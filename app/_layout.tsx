@@ -7,12 +7,25 @@ import { ThemeProvider, useTheme } from '../providers/ThemeProvider';
 import { I18nProvider } from '../providers/I18nProvider';
 import { AuthProvider, useAuth } from '../providers/AuthProvider';
 import { PlayerProvider } from '../providers/PlayerProvider';
+import { initNotifications, registerDevice } from '../services/notifications';
 
 function AuthGate() {
-  const { session, loading } = useAuth();
+  const { session, user, loading } = useAuth();
   const { theme } = useTheme();
   const router = useRouter();
   const segments = useSegments();
+
+  // Initialise OneSignal once when the component mounts
+  useEffect(() => {
+    initNotifications();
+  }, []);
+
+  // Register device token in Supabase whenever a user session becomes available
+  useEffect(() => {
+    if (user?.id) {
+      registerDevice(user.id);
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     if (loading) return;
