@@ -13,7 +13,7 @@ function TabIcon({ emoji, color }: { emoji: string; color: string }) {
 
 export default function TabLayout() {
   const { theme } = useTheme();
-  const { isAdmin, isEditor } = useAuth();
+  const { user, isAdmin, isEditor } = useAuth();
   const { t } = useI18n();
   const colors = theme.colors;
 
@@ -56,6 +56,7 @@ export default function TabLayout() {
         options={{
           title: t('tabs.collection') || 'Collection',
           tabBarIcon: ({ color }) => <TabIcon emoji="❤" color={color} />,
+          href: user ? '/collection' : null,
         }}
       />
       <Tabs.Screen
