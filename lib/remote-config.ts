@@ -4,6 +4,18 @@ const CONFIG_CACHE_KEY = 'app_remote_config';
 const CONFIG_URL = 'http://165.22.208.103/api/config.json';
 const CONFIG_TTL_MS = 60 * 60 * 1000; // Re-fetch every 1 hour
 
+// Fallback config for local development when remote config is unreachable
+const FALLBACK_CONFIG: AppConfig = {
+  supabaseUrl: 'https://hewlmlqjcwlzouywnwjb.supabase.co',
+  supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhld2xtbHFqY3dsem91eXdud2piIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1NjcxMDQsImV4cCI6MjA5MTE0MzEwNH0.0mJNwzM9CPpPPvlhgYuaFix6C8OSPbAMFFar44aLfIg',
+  onesignalAppId: '',
+  streamHlsUrl: 'http://165.22.208.103/hls/stream.m3u8',
+  streamRtmpUrl: 'rtmp://165.22.208.103:1935/live',
+  archiveOrgCollection: 'khanqah-maseeh-ul-ummah',
+  appVersion: '1.0.0',
+  maintenanceMode: false,
+};
+
 export interface AppConfig {
   supabaseUrl: string;
   supabaseAnonKey: string;
@@ -45,12 +57,16 @@ export async function loadConfig(): Promise<AppConfig> {
     _config = await fetchAndCacheConfig();
     return _config;
   } catch (error) {
+    console.warn('Remote config fetch failed:', error);
     // Fall back to stale cache if available
     if (cached) {
       _config = cached.config;
       return _config;
     }
-    throw new Error('Failed to load app configuration. Please check your internet connection.');
+    // Fall back to built-in config (for dev or when server is unreachable)
+    console.warn('Using fallback config');
+    _config = FALLBACK_CONFIG;
+    return _config;
   }
 }
 
