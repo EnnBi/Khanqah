@@ -3,10 +3,14 @@ import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
   Alert, Modal, TextInput, Platform, ActivityIndicator,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useI18n } from '../../providers/I18nProvider';
 import { useAuth } from '../../hooks/useAuth';
 import { usePlaylists, createPlaylist } from '../../hooks/usePlaylists';
+import { useDownloads } from '../../hooks/useDownloads';
+import { ContentCard } from '../../components/ContentCard';
+import { useContinueListening, useHistory } from '../../hooks/useListeningProgress';
 
 // ── Inline sub-components ──────────────────────────────────────────────────
 
@@ -215,13 +219,120 @@ const modalStyles = StyleSheet.create({
   },
 });
 
+// ── Continue Listening card ────────────────────────────────────────────────
+
+interface ContinueListeningCardProps {
+  title: string;
+  position: number;
+  duration: number;
+  onPlay: () => void;
+}
+
+function ContinueListeningCard({ title, position, duration, onPlay }: ContinueListeningCardProps) {
+  const { theme } = useTheme();
+  const remaining = Math.max(0, duration - position);
+  const minutes = Math.floor(remaining / 60);
+  const seconds = Math.floor(remaining % 60);
+  const remainingText = `${minutes}:${seconds.toString().padStart(2, '0')} remaining`;
+  const progress = duration > 0 ? Math.min(position / duration, 1) : 0;
+
+  return (
+    <View
+      style={[
+        clStyles.card,
+        { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+      ]}
+    >
+      <View style={clStyles.row}>
+        <View style={clStyles.info}>
+          <Text style={[clStyles.title, { color: theme.colors.text }]} numberOfLines={2}>
+            {title}
+          </Text>
+          <Text style={[clStyles.remaining, { color: theme.colors.textMuted }]}>
+            {remainingText}
+          </Text>
+          {/* Progress bar */}
+          <View style={[clStyles.barBg, { backgroundColor: theme.colors.border }]}>
+            <View style={[clStyles.barFill, { width: `${progress * 100}%` }]} />
+          </View>
+        </View>
+        <TouchableOpacity onPress={onPlay} activeOpacity={0.7} style={clStyles.playBtn}>
+          <Text style={clStyles.playIcon}>{'▶'}</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+const clStyles = StyleSheet.create({
+  card: {
+    marginHorizontal: 16,
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 14,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  info: {
+    flex: 1,
+    marginRight: 12,
+  },
+  title: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  remaining: {
+    fontSize: 12,
+    marginBottom: 8,
+  },
+  barBg: {
+    height: 4,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  barFill: {
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#C9A84C', // gold
+  },
+  playBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#C9A84C',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  playIcon: {
+    color: '#fff',
+    fontSize: 14,
+    marginLeft: 2,
+  },
+});
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+}
+
 // ── Main Screen ────────────────────────────────────────────────────────────
 
 export default function CollectionScreen() {
   const { theme } = useTheme();
   const { t } = useI18n();
   const { user } = useAuth();
+  const router = useRouter();
   const { playlists, loading: playlistsLoading, refetch: refetchPlaylists } = usePlaylists();
+  const { downloads, loading: downloadsLoading, totalSize } = useDownloads();
+  const continueListening = useContinueListening();
+  const { items: historyItems, loading: historyLoading } = useHistory(20);
   const [showModal, setShowModal] = useState(false);
 
   async function handleNewPlaylist(name: string) {
@@ -263,7 +374,20 @@ export default function CollectionScreen() {
         {/* Continue Listening */}
         <View style={styles.section}>
           <SectionHeader title={t('collection.continueListening') || 'Continue Listening'} />
-          <EmptyState message={t('collection.nothingPlaying') || 'Nothing playing yet'} />
+          {continueListening ? (
+            <ContinueListeningCard
+              title={
+                user?.language_pref === 'ur'
+                  ? continueListening.content.title_ur
+                  : continueListening.content.title_en
+              }
+              position={continueListening.position}
+              duration={continueListening.duration}
+              onPlay={() => router.push(`/player/${continueListening.content.id}`)}
+            />
+          ) : (
+            <EmptyState message={t('collection.nothingPlaying') || 'Nothing playing yet'} />
+          )}
         </View>
 
         {/* Playlists */}
@@ -286,8 +410,28 @@ export default function CollectionScreen() {
 
         {/* Downloads */}
         <View style={styles.section}>
-          <SectionHeader title={t('collection.downloads') || 'Downloads'} />
-          <EmptyState message={t('collection.noDownloads') || 'No downloads yet'} />
+          <SectionHeader
+            title={t('collection.downloads') || 'Downloads'}
+            actionLabel={
+              downloads.length > 0
+                ? `${downloads.length} ${downloads.length === 1 ? 'item' : 'items'} \u2022 ${formatBytes(totalSize)}`
+                : undefined
+            }
+          />
+          {downloadsLoading ? (
+            <ActivityIndicator style={{ marginTop: 16 }} color={theme.colors.primaryLight} />
+          ) : downloads.length === 0 ? (
+            <EmptyState message={t('collection.noDownloads') || 'No downloads yet'} />
+          ) : (
+            downloads.map(({ content }) => (
+              <ContentCard
+                key={content.id}
+                content={content}
+                onPress={() => {}}
+                language={user?.language_pref ?? 'en'}
+              />
+            ))
+          )}
         </View>
 
         {/* History */}
@@ -297,7 +441,20 @@ export default function CollectionScreen() {
             actionLabel={t('collection.seeAll') || 'See all'}
             onAction={() => {}}
           />
-          <EmptyState message={t('collection.noHistory') || 'No listening history'} />
+          {historyLoading ? (
+            <ActivityIndicator style={{ marginTop: 16 }} color={theme.colors.primaryLight} />
+          ) : historyItems.length === 0 ? (
+            <EmptyState message={t('collection.noHistory') || 'No listening history'} />
+          ) : (
+            historyItems.map(({ content }) => (
+              <ContentCard
+                key={content.id}
+                content={content}
+                onPress={() => router.push(`/player/${content.id}`)}
+                language={user?.language_pref ?? 'en'}
+              />
+            ))
+          )}
         </View>
 
         <View style={styles.bottomPad} />

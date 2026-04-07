@@ -8,6 +8,8 @@ import TrackPlayer, {
 
 import { Content } from '../lib/types';
 import { setupPlayer } from '../services/player-service';
+import { saveProgress } from '../hooks/useListeningProgress';
+import { useAuth } from '../hooks/useAuth';
 
 interface PlayerContextValue {
   currentContent: Content | null;
@@ -63,6 +65,23 @@ function PlayerProviderInner({ children }: { children: React.ReactNode }) {
   useActiveTrack(); // keep active track subscription alive
 
   const isPlaying = playbackState.state === State.Playing;
+
+  const { user } = useAuth();
+
+  // Auto-save progress every 10 seconds while playing
+  useEffect(() => {
+    if (!user?.id || !currentContent) return;
+
+    const interval = setInterval(async () => {
+      const { position: pos, duration: dur } = await TrackPlayer.getProgress();
+      if (pos <= 0) return;
+
+      const completed = dur > 0 && pos >= dur - 2;
+      saveProgress(user.id, currentContent.id, pos, completed);
+    }, 10_000);
+
+    return () => clearInterval(interval);
+  }, [user?.id, currentContent]);
 
   const playContent = useCallback(async (content: Content) => {
     const track = contentToTrack(content);
