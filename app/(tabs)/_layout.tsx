@@ -69,6 +69,7 @@ export default function TabLayout() {
             />
           ),
           tabBarActiveTintColor: isPrivileged ? colors.gold : colors.primaryLight,
+          href: isPrivileged ? '/admin' : '/profile',
         }}
       />
     </Tabs>
