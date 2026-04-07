@@ -77,23 +77,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function signUpWithEmail(email: string, password: string, displayName: string) {
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    // Profile is auto-created by handle_new_user() DB trigger
+    // Pass full_name in metadata so the trigger can use it
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { full_name: displayName } },
+    });
     if (error) throw error;
-
-    if (data.user) {
-      const { error: profileError } = await supabase.from('users').insert({
-        id: data.user.id,
-        email,
-        display_name: displayName,
-        role: 'listener',
-        language_pref: 'en',
-        theme_pref: 'system',
-        created_at: new Date().toISOString(),
-      });
-      if (profileError) {
-        console.error('Error creating user profile:', profileError);
-      }
-    }
   }
 
   async function signOut() {
