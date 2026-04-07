@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, View, Text } from 'react-native';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useFonts } from 'expo-font';
 
 import { loadConfig } from '../lib/remote-config';
 import { initSupabase } from '../lib/supabase';
@@ -66,6 +67,10 @@ export default function RootLayout() {
   const [configLoaded, setConfigLoaded] = useState(false);
   const [configError, setConfigError] = useState<string | null>(null);
 
+  const [fontsLoaded] = useFonts({
+    'NastaleeqUrdu': require('../assets/fonts/JameelNooriNastaleeq.ttf'),
+  });
+
   useEffect(() => {
     loadConfig()
       .then(() => {
@@ -90,7 +95,7 @@ export default function RootLayout() {
     );
   }
 
-  if (!configLoaded) {
+  if (!configLoaded || !fontsLoaded) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#09090b' }}>
         <ActivityIndicator size="large" color="#047857" />

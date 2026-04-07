@@ -29,7 +29,9 @@ export function BilingualText({ en, ur, style, numberOfLines }: BilingualTextPro
 
 const styles = StyleSheet.create({
   urdu: {
+    fontFamily: 'NastaleeqUrdu',
     writingDirection: 'rtl',
     textAlign: 'right',
+    lineHeight: 32,
   },
 });

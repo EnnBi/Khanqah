@@ -117,11 +117,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   headerArabic: {
+    fontFamily: 'NastaleeqUrdu',
     color: '#bbf7d0',
-    fontSize: 16,
+    fontSize: 20,
     textAlign: 'center',
-    marginTop: 4,
-    fontWeight: '500',
+    marginTop: 6,
+    lineHeight: 36,
   },
   headerSubtitle: {
     color: '#d1fae5',

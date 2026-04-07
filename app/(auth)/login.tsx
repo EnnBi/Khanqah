@@ -74,10 +74,12 @@ export default function LoginScreen() {
       marginBottom: 6,
     },
     arabicText: {
-      fontSize: 22,
+      fontFamily: 'NastaleeqUrdu',
+      fontSize: 26,
       color: colors.gold,
       textAlign: 'center',
       marginBottom: 4,
+      lineHeight: 42,
     },
     subtitle: {
       fontSize: 13,
