@@ -20,12 +20,23 @@ export default function Root({ children }: { children: React.ReactNode }) {
 
         {/* Using raw CSS styles as an escape-hatch to ensure the background color never flickers in dark-mode. */}
         <style dangerouslySetInnerHTML={{ __html: responsiveBackground }} />
-        {/* Add any additional <head> elements that you want globally available on web... */}
+        {/* Nastaleeq font for Urdu text */}
+        <style dangerouslySetInnerHTML={{ __html: nastaleeqFont }} />
       </head>
       <body>{children}</body>
     </html>
   );
 }
+
+const nastaleeqFont = `
+@font-face {
+  font-family: 'NastaleeqUrdu';
+  src: url('/assets/fonts/JameelNooriNastaleeq.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+`;
 
 const responsiveBackground = `
 body {
