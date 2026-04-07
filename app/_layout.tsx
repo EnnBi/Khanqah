@@ -1,8 +1,10 @@
-import React, { useEffect } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, View, Text } from 'react-native';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
+import { loadConfig } from '../lib/remote-config';
+import { initSupabase } from '../lib/supabase';
 import { ThemeProvider, useTheme } from '../providers/ThemeProvider';
 import { I18nProvider } from '../providers/I18nProvider';
 import { AuthProvider, useAuth } from '../providers/AuthProvider';
@@ -62,6 +64,41 @@ function RootLayoutInner() {
 }
 
 export default function RootLayout() {
+  const [configLoaded, setConfigLoaded] = useState(false);
+  const [configError, setConfigError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadConfig()
+      .then(() => {
+        initSupabase();
+        setConfigLoaded(true);
+      })
+      .catch((err) => {
+        setConfigError(err.message || 'Failed to load configuration');
+      });
+  }, []);
+
+  if (configError) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#09090b', padding: 24 }}>
+        <Text style={{ color: '#ef4444', fontSize: 16, fontWeight: '600', textAlign: 'center' }}>
+          {configError}
+        </Text>
+        <Text style={{ color: '#71717a', fontSize: 13, marginTop: 8, textAlign: 'center' }}>
+          Please check your internet connection and restart the app.
+        </Text>
+      </View>
+    );
+  }
+
+  if (!configLoaded) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#09090b' }}>
+        <ActivityIndicator size="large" color="#047857" />
+      </View>
+    );
+  }
+
   return (
     <ThemeProvider>
       <I18nProvider>

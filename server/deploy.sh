@@ -57,6 +57,9 @@ rm -f /etc/nginx/sites-enabled/default
 cp record-and-upload.sh /opt/khanqah/record-and-upload.sh
 chmod +x /opt/khanqah/record-and-upload.sh
 
+# Copy remote config (edit this file with your real values!)
+cp config.json /opt/khanqah/config.json
+
 # Test nginx config
 nginx -t
 
@@ -72,6 +75,9 @@ echo ""
 echo "NOTE: Upload the web build to /var/www/khanqah/ after running:"
 echo "  npx expo export --platform web"
 echo "  scp -r dist/* user@$(hostname -I | awk '{print $1}'):/var/www/khanqah/"
+echo ""
+echo "IMPORTANT: Edit the remote config with your real values:"
+echo "  nano /opt/khanqah/config.json"
 echo ""
 echo "IMPORTANT: Set these environment variables in /opt/khanqah/.env:"
 echo "  IA_ACCESS_KEY=your-internet-archive-access-key"

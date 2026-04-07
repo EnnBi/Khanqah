@@ -1,15 +1,50 @@
 import 'react-native-url-polyfill/auto';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getConfig } from './remote-config';
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
+let _supabase: SupabaseClient | null = null;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    storage: AsyncStorage,
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false,
+/**
+ * Get the Supabase client. Must call initSupabase() first (after loadConfig).
+ */
+export function getSupabase(): SupabaseClient {
+  if (!_supabase) {
+    throw new Error('Supabase not initialized. Call initSupabase() after loadConfig().');
+  }
+  return _supabase;
+}
+
+/**
+ * Initialize Supabase client using values from remote config.
+ * Call this once after loadConfig() completes.
+ */
+export function initSupabase(): SupabaseClient {
+  if (_supabase) return _supabase;
+
+  const config = getConfig();
+
+  _supabase = createClient(config.supabaseUrl, config.supabaseAnonKey, {
+    auth: {
+      storage: AsyncStorage,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: false,
+    },
+  });
+
+  return _supabase;
+}
+
+// Backward-compatible export — lazily gets the initialized client
+// This allows existing imports of `supabase` to keep working
+export const supabase = new Proxy({} as SupabaseClient, {
+  get(_target, prop) {
+    const client = getSupabase();
+    const value = (client as any)[prop];
+    if (typeof value === 'function') {
+      return value.bind(client);
+    }
+    return value;
   },
 });
