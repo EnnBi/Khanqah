@@ -50,7 +50,7 @@ function contentToTrack(content: Content, language: string = 'en') {
     id: content.id,
     url: content.media_url,
     title: language === 'ur' ? content.title_ur : content.title_en,
-    artist: 'Mufti Abdur Rasheed Miftahi DB',
+    artist: 'Mufti Abdur Rasheed Miftahi Sahab',
     artwork: content.thumbnail_url ?? undefined,
     duration: content.duration ?? undefined,
   };

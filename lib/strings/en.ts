@@ -8,7 +8,7 @@ const en = {
   },
   home: {
     title: 'Khanqah Maseeh-ul-Ummah',
-    subtitle: 'Hazrat Mufti Abdur Rasheed Miftahi DB',
+    subtitle: 'Hazrat Mufti Abdur Rasheed Miftahi Sahab',
     liveNow: 'Live Now',
     nextLive: 'Next Live',
     latestBayans: 'Latest Bayans',
@@ -45,7 +45,7 @@ const en = {
     skipInterval: 'Skip Interval',
     notifications: 'Notifications',
     aboutKhanqah: 'About Khanqah',
-    muftiBio: 'Mufti Bio',
+    muftiBio: "Hazrat Mufti Abdur Rasheed Miftahi Sahab's Bio",
     signOut: 'Sign Out',
   },
   player: {

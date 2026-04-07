@@ -56,7 +56,7 @@ export function MiniPlayer() {
             style={[styles.artist, { color: colors.textMuted }]}
             numberOfLines={1}
           >
-            Mufti Abdur Rasheed Miftahi DB
+            Mufti Abdur Rasheed Miftahi Sahab
           </Text>
         </View>
 

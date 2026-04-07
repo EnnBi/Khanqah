@@ -159,7 +159,7 @@ export default function LoginScreen() {
         <View style={styles.header}>
           <Text style={styles.appName}>Khanqah Maseeh-ul-Ummah</Text>
           <Text style={styles.arabicText}>خانقاہ مسیح الامت</Text>
-          <Text style={styles.subtitle}>Hazrat Mufti Abdur Rasheed Miftahi DB</Text>
+          <Text style={styles.subtitle}>Hazrat Mufti Abdur Rasheed Miftahi Sahab</Text>
         </View>
 
         <View style={styles.card}>

@@ -45,7 +45,7 @@ const ur = {
     skipInterval: 'اسکپ وقفہ',
     notifications: 'اطلاعات',
     aboutKhanqah: 'خانقاہ کے بارے میں',
-    muftiBio: 'مفتی صاحب کا تعارف',
+    muftiBio: 'حضرت مفتی عبدالرشید مفتاحی صاحب کا تعارف',
     signOut: 'سائن آوٹ',
   },
   player: {

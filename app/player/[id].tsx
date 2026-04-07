@@ -185,7 +185,7 @@ export default function PlayerScreen() {
             {title || '—'}
           </Text>
           <Text style={[styles.trackArtist, { color: c.textMuted }]} numberOfLines={1}>
-            Hazrat Mufti Abdur Rasheed Miftahi DB
+            Hazrat Mufti Abdur Rasheed Miftahi Sahab
           </Text>
         </View>
 

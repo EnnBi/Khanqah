@@ -213,7 +213,7 @@ export default function ProfileScreen() {
           />
           <ProfileItem
             icon="📖"
-            label={t('profile.muftiBio') || "Mufti Sahab's Bio"}
+            label={t('profile.muftiBio') || "Hazrat Mufti Abdur Rasheed Miftahi Sahab's Bio"}
             onPress={() => {}}
           />
         </View>
