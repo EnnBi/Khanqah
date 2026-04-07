@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useI18n } from '../../providers/I18nProvider';
 import { useAuth } from '../../providers/AuthProvider';
@@ -92,6 +93,7 @@ export default function ProfileScreen() {
   const { theme, themePref, setThemePref } = useTheme();
   const { t, language, setLanguage } = useI18n();
   const { user, signOut } = useAuth();
+  const router = useRouter();
 
   // Cycle system → light → dark
   function handleThemeToggle() {
@@ -135,20 +137,39 @@ export default function ProfileScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* User Card */}
-        <View style={[styles.userCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-          <View style={[styles.avatar, { borderColor: theme.colors.gold }]}>
-            <Text style={styles.avatarEmoji}>👤</Text>
+        {/* User Card or Sign In prompt */}
+        {user ? (
+          <View style={[styles.userCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+            <View style={[styles.avatar, { borderColor: theme.colors.gold }]}>
+              <Text style={styles.avatarEmoji}>👤</Text>
+            </View>
+            <View style={styles.userInfo}>
+              <Text style={[styles.displayName, { color: theme.colors.text }]}>
+                {user.display_name || 'User'}
+              </Text>
+              <Text style={[styles.email, { color: theme.colors.textSecondary }]}>
+                {user.email}
+              </Text>
+            </View>
           </View>
-          <View style={styles.userInfo}>
-            <Text style={[styles.displayName, { color: theme.colors.text }]}>
-              {user?.display_name || t('profile.guest') || 'Guest'}
-            </Text>
-            <Text style={[styles.email, { color: theme.colors.textSecondary }]}>
-              {user?.email || ''}
-            </Text>
+        ) : (
+          <View style={[styles.userCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+            <View style={styles.userInfo}>
+              <Text style={[styles.displayName, { color: theme.colors.text }]}>
+                {t('profile.guest') || 'Guest'}
+              </Text>
+              <Text style={[styles.email, { color: theme.colors.textSecondary }]}>
+                Sign in to sync playlists, downloads, and listening progress
+              </Text>
+              <TouchableOpacity
+                style={[styles.signInBtn, { backgroundColor: theme.colors.primary }]}
+                onPress={() => router.push('/(auth)/login')}
+              >
+                <Text style={styles.signInText}>{t('auth.signIn') || 'Sign In'}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        )}
 
         {/* Settings Group */}
         <View style={[styles.group, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
@@ -197,16 +218,18 @@ export default function ProfileScreen() {
           />
         </View>
 
-        {/* Sign Out */}
-        <TouchableOpacity
-          style={[styles.signOutBtn, { borderColor: theme.colors.liveRed }]}
-          onPress={handleSignOut}
-          activeOpacity={0.7}
-        >
-          <Text style={[styles.signOutText, { color: theme.colors.liveRed }]}>
-            {t('profile.signOut') || 'Sign Out'}
-          </Text>
-        </TouchableOpacity>
+        {/* Sign Out (only if logged in) */}
+        {user && (
+          <TouchableOpacity
+            style={[styles.signOutBtn, { borderColor: theme.colors.liveRed }]}
+            onPress={handleSignOut}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.signOutText, { color: theme.colors.liveRed }]}>
+              {t('profile.signOut') || 'Sign Out'}
+            </Text>
+          </TouchableOpacity>
+        )}
 
         {/* Version */}
         <Text style={[styles.version, { color: theme.colors.textMuted }]}>v1.0.0</Text>
@@ -282,6 +305,18 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   // Sign out
+  signInBtn: {
+    marginTop: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  signInText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
   signOutBtn: {
     marginHorizontal: 16,
     marginTop: 16,

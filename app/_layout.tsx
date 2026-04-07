@@ -29,14 +29,13 @@ function AuthGate() {
     }
   }, [user?.id]);
 
+  // App is public by default — no forced login redirect.
+  // Only redirect logged-in users away from the auth screens.
   useEffect(() => {
     if (loading) return;
-
     const inAuthGroup = segments[0] === '(auth)';
 
-    if (!session && !inAuthGroup) {
-      router.replace('/(auth)/login');
-    } else if (session && inAuthGroup) {
+    if (session && inAuthGroup) {
       router.replace('/(tabs)');
     }
   }, [session, loading, segments]);
