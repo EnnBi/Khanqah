@@ -5,12 +5,13 @@ const CONFIG_URL = 'http://165.22.208.103/api/config.json';
 const CONFIG_TTL_MS = 60 * 60 * 1000; // Re-fetch every 1 hour
 
 // Fallback config for local development when remote config is unreachable
+// Fallback reads from .env.local for local dev only — no real creds in source
 const FALLBACK_CONFIG: AppConfig = {
-  supabaseUrl: 'https://hewlmlqjcwlzouywnwjb.supabase.co',
-  supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhld2xtbHFqY3dsem91eXdud2piIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1NjcxMDQsImV4cCI6MjA5MTE0MzEwNH0.0mJNwzM9CPpPPvlhgYuaFix6C8OSPbAMFFar44aLfIg',
-  onesignalAppId: '',
-  streamHlsUrl: 'http://165.22.208.103/hls/stream.m3u8',
-  streamRtmpUrl: 'rtmp://165.22.208.103:1935/live',
+  supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL || '',
+  supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '',
+  onesignalAppId: process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID || '',
+  streamHlsUrl: '',
+  streamRtmpUrl: '',
   archiveOrgCollection: 'khanqah-maseeh-ul-ummah',
   appVersion: '1.0.0',
   maintenanceMode: false,

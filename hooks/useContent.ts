@@ -90,10 +90,12 @@ export function useSearchContent(query: string) {
     setLoading(true);
     const timer = setTimeout(async () => {
       setError(null);
+      // Sanitize query to prevent PostgREST filter injection
+      const sanitized = query.replace(/[,%()]/g, '');
       const { data, error: err } = await supabase
         .from('content')
         .select('*')
-        .or(`title_en.ilike.%${query}%,title_ur.ilike.%${query}%`)
+        .or(`title_en.ilike.%${sanitized}%,title_ur.ilike.%${sanitized}%`)
         .order('created_at', { ascending: false });
 
       if (err) setError(err.message);
