@@ -1,57 +1,72 @@
 import React from 'react';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Link, Tabs } from 'expo-router';
-import { Pressable } from 'react-native';
+import { Text } from 'react-native';
+import { Tabs } from 'expo-router';
 
-import Colors from '@/constants/Colors';
-import { useColorScheme } from '@/components/useColorScheme';
-import { useClientOnlyValue } from '@/components/useClientOnlyValue';
+import { useTheme } from '../../providers/ThemeProvider';
+import { useAuth } from '../../providers/AuthProvider';
+import { useI18n } from '../../providers/I18nProvider';
 
-// You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
-function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>['name'];
-  color: string;
-}) {
-  return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
+function TabIcon({ emoji, color }: { emoji: string; color: string }) {
+  return <Text style={{ fontSize: 20, color }}>{emoji}</Text>;
 }
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  const { theme } = useTheme();
+  const { isAdmin, isEditor } = useAuth();
+  const { t } = useI18n();
+  const colors = theme.colors;
+
+  const isPrivileged = isAdmin || isEditor;
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        // Disable the static render of the header on web
-        // to prevent a hydration error in React Navigation v6.
-        headerShown: useClientOnlyValue(false, true),
-      }}>
+        headerShown: false,
+        tabBarStyle: {
+          backgroundColor: colors.tabBarBg,
+          borderTopColor: colors.border,
+          borderTopWidth: 1,
+        },
+        tabBarActiveTintColor: colors.primaryLight,
+        tabBarInactiveTintColor: colors.textMuted,
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontWeight: '500',
+        },
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Tab One',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
-          headerRight: () => (
-            <Link href="/modal" asChild>
-              <Pressable>
-                {({ pressed }) => (
-                  <FontAwesome
-                    name="info-circle"
-                    size={25}
-                    color={Colors[colorScheme ?? 'light'].text}
-                    style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
-                  />
-                )}
-              </Pressable>
-            </Link>
-          ),
+          title: t('tabs.home') || 'Home',
+          tabBarIcon: ({ color }) => <TabIcon emoji="🏠" color={color} />,
         }}
       />
       <Tabs.Screen
-        name="two"
+        name="library"
         options={{
-          title: 'Tab Two',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+          title: t('tabs.library') || 'Library',
+          tabBarIcon: ({ color }) => <TabIcon emoji="📚" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="collection"
+        options={{
+          title: t('tabs.collection') || 'Collection',
+          tabBarIcon: ({ color }) => <TabIcon emoji="❤" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: isPrivileged ? (t('tabs.admin') || 'Admin') : (t('tabs.profile') || 'Profile'),
+          tabBarIcon: ({ color }) => (
+            <TabIcon
+              emoji={isPrivileged ? '⚙' : '👤'}
+              color={isPrivileged ? colors.gold : color}
+            />
+          ),
+          tabBarActiveTintColor: isPrivileged ? colors.gold : colors.primaryLight,
         }}
       />
     </Tabs>
