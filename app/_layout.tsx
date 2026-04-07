@@ -6,6 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { ThemeProvider, useTheme } from '../providers/ThemeProvider';
 import { I18nProvider } from '../providers/I18nProvider';
 import { AuthProvider, useAuth } from '../providers/AuthProvider';
+import { PlayerProvider } from '../providers/PlayerProvider';
 
 function AuthGate() {
   const { session, loading } = useAuth();
@@ -52,7 +53,9 @@ export default function RootLayout() {
     <ThemeProvider>
       <I18nProvider>
         <AuthProvider>
-          <RootLayoutInner />
+          <PlayerProvider>
+            <RootLayoutInner />
+          </PlayerProvider>
         </AuthProvider>
       </I18nProvider>
     </ThemeProvider>
