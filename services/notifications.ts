@@ -1,16 +1,16 @@
 import { OneSignal } from 'react-native-onesignal';
 import { Platform } from 'react-native';
 import { supabase } from '../lib/supabase';
-
-const ONESIGNAL_APP_ID = process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID || '';
+import { getConfig } from '../lib/remote-config';
 
 export function initNotifications() {
-  if (!ONESIGNAL_APP_ID) {
+  const appId = getConfig().onesignalAppId;
+  if (!appId) {
     console.warn('OneSignal App ID not configured');
     return;
   }
 
-  OneSignal.initialize(ONESIGNAL_APP_ID);
+  OneSignal.initialize(appId);
 
   // Request permission (iOS only — Android grants automatically on install for API < 33)
   OneSignal.Notifications.requestPermission(true);
@@ -38,7 +38,7 @@ export async function registerDevice(userId: string) {
         onesignal_player_id: subscriptionId,
         device_type: deviceType,
       },
-      { onConflict: 'user_id,device_type' }
+      { onConflict: 'user_id,onesignal_player_id' }
     );
 
     if (error) {

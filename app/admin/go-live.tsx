@@ -16,13 +16,7 @@ import { useRouter } from 'expo-router';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useAuth } from '../../providers/AuthProvider';
 import { supabase } from '../../lib/supabase';
-
-// TODO: Replace with actual server IP once configured on DigitalOcean.
-// For actual audio capture + RTMP streaming from the phone, a native RTMP
-// library is required (e.g. react-native-rtmp-publisher). This initial
-// implementation only creates/closes the live_sessions record and shows
-// the broadcasting UI. Wire up the native module when it is available.
-const STREAM_HLS_URL = 'http://YOUR_SERVER_IP:8080/hls/stream.m3u8';
+import { getConfig } from '../../lib/remote-config';
 
 function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -183,7 +177,7 @@ export default function GoLiveScreen() {
       .insert({
         title_en: titleEn.trim(),
         title_ur: titleUr.trim(),
-        stream_url: STREAM_HLS_URL,
+        stream_url: getConfig().streamHlsUrl,
         started_by: user.id,
         status: 'live',
       })

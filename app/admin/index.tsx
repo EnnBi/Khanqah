@@ -45,9 +45,8 @@ export default function AdminDashboard() {
         supabase.from('content').select('*', { count: 'exact', head: true }),
         supabase.from('users').select('*', { count: 'exact', head: true }),
         supabase
-          .from('live_sessions')
+          .from('scheduled_sessions')
           .select('*', { count: 'exact', head: true })
-          .eq('status', 'scheduled')
           .gte('scheduled_at', new Date().toISOString()),
       ]);
 

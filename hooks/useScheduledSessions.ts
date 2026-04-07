@@ -17,7 +17,7 @@ export function useNextScheduledSession() {
         .gte('scheduled_at', now)
         .order('scheduled_at', { ascending: true })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (!cancelled) {
         setSession(data ?? null);

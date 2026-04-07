@@ -15,7 +15,7 @@ export function useLiveSession() {
         .select('*')
         .eq('status', 'live')
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (!cancelled) {
         setSession(data ?? null);
