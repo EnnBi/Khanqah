@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session } from '@supabase/supabase-js';
+import { makeRedirectUri } from 'expo-auth-session';
+import * as WebBrowser from 'expo-web-browser';
 import { supabase } from '../lib/supabase';
 import { User } from '../lib/types';
 
@@ -9,6 +11,9 @@ interface AuthContextValue {
   loading: boolean;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (email: string, password: string, displayName: string) => Promise<void>;
+  signInWithPhone: (phone: string) => Promise<void>;
+  verifyOtp: (phone: string, token: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
   isEditor: boolean;
@@ -20,6 +25,9 @@ const AuthContext = createContext<AuthContextValue>({
   loading: true,
   signInWithEmail: async () => {},
   signUpWithEmail: async () => {},
+  signInWithPhone: async () => {},
+  verifyOtp: async () => {},
+  signInWithGoogle: async () => {},
   signOut: async () => {},
   isAdmin: false,
   isEditor: false,
@@ -41,7 +49,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Error fetching user profile:', error);
       return null;
     }
-
     return data as User;
   }
 
@@ -71,20 +78,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Email/password sign in
   async function signInWithEmail(email: string, password: string) {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
   }
 
+  // Email/password sign up
   async function signUpWithEmail(email: string, password: string, displayName: string) {
-    // Profile is auto-created by handle_new_user() DB trigger
-    // Pass full_name in metadata so the trigger can use it
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { full_name: displayName } },
     });
     if (error) throw error;
+  }
+
+  // Phone OTP — send code
+  async function signInWithPhone(phone: string) {
+    const { error } = await supabase.auth.signInWithOtp({ phone });
+    if (error) throw error;
+  }
+
+  // Phone OTP — verify code
+  async function verifyOtp(phone: string, token: string) {
+    const { error } = await supabase.auth.verifyOtp({
+      phone,
+      token,
+      type: 'sms',
+    });
+    if (error) throw error;
+  }
+
+  // Google OAuth
+  async function signInWithGoogle() {
+    const redirectUrl = makeRedirectUri({ preferLocalhost: true });
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: redirectUrl },
+    });
+    if (error) throw error;
+    if (data?.url) {
+      await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
+    }
   }
 
   async function signOut() {
@@ -97,7 +133,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ session, user, loading, signInWithEmail, signUpWithEmail, signOut, isAdmin, isEditor }}
+      value={{
+        session, user, loading,
+        signInWithEmail, signUpWithEmail,
+        signInWithPhone, verifyOtp,
+        signInWithGoogle,
+        signOut, isAdmin, isEditor,
+      }}
     >
       {children}
     </AuthContext.Provider>
