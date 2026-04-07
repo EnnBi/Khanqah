@@ -1,10 +1,11 @@
 import React from 'react';
-import { Text } from 'react-native';
+import { Text, View } from 'react-native';
 import { Tabs } from 'expo-router';
 
 import { useTheme } from '../../providers/ThemeProvider';
 import { useAuth } from '../../providers/AuthProvider';
 import { useI18n } from '../../providers/I18nProvider';
+import { MiniPlayer } from '../../components/MiniPlayer';
 
 function TabIcon({ emoji, color }: { emoji: string; color: string }) {
   return <Text style={{ fontSize: 20, color }}>{emoji}</Text>;
@@ -19,6 +20,7 @@ export default function TabLayout() {
   const isPrivileged = isAdmin || isEditor;
 
   return (
+    <View style={{ flex: 1 }}>
     <Tabs
       screenOptions={{
         headerShown: false,
@@ -70,5 +72,7 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+    <MiniPlayer />
+    </View>
   );
 }
