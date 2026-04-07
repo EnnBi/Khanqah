@@ -28,7 +28,7 @@ export default function HomeScreen() {
       <View style={[styles.header, { backgroundColor: theme.colors.headerBg }]}>
         <Text style={styles.headerTitle}>Khanqah Maseeh-ul-Ummah</Text>
         <Text style={styles.headerArabic}>خانقاہ مسیح الامت</Text>
-        <Text style={styles.headerSubtitle}>Mufti Saeed Ahmad Saeedi (db)</Text>
+        <Text style={styles.headerSubtitle}>Hazrat Mufti Abdur Rasheed Miftahi DB</Text>
       </View>
 
       <ScrollView
