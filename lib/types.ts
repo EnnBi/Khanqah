@@ -1,0 +1,67 @@
+export type ContentType = 'bayan' | 'clip' | 'nazam' | 'quran' | 'hamd_naat' | 'book';
+export type UserRole = 'listener' | 'editor' | 'admin';
+export type ThemePref = 'light' | 'dark' | 'system';
+export type LiveSessionStatus = 'live' | 'ended' | 'processing';
+
+export interface User {
+  id: string; email: string; display_name: string;
+  role: UserRole; language_pref: 'en' | 'ur';
+  theme_pref: ThemePref; created_at: string;
+}
+
+export interface Category {
+  id: string; name_en: string; name_ur: string;
+  type: ContentType; parent_id: string | null; sort_order: number;
+}
+
+export interface Content {
+  id: string; title_en: string; title_ur: string;
+  description_en: string | null; description_ur: string | null;
+  type: ContentType; category_id: string; media_url: string;
+  thumbnail_url: string | null; duration: number | null;
+  file_size: number | null; is_video: boolean;
+  uploaded_by: string; created_at: string; updated_at: string;
+}
+
+export interface Topic {
+  id: string; content_id: string; title_en: string; title_ur: string;
+  timestamp_seconds: number; sort_order: number;
+}
+
+export interface Playlist {
+  id: string; user_id: string; name: string;
+  is_public: boolean; created_at: string;
+}
+
+export interface PlaylistItem {
+  id: string; playlist_id: string; content_id: string;
+  sort_order: number; added_at: string;
+}
+
+export interface Download {
+  id: string; user_id: string; content_id: string; downloaded_at: string;
+}
+
+export interface ListeningProgress {
+  id: string; user_id: string; content_id: string;
+  position_seconds: number; completed: boolean; updated_at: string;
+}
+
+export interface LiveSession {
+  id: string; title_en: string; title_ur: string;
+  stream_url: string; started_by: string; started_at: string;
+  ended_at: string | null; recording_url: string | null;
+  status: LiveSessionStatus;
+}
+
+export interface ScheduledSession {
+  id: string; title_en: string; title_ur: string;
+  description_en: string | null; description_ur: string | null;
+  scheduled_at: string; is_recurring: boolean;
+  recurrence_rule: string | null; created_by: string; created_at: string;
+}
+
+export interface PushSubscription {
+  id: string; user_id: string; onesignal_player_id: string;
+  device_type: 'android' | 'ios' | 'web'; created_at: string;
+}
