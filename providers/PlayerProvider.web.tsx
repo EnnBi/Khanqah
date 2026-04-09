@@ -23,7 +23,7 @@ interface PlayerContextValue {
 
 const noop = async () => {};
 
-const PlayerContext = createContext<PlayerContextValue>({
+const defaultValue: PlayerContextValue = {
   currentContent: null,
   isPlaying: false,
   position: 0,
@@ -38,10 +38,12 @@ const PlayerContext = createContext<PlayerContextValue>({
   skipToNext: noop,
   skipToPrevious: noop,
   addToQueue: noop,
-});
+};
+
+const PlayerContext = createContext<PlayerContextValue>(defaultValue);
 
 export function PlayerProvider({ children }: { children: React.ReactNode }) {
-  return <PlayerContext.Provider value={PlayerContext._currentValue}>{children}</PlayerContext.Provider>;
+  return <PlayerContext.Provider value={defaultValue}>{children}</PlayerContext.Provider>;
 }
 
 export function usePlayer() {

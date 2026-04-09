@@ -91,7 +91,7 @@ export function useSearchContent(query: string) {
     const timer = setTimeout(async () => {
       setError(null);
       // Sanitize query to prevent PostgREST filter injection
-      const sanitized = query.replace(/[,%()]/g, '');
+      const sanitized = query.replace(/[,%()\\]/g, '');
       const { data, error: err } = await supabase
         .from('content')
         .select('*')

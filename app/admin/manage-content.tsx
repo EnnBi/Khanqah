@@ -142,7 +142,7 @@ export default function ManageContentScreen() {
       }
 
       if (searchQuery.trim().length > 0) {
-        const sanitized = searchQuery.trim().replace(/[,%()]/g, '');
+        const sanitized = searchQuery.trim().replace(/[,%()\\]/g, '');
         query = query.or(
           `title_en.ilike.%${sanitized}%,title_ur.ilike.%${sanitized}%`
         );
