@@ -4,6 +4,7 @@
   "onesignalAppId": "YOUR_ONESIGNAL_APP_ID",
   "streamHlsUrl": "http://YOUR_SERVER_IP:8080/hls/stream.m3u8",
   "streamRtmpUrl": "rtmp://YOUR_SERVER_IP:1935/live",
+  "audioRelayWsUrl": "ws://YOUR_SERVER_IP:3001",
   "archiveOrgCollection": "khanqah-maseeh-ul-ummah",
   "appVersion": "1.0.0",
   "maintenanceMode": false

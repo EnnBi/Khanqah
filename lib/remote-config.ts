@@ -12,6 +12,7 @@ const FALLBACK_CONFIG: AppConfig = {
   onesignalAppId: process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID || '',
   streamHlsUrl: '',
   streamRtmpUrl: '',
+  audioRelayWsUrl: '',
   archiveOrgCollection: 'khanqah-maseeh-ul-ummah',
   appVersion: '1.0.0',
   maintenanceMode: false,
@@ -23,6 +24,7 @@ export interface AppConfig {
   onesignalAppId: string;
   streamHlsUrl: string;
   streamRtmpUrl: string;
+  audioRelayWsUrl: string;
   archiveOrgCollection: string;
   appVersion: string;
   maintenanceMode: boolean;

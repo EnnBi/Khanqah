@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,169 @@ import { useTheme } from '../../providers/ThemeProvider';
 import { useAuth } from '../../providers/AuthProvider';
 import { supabase } from '../../lib/supabase';
 import { getConfig } from '../../lib/remote-config';
+import { Audio } from 'expo-av';
+
+// ---------------------------------------------------------------------------
+// Audio streaming helpers
+// ---------------------------------------------------------------------------
+
+/** Derive the WebSocket relay URL from remote config. */
+function getRelayUrl(): string {
+  const config = getConfig();
+  // Prefer explicit audioRelayWsUrl; fall back to deriving from streamRtmpUrl host.
+  if (config.audioRelayWsUrl) return config.audioRelayWsUrl;
+  try {
+    const rtmpHost = new URL(config.streamRtmpUrl.replace('rtmp://', 'http://')).hostname;
+    return `ws://${rtmpHost}:3001`;
+  } catch {
+    return 'ws://165.22.208.103:3001';
+  }
+}
+
+// ---- Web implementation (MediaRecorder API) --------------------------------
+
+async function startWebStream(): Promise<{
+  stop: () => void;
+  ws: WebSocket;
+}> {
+  const relayUrl = getRelayUrl();
+  const ws = new WebSocket(relayUrl);
+
+  const stream = await (navigator as any).mediaDevices.getUserMedia({ audio: true });
+
+  // Prefer opus in webm; fall back to whatever the browser supports
+  const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+    ? 'audio/webm;codecs=opus'
+    : 'audio/webm';
+
+  const mediaRecorder = new MediaRecorder(stream, { mimeType });
+
+  return new Promise((resolve, reject) => {
+    ws.onopen = () => {
+      // Send config packet so the relay knows the format
+      ws.send(JSON.stringify({ format: 'webm' }));
+
+      mediaRecorder.ondataavailable = (e: BlobEvent) => {
+        if (ws.readyState === WebSocket.OPEN && e.data.size > 0) {
+          ws.send(e.data);
+        }
+      };
+
+      mediaRecorder.start(1000); // 1-second chunks
+
+      resolve({
+        stop: () => {
+          try { mediaRecorder.stop(); } catch (_) {}
+          stream.getTracks().forEach((t: MediaStreamTrack) => t.stop());
+          try { ws.close(); } catch (_) {}
+        },
+        ws,
+      });
+    };
+
+    ws.onerror = (err) => {
+      stream.getTracks().forEach((t: MediaStreamTrack) => t.stop());
+      reject(new Error('WebSocket connection to audio relay failed'));
+    };
+  });
+}
+
+// ---- Native implementation (expo-av Recording) -----------------------------
+
+async function startNativeStream(): Promise<{
+  stop: () => void;
+  ws: WebSocket;
+}> {
+  const relayUrl = getRelayUrl();
+
+  // Request microphone permission
+  const { status } = await Audio.requestPermissionsAsync();
+  if (status !== 'granted') {
+    throw new Error('Microphone permission not granted');
+  }
+
+  await Audio.setAudioModeAsync({
+    allowsRecordingIOS: true,
+    playsInSilentModeIOS: true,
+  });
+
+  const ws = new WebSocket(relayUrl);
+
+  return new Promise((resolve, reject) => {
+    ws.onopen = async () => {
+      // Tell the relay we're sending PCM
+      ws.send(JSON.stringify({ format: 'pcm' }));
+
+      // We record in short segments and send each completed file.
+      // expo-av doesn't support streaming, so we use a polling loop
+      // that records ~1-second clips back-to-back.
+      let running = true;
+
+      async function recordLoop() {
+        while (running) {
+          try {
+            const recording = new Audio.Recording();
+            await recording.prepareToRecordAsync({
+              ...Audio.RecordingOptionsPresets.LOW_QUALITY,
+              android: {
+                ...Audio.RecordingOptionsPresets.LOW_QUALITY.android,
+                extension: '.wav',
+                outputFormat: 3, // THREE_GPP fallback — we use WAV where possible
+              },
+              ios: {
+                ...Audio.RecordingOptionsPresets.LOW_QUALITY.ios,
+                extension: '.wav',
+                outputFormat: 5, // kAudioFormatLinearPCM
+                linearPCMBitDepth: 16,
+                linearPCMIsBigEndian: false,
+                linearPCMIsFloat: false,
+              },
+              web: {},
+            });
+            await recording.startAsync();
+
+            // Record for ~1 second
+            await new Promise((r) => setTimeout(r, 1000));
+
+            if (!running) {
+              await recording.stopAndUnloadAsync().catch(() => {});
+              break;
+            }
+
+            await recording.stopAndUnloadAsync();
+            const uri = recording.getURI();
+            if (uri && ws.readyState === WebSocket.OPEN) {
+              // Read file and send as binary
+              const response = await fetch(uri);
+              const blob = await response.blob();
+              const arrayBuffer = await blob.arrayBuffer();
+              ws.send(arrayBuffer);
+            }
+          } catch (err) {
+            console.warn('[go-live] Recording chunk error:', err);
+            // Small delay before retrying
+            await new Promise((r) => setTimeout(r, 500));
+          }
+        }
+      }
+
+      recordLoop().catch(console.warn);
+
+      resolve({
+        stop: () => {
+          running = false;
+          Audio.setAudioModeAsync({ allowsRecordingIOS: false }).catch(() => {});
+          try { ws.close(); } catch (_) {}
+        },
+        ws,
+      });
+    };
+
+    ws.onerror = () => {
+      reject(new Error('WebSocket connection to audio relay failed'));
+    };
+  });
+}
 
 function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -114,6 +277,10 @@ export default function GoLiveScreen() {
   const [isStarting, setIsStarting] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
   const [listenerCount, setListenerCount] = useState(0);
+  const [streamError, setStreamError] = useState<string | null>(null);
+
+  // Holds the stop() handle for the active audio stream
+  const streamRef = useRef<{ stop: () => void; ws: WebSocket } | null>(null);
 
   // Pulse animation for the record button
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -168,9 +335,29 @@ export default function GoLiveScreen() {
     }
 
     setIsStarting(true);
+    setStreamError(null);
 
-    // TODO: Start RTMP stream capture here using react-native-rtmp-publisher
-    // or a similar native module before inserting the session record.
+    // ── Start audio capture & WebSocket relay ─────────────────────────────
+    try {
+      const handle =
+        Platform.OS === 'web' ? await startWebStream() : await startNativeStream();
+
+      streamRef.current = handle;
+
+      // Monitor for unexpected disconnects
+      handle.ws.onclose = () => {
+        if (streamRef.current === handle) {
+          setStreamError('Audio relay connection lost');
+        }
+      };
+    } catch (err: any) {
+      setIsStarting(false);
+      Alert.alert(
+        'Streaming Error',
+        err?.message || 'Could not start audio capture. Check microphone permissions and that the relay server is running.',
+      );
+      return;
+    }
 
     const { data, error } = await supabase
       .from('live_sessions')
@@ -187,6 +374,9 @@ export default function GoLiveScreen() {
     setIsStarting(false);
 
     if (error) {
+      // Stop the audio stream since we can't create the session
+      streamRef.current?.stop();
+      streamRef.current = null;
       Alert.alert('Error', `Failed to start broadcast: ${error.message}`);
       return;
     }
@@ -210,7 +400,10 @@ export default function GoLiveScreen() {
             if (!sessionId) return;
             setIsStopping(true);
 
-            // TODO: Stop RTMP capture here.
+            // Stop audio capture & WebSocket relay
+            streamRef.current?.stop();
+            streamRef.current = null;
+            setStreamError(null);
 
             const { error } = await supabase
               .from('live_sessions')
@@ -471,6 +664,24 @@ export default function GoLiveScreen() {
       fontWeight: '700',
       color: '#ffffff',
     },
+
+    // ── Error banner ─────────────────────────────────────────
+    errorBanner: {
+      marginHorizontal: 20,
+      marginTop: 12,
+      backgroundColor: '#fef2f2',
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: '#fca5a5',
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+    },
+    errorBannerText: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: '#dc2626',
+      textAlign: 'center',
+    },
   });
 
   // ── During broadcast ────────────────────────────────────────────────────
@@ -518,6 +729,13 @@ export default function GoLiveScreen() {
             <Text style={styles.recordingStatusText}>Active</Text>
           </View>
         </View>
+
+        {/* Stream error banner */}
+        {streamError && (
+          <View style={styles.errorBanner}>
+            <Text style={styles.errorBannerText}>{streamError}</Text>
+          </View>
+        )}
 
         {/* Session title display */}
         <View style={styles.sessionTitleSection}>
