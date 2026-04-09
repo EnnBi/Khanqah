@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { supabase } from '../lib/supabase';
 import { Content } from '../lib/types';
 import {
@@ -135,7 +135,7 @@ export function useDownloads(): UseDownloadsResult {
           total += item.content.file_size;
         } else {
           try {
-            const info = await FileSystem.getInfoAsync(item.localPath, { size: true });
+            const info = await FileSystem.getInfoAsync(item.localPath, { size: true } as any);
             if (info.exists && 'size' in info) {
               total += (info as FileSystem.FileInfo & { size: number }).size;
             }
