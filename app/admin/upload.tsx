@@ -18,7 +18,9 @@ import { useI18n } from '../../providers/I18nProvider';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
 import { ContentType, Category } from '../../lib/types';
+import type { MirrorFormat } from '../../lib/types';
 import { type as typeP, font } from '../../lib/typography';
+import { isYouTubeUrl } from '../../components/YouTubeEmbed';
 
 interface ContentTypeOption {
   value: ContentType;
@@ -33,10 +35,6 @@ const CONTENT_TYPES: ContentTypeOption[] = [
   { value: 'hamd_naat', label: 'Hamd & Naat' },
   { value: 'book', label: 'Book' },
 ];
-
-function isYouTubeUrl(url: string): boolean {
-  return url.includes('youtube.com') || url.includes('youtu.be');
-}
 
 export default function UploadContentScreen() {
   const { theme } = useTheme();
@@ -58,6 +56,17 @@ export default function UploadContentScreen() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
+
+  const [mirrorFormat, setMirrorFormat] = useState<MirrorFormat>('audio');
+
+  // Derive whether the pasted media URL is a YouTube link
+  const isYouTube = isYouTubeUrl(mediaUrl.trim());
+
+  // Default the toggle whenever the content type changes so clips prefer Video
+  // and everything else prefers Audio. Users can still override.
+  useEffect(() => {
+    setMirrorFormat(selectedType === 'clip' ? 'video' : 'audio');
+  }, [selectedType]);
 
   // Submit state
   const [submitting, setSubmitting] = useState(false);
@@ -145,11 +154,12 @@ export default function UploadContentScreen() {
 
     setSubmitting(true);
 
-    const isVideo = isYouTubeUrl(mediaUrl.trim()) || selectedType === 'clip';
+    const isYouTubeSubmit = isYouTubeUrl(mediaUrl.trim());
 
     let error;
 
     if (editId) {
+      const isVideo = isYouTubeSubmit || selectedType === 'clip';
       ({ error } = await supabase.from('content').update({
         title_en: titleEn.trim(),
         title_ur: titleUr.trim(),
@@ -160,20 +170,32 @@ export default function UploadContentScreen() {
         is_video: isVideo,
       }).eq('id', editId));
     } else {
-      ({ error } = await supabase.from('content').insert({
+      const payload: Record<string, any> = {
         title_en: titleEn.trim(),
         title_ur: titleUr.trim(),
         type: selectedType,
         category_id: selectedCategory.id,
-        media_url: mediaUrl.trim(),
         thumbnail_url: thumbnailUrl.trim() || null,
-        is_video: isVideo,
-        duration: null,
-        uploaded_by: user?.id ?? '',
         description_en: null,
         description_ur: null,
+        duration: null,
         file_size: null,
-      }));
+        uploaded_by: user?.id ?? '',
+      };
+
+      if (isYouTubeSubmit) {
+        payload.media_url         = '';
+        payload.mirror_source_url = mediaUrl.trim();
+        payload.mirror_status     = 'pending';
+        payload.mirror_format     = mirrorFormat;
+        payload.is_video          = mirrorFormat === 'video';
+      } else {
+        payload.media_url         = mediaUrl.trim();
+        payload.mirror_status     = 'not_applicable';
+        payload.is_video          = selectedType === 'clip';
+      }
+
+      ({ error } = await supabase.from('content').insert(payload));
     }
 
     setSubmitting(false);
@@ -188,20 +210,26 @@ export default function UploadContentScreen() {
         { text: 'OK', onPress: () => router.back() },
       ]);
     } else {
-      Alert.alert('Success', 'Content published successfully!', [
-        {
-          text: 'OK',
-          onPress: () => {
-            // Reset form
-            setSelectedType('bayan');
-            setTitleEn('');
-            setTitleUr('');
-            setSelectedCategory(null);
-            setMediaUrl('');
-            setThumbnailUrl('');
+      Alert.alert(
+        'Success',
+        isYouTubeSubmit
+          ? 'Queued — mirroring usually takes 5–15 min.'
+          : 'Content published successfully!',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              // Reset form
+              setSelectedType('bayan');
+              setTitleEn('');
+              setTitleUr('');
+              setSelectedCategory(null);
+              setMediaUrl('');
+              setThumbnailUrl('');
+            },
           },
-        },
-      ]);
+        ],
+      );
     }
   }
 
@@ -460,6 +488,33 @@ export default function UploadContentScreen() {
       fontSize: 14,
       paddingVertical: 24,
     },
+
+    // Format toggle (YouTube mirror)
+    formatToggleRow: {
+      marginTop: 20,
+      gap: 8,
+    },
+    formatLabel: {
+      fontFamily: 'DMSans-Medium',
+      fontSize: 10,
+      letterSpacing: 1.5,
+      color: '#8a7d66',
+    },
+    formatPills: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    formatPill: {
+      paddingHorizontal: 14,
+      paddingVertical: 6,
+      borderRadius: 100,
+      borderWidth: 1,
+    },
+    formatPillLabel: {
+      fontFamily: 'DMSans-SemiBold',
+      fontSize: 11,
+      letterSpacing: 1,
+    },
   });
 
   return (
@@ -577,6 +632,37 @@ export default function UploadContentScreen() {
             keyboardType="url"
             returnKeyType="next"
           />
+
+          {isYouTube && (
+            <View style={styles.formatToggleRow}>
+              <Text style={styles.formatLabel}>SAVE AS</Text>
+              <View style={styles.formatPills}>
+                {(['audio', 'video'] as MirrorFormat[]).map((f) => {
+                  const isActive = mirrorFormat === f;
+                  return (
+                    <TouchableOpacity
+                      key={f}
+                      onPress={() => setMirrorFormat(f)}
+                      style={[
+                        styles.formatPill,
+                        { borderColor: c.border, backgroundColor: isActive ? c.primary : 'transparent' },
+                      ]}
+                      activeOpacity={0.7}
+                    >
+                      <Text
+                        style={[
+                          styles.formatPillLabel,
+                          { color: isActive ? c.onPrimary : c.textMuted },
+                        ]}
+                      >
+                        {f.toUpperCase()}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+          )}
 
           {/* Thumbnail */}
           <Text style={styles.sectionLabel}>THUMBNAIL (OPTIONAL)</Text>
