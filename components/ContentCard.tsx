@@ -4,13 +4,23 @@ import { useTheme } from '../providers/ThemeProvider';
 import { Content, ContentType } from '../lib/types';
 import { BilingualText } from './BilingualText';
 
-const TYPE_CONFIG: Record<ContentType, { emoji: string; gradientStart: string; gradientEnd: string }> = {
-  bayan:     { emoji: '🎙', gradientStart: '#047857', gradientEnd: '#059669' },
-  clip:      { emoji: '🎥', gradientStart: '#1d4ed8', gradientEnd: '#3b82f6' },
-  nazam:     { emoji: '🎶', gradientStart: '#7c3aed', gradientEnd: '#a78bfa' },
-  quran:     { emoji: '📖', gradientStart: '#b45309', gradientEnd: '#d97706' },
-  hamd_naat: { emoji: '🙌', gradientStart: '#be185d', gradientEnd: '#ec4899' },
-  book:      { emoji: '📕', gradientStart: '#dc2626', gradientEnd: '#f87171' },
+// Calm Architecture: unified forest thumb with gold symbol per type.
+const TYPE_SYMBOL: Record<ContentType, string> = {
+  bayan:     '♪',
+  clip:      '▸',
+  nazam:     '✧',
+  quran:     '☪',
+  hamd_naat: '✦',
+  book:      '❖',
+};
+
+const TYPE_LABEL: Record<ContentType, string> = {
+  bayan:     'BAYAN',
+  clip:      'CLIP',
+  nazam:     'NAZAM',
+  quran:     'QURAN',
+  hamd_naat: 'HAMD & NAAT',
+  book:      'BOOK',
 };
 
 interface ContentCardProps {
@@ -21,47 +31,37 @@ interface ContentCardProps {
 
 export function ContentCard({ content, onPress, language }: ContentCardProps) {
   const { theme } = useTheme();
-  const config = TYPE_CONFIG[content.type] ?? TYPE_CONFIG.bayan;
+  const c = theme.colors;
+
+  const symbol = TYPE_SYMBOL[content.type] ?? TYPE_SYMBOL.bayan;
+  const typeLabel = TYPE_LABEL[content.type] ?? 'BAYAN';
+
   const durationMin = content.duration ? Math.round(content.duration / 60) : null;
+  const metaParts: string[] = [];
+  if (durationMin !== null) metaParts.push(`${durationMin} MIN`);
+  metaParts.push(typeLabel);
+  if (content.is_video) metaParts.push('VIDEO');
 
   return (
     <TouchableOpacity
-      style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+      style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}
       onPress={onPress}
-      activeOpacity={0.8}
+      activeOpacity={0.85}
     >
-      {/* Thumbnail */}
-      <View style={[styles.thumbnail, { backgroundColor: config.gradientStart }]}>
-        <Text style={styles.emoji}>{config.emoji}</Text>
+      <View style={[styles.thumb, { backgroundColor: c.primary }]}>
+        <Text style={[styles.symbol, { color: c.accent }]}>{symbol}</Text>
       </View>
 
-      {/* Info */}
-      <View style={styles.info}>
+      <View style={styles.body}>
         <BilingualText
           en={content.title_en}
           ur={content.title_ur}
-          style={[styles.title, { color: theme.colors.text }]}
+          style={[styles.title, { color: c.primary }]}
           numberOfLines={2}
         />
-        <View style={styles.meta}>
-          {durationMin !== null && (
-            <Text style={[styles.metaText, { color: theme.colors.textMuted }]}>
-              {durationMin} min
-            </Text>
-          )}
-          {content.is_video && (
-            <View style={[styles.videoBadge, { backgroundColor: theme.colors.surface2 }]}>
-              <Text style={[styles.videoBadgeText, { color: theme.colors.textSecondary }]}>
-                VIDEO
-              </Text>
-            </View>
-          )}
-        </View>
-      </View>
-
-      {/* Play icon */}
-      <View style={[styles.playBtn, { backgroundColor: theme.colors.primary }]}>
-        <Text style={styles.playIcon}>▶</Text>
+        <Text style={[styles.meta, { color: c.textMuted }]}>
+          {metaParts.join(' · ')}
+        </Text>
       </View>
     </TouchableOpacity>
   );
@@ -71,61 +71,39 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 12,
+    gap: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 10,
     borderWidth: 1,
-    marginHorizontal: 16,
-    marginVertical: 6,
-    overflow: 'hidden',
+    marginBottom: 10,
   },
-  thumbnail: {
-    width: 72,
-    height: 72,
+  thumb: {
+    width: 48,
+    height: 48,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
-  emoji: {
-    fontSize: 28,
+  symbol: {
+    fontSize: 18,
   },
-  info: {
+  body: {
     flex: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    minWidth: 0,
   },
   title: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 4,
-    lineHeight: 20,
+    fontFamily: 'CrimsonPro',
+    fontSize: 17,
+    lineHeight: 22,
+    letterSpacing: -0.2,
   },
   meta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  metaText: {
-    fontSize: 12,
-  },
-  videoBadge: {
-    borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  videoBadgeText: {
+    fontFamily: 'DMSans-Medium',
     fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  playBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  playIcon: {
-    color: '#fff',
-    fontSize: 14,
-    marginLeft: 2,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginTop: 4,
   },
 });

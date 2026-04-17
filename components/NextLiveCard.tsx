@@ -10,6 +10,7 @@ interface NextLiveCardProps {
 
 export function NextLiveCard({ session }: NextLiveCardProps) {
   const { theme } = useTheme();
+  const c = theme.colors;
 
   const scheduledDate = new Date(session.scheduled_at);
   const dateStr = scheduledDate.toLocaleDateString('en-US', {
@@ -18,22 +19,22 @@ export function NextLiveCard({ session }: NextLiveCardProps) {
     day: 'numeric',
   });
   const timeStr = scheduledDate.toLocaleTimeString('en-US', {
-    hour: '2-digit',
+    hour: 'numeric',
     minute: '2-digit',
   });
 
   return (
-    <View style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-      <Text style={styles.calendarEmoji}>📅</Text>
-      <View style={styles.info}>
-        <Text style={[styles.label, { color: theme.colors.textMuted }]}>NEXT LIVE</Text>
+    <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.primary }]}>
+      <View style={[styles.markerStripe, { backgroundColor: c.accent }]} />
+      <View style={styles.inner}>
+        <Text style={[styles.label, { color: c.accent }]}>NEXT LIVE · SCHEDULED</Text>
         <BilingualText
           en={session.title_en}
           ur={session.title_ur}
-          style={[styles.title, { color: theme.colors.text }]}
+          style={[styles.title, { color: c.primary }]}
           numberOfLines={2}
         />
-        <Text style={[styles.dateTime, { color: theme.colors.gold }]}>
+        <Text style={[styles.dateTime, { color: c.textMuted }]}>
           {dateStr} · {timeStr}
         </Text>
       </View>
@@ -44,34 +45,35 @@ export function NextLiveCard({ session }: NextLiveCardProps) {
 const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 16,
-    marginVertical: 8,
-    borderRadius: 12,
+    borderRadius: 10,
     borderWidth: 1,
-    padding: 14,
+    overflow: 'hidden',
+    marginBottom: 16,
   },
-  calendarEmoji: {
-    fontSize: 32,
-    marginRight: 14,
+  markerStripe: {
+    width: 4,
   },
-  info: {
+  inner: {
     flex: 1,
+    padding: 18,
   },
   label: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1,
-    marginBottom: 4,
+    fontFamily: 'DMSans-SemiBold',
+    fontSize: 10,
+    letterSpacing: 2.5,
+    textTransform: 'uppercase',
+    marginBottom: 8,
   },
   title: {
-    fontSize: 15,
-    fontWeight: '600',
-    lineHeight: 21,
-    marginBottom: 4,
+    fontFamily: 'CrimsonPro',
+    fontSize: 20,
+    lineHeight: 24,
+    letterSpacing: -0.3,
+    marginBottom: 6,
   },
   dateTime: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontFamily: 'DMSans',
+    fontSize: 11,
+    letterSpacing: 0.5,
   },
 });

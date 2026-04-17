@@ -69,6 +69,14 @@ export default function RootLayout() {
 
   const [fontsLoaded] = useFonts({
     'NastaleeqUrdu': require('../assets/fonts/JameelNooriNastaleeq.ttf'),
+    'CrimsonPro': require('@expo-google-fonts/crimson-pro/400Regular/CrimsonPro_400Regular.ttf'),
+    'CrimsonPro-Italic': require('@expo-google-fonts/crimson-pro/400Regular_Italic/CrimsonPro_400Regular_Italic.ttf'),
+    'CrimsonPro-Medium': require('@expo-google-fonts/crimson-pro/500Medium/CrimsonPro_500Medium.ttf'),
+    'CrimsonPro-SemiBold': require('@expo-google-fonts/crimson-pro/600SemiBold/CrimsonPro_600SemiBold.ttf'),
+    'DMSans': require('@expo-google-fonts/dm-sans/400Regular/DMSans_400Regular.ttf'),
+    'DMSans-Medium': require('@expo-google-fonts/dm-sans/500Medium/DMSans_500Medium.ttf'),
+    'DMSans-SemiBold': require('@expo-google-fonts/dm-sans/600SemiBold/DMSans_600SemiBold.ttf'),
+    'DMSans-Bold': require('@expo-google-fonts/dm-sans/700Bold/DMSans_700Bold.ttf'),
   });
 
   useEffect(() => {

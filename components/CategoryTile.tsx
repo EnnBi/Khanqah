@@ -3,18 +3,13 @@ import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
 import { useTheme } from '../providers/ThemeProvider';
 import { ContentType } from '../lib/types';
 
-interface TileColors {
-  light: string;
-  dark: string;
-}
-
-const TYPE_TINTS: Record<ContentType, TileColors> = {
-  bayan:     { light: '#dcfce7', dark: '#14532d' },
-  clip:      { light: '#fef9c3', dark: '#713f12' },
-  nazam:     { light: '#f3e8ff', dark: '#581c87' },
-  quran:     { light: '#dbeafe', dark: '#1e3a5f' },
-  hamd_naat: { light: '#fce7f3', dark: '#831843' },
-  book:      { light: '#fef3c7', dark: '#78350f' },
+const TYPE_LABEL: Record<ContentType, string> = {
+  bayan:     'Discourses',
+  clip:      'Moments',
+  nazam:     'Nazams',
+  quran:     'Recitations',
+  hamd_naat: 'Hamd & Naat',
+  book:      'Volumes',
 };
 
 interface CategoryTileProps {
@@ -27,27 +22,23 @@ interface CategoryTileProps {
 
 export function CategoryTile({ icon, name, count, type, onPress }: CategoryTileProps) {
   const { theme } = useTheme();
-  const tints = TYPE_TINTS[type] ?? TYPE_TINTS.bayan;
-  const bgColor = theme.dark ? tints.dark : tints.light;
+  const c = theme.colors;
+  const subtitle = TYPE_LABEL[type] ?? 'Collection';
 
   return (
     <TouchableOpacity
-      style={[
-        styles.tile,
-        {
-          backgroundColor: bgColor,
-          borderColor: theme.colors.border,
-        },
-      ]}
+      style={[styles.tile, { backgroundColor: c.surface, borderColor: c.border }]}
       onPress={onPress}
-      activeOpacity={0.75}
+      activeOpacity={0.85}
     >
-      <Text style={styles.emoji}>{icon}</Text>
-      <Text style={[styles.name, { color: theme.colors.text }]} numberOfLines={2}>
+      <View style={[styles.symbolBox, { backgroundColor: c.primary }]}>
+        <Text style={[styles.symbol, { color: c.accent }]}>{icon}</Text>
+      </View>
+      <Text style={[styles.name, { color: c.primary }]} numberOfLines={2}>
         {name}
       </Text>
-      <Text style={[styles.count, { color: theme.colors.textMuted }]}>
-        {count} items
+      <Text style={[styles.subtitle, { color: c.textMuted }]}>
+        {subtitle}
       </Text>
     </TouchableOpacity>
   );
@@ -57,26 +48,33 @@ const styles = StyleSheet.create({
   tile: {
     flex: 1,
     margin: 6,
-    borderRadius: 14,
+    borderRadius: 10,
     borderWidth: 1,
+    padding: 18,
+    minHeight: 150,
+  },
+  symbolBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 24,
-    paddingHorizontal: 12,
-    minHeight: 130,
+    marginBottom: 14,
   },
-  emoji: {
-    fontSize: 36,
-    marginBottom: 10,
+  symbol: {
+    fontSize: 18,
   },
   name: {
-    fontSize: 15,
-    fontWeight: '600',
-    textAlign: 'center',
+    fontFamily: 'CrimsonPro',
+    fontSize: 17,
+    lineHeight: 20,
+    letterSpacing: -0.2,
     marginBottom: 4,
   },
-  count: {
-    fontSize: 12,
-    textAlign: 'center',
+  subtitle: {
+    fontFamily: 'DMSans-Medium',
+    fontSize: 9,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
   },
 });

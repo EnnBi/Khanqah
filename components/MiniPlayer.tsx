@@ -7,7 +7,7 @@ import { useTheme } from '../providers/ThemeProvider';
 export function MiniPlayer() {
   const { currentContent, isPlaying, position, duration, resume, pause } = usePlayer();
   const { theme } = useTheme();
-  const colors = theme.colors;
+  const c = theme.colors;
   const router = useRouter();
 
   if (!currentContent) return null;
@@ -15,59 +15,48 @@ export function MiniPlayer() {
   const progressWidth = duration > 0 ? `${(position / duration) * 100}%` : '0%';
 
   const handlePlayPause = async () => {
-    if (isPlaying) {
-      await pause();
-    } else {
-      await resume();
-    }
-  };
-
-  const handleNavigate = () => {
-    router.push(`/player/${currentContent.id}`);
+    if (isPlaying) await pause();
+    else await resume();
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.miniPlayerBg }]}>
-      {/* Gold progress bar */}
-      <View style={styles.progressTrack}>
-        <View style={[styles.progressFill, { width: progressWidth as any }]} />
+    <View style={[styles.container, { backgroundColor: c.primary }]}>
+      {/* Gold progress bar at top */}
+      <View style={[styles.progressTrack, { backgroundColor: 'rgba(212, 168, 83, 0.2)' }]}>
+        <View style={[styles.progressFill, { width: progressWidth as any, backgroundColor: c.accent }]} />
       </View>
 
-      {/* Main content row */}
       <TouchableOpacity
         style={styles.row}
-        onPress={handleNavigate}
-        activeOpacity={0.8}
+        onPress={() => router.push(`/player/${currentContent.id}`)}
+        activeOpacity={0.85}
       >
-        {/* Thumbnail */}
-        <View style={styles.thumbnail}>
-          <Text style={styles.thumbnailEmoji}>🎙</Text>
+        <View style={[styles.thumb, { borderColor: c.accent }]}>
+          <Text style={[styles.thumbSymbol, { color: c.accent }]}>♪</Text>
         </View>
 
-        {/* Title + artist */}
         <View style={styles.info}>
           <Text
-            style={[styles.title, { color: colors.text }]}
+            style={[styles.title, { color: '#f7f5f0' }]}
             numberOfLines={1}
           >
             {currentContent.title_en || currentContent.title_ur || 'Untitled'}
           </Text>
           <Text
-            style={[styles.artist, { color: colors.textMuted }]}
+            style={[styles.artist, { color: 'rgba(247, 245, 240, 0.55)' }]}
             numberOfLines={1}
           >
-            Mufti Abdur Rasheed Miftahi Sahab
+            MUFTI ABDUR RASHEED MIFTAHI SAHAB
           </Text>
         </View>
 
-        {/* Play / Pause button */}
         <TouchableOpacity
           style={styles.playButton}
           onPress={handlePlayPause}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Text style={[styles.playIcon, { color: colors.primaryLight }]}>
-            {isPlaying ? '⏸' : '▶'}
+          <Text style={[styles.playIcon, { color: c.accent }]}>
+            {isPlaying ? '▌▌' : '▶'}
           </Text>
         </TouchableOpacity>
       </TouchableOpacity>
@@ -82,39 +71,37 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 4,
-    elevation: 8,
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 10,
   },
   progressTrack: {
     height: 2,
-    backgroundColor: 'rgba(0,0,0,0.1)',
     width: '100%',
   },
   progressFill: {
     height: 2,
-    backgroundColor: '#d4a853',
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    height: 50,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    height: 58,
   },
-  thumbnail: {
-    width: 34,
-    height: 34,
+  thumb: {
+    width: 38,
+    height: 38,
     borderRadius: 4,
-    backgroundColor: '#059669',
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 8,
+    marginRight: 12,
     flexShrink: 0,
   },
-  thumbnailEmoji: {
-    fontSize: 18,
+  thumbSymbol: {
+    fontSize: 16,
   },
   info: {
     flex: 1,
@@ -122,23 +109,27 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   title: {
-    fontSize: 11,
-    fontWeight: '700',
-    lineHeight: 14,
+    fontFamily: 'CrimsonPro',
+    fontSize: 14,
+    lineHeight: 17,
+    letterSpacing: -0.2,
   },
   artist: {
-    fontSize: 9,
-    lineHeight: 12,
-    marginTop: 1,
+    fontFamily: 'DMSans-Medium',
+    fontSize: 8,
+    lineHeight: 11,
+    letterSpacing: 1.5,
+    marginTop: 2,
   },
   playButton: {
-    width: 32,
-    height: 32,
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
   playIcon: {
-    fontSize: 18,
+    fontFamily: 'DMSans-SemiBold',
+    fontSize: 14,
   },
 });
