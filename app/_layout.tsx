@@ -99,7 +99,7 @@ export default function RootLayout() {
   const [configLoaded, setConfigLoaded] = useState(false);
   const [configError, setConfigError] = useState<string | null>(null);
 
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     'NastaleeqUrdu': require('../assets/fonts/JameelNooriNastaleeq.ttf'),
     'CrimsonPro': require('@expo-google-fonts/crimson-pro/400Regular/CrimsonPro_400Regular.ttf'),
     'CrimsonPro-Italic': require('@expo-google-fonts/crimson-pro/400Regular_Italic/CrimsonPro_400Regular_Italic.ttf'),
@@ -110,6 +110,18 @@ export default function RootLayout() {
     'DMSans-SemiBold': require('@expo-google-fonts/dm-sans/600SemiBold/DMSans_600SemiBold.ttf'),
     'DMSans-Bold': require('@expo-google-fonts/dm-sans/700Bold/DMSans_700Bold.ttf'),
   });
+
+  // If fonts error out, still render — text falls back to system fonts.
+  const fontsReady = fontsLoaded || !!fontError;
+
+  // Safety net: don't block the app forever on fonts (web font loading can
+  // stall in some browsers). If fonts haven't loaded after 3s, proceed anyway.
+  const [fontTimeoutElapsed, setFontTimeoutElapsed] = useState(false);
+  useEffect(() => {
+    if (fontsReady) return;
+    const t = setTimeout(() => setFontTimeoutElapsed(true), 3000);
+    return () => clearTimeout(t);
+  }, [fontsReady]);
 
   useEffect(() => {
     loadConfig()
@@ -191,7 +203,7 @@ export default function RootLayout() {
     );
   }
 
-  if (!configLoaded || !fontsLoaded) {
+  if (!configLoaded || (!fontsReady && !fontTimeoutElapsed)) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#09090b' }}>
         <ActivityIndicator size="large" color="#047857" />
