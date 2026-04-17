@@ -2,6 +2,7 @@ import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
 import { useTheme } from '../providers/ThemeProvider';
 import { ContentType } from '../lib/types';
+import { useBilingual, urduTextStyle } from './BilingualText';
 
 const TYPE_LABEL: Record<ContentType, string> = {
   bayan:     'Discourses',
@@ -14,16 +15,23 @@ const TYPE_LABEL: Record<ContentType, string> = {
 
 interface CategoryTileProps {
   icon: string;
-  name: string;
+  name: string;        // Current-language name (kept for compat)
+  nameEn?: string;     // Optional — if provided with nameUr, renders with correct font
+  nameUr?: string;
   count: number;
   type: ContentType;
   onPress: () => void;
 }
 
-export function CategoryTile({ icon, name, count, type, onPress }: CategoryTileProps) {
+export function CategoryTile({ icon, name, nameEn, nameUr, count, type, onPress }: CategoryTileProps) {
   const { theme } = useTheme();
   const c = theme.colors;
+  const { isUrdu } = useBilingual();
   const subtitle = TYPE_LABEL[type] ?? 'Collection';
+
+  // Prefer bilingual props if provided, otherwise fall back to `name`
+  const displayName = nameEn && nameUr ? (isUrdu ? nameUr : nameEn) : name;
+  const useUrduFont = (nameEn && nameUr) ? isUrdu : false;
 
   return (
     <TouchableOpacity
@@ -34,8 +42,11 @@ export function CategoryTile({ icon, name, count, type, onPress }: CategoryTileP
       <View style={[styles.symbolBox, { backgroundColor: c.primary }]}>
         <Text style={[styles.symbol, { color: c.accent }]}>{icon}</Text>
       </View>
-      <Text style={[styles.name, { color: c.primary }]} numberOfLines={2}>
-        {name}
+      <Text
+        style={[styles.name, { color: c.primary }, useUrduFont && urduTextStyle]}
+        numberOfLines={2}
+      >
+        {displayName}
       </Text>
       <Text style={[styles.subtitle, { color: c.textMuted }]}>
         {subtitle}

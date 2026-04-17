@@ -8,6 +8,7 @@ import { useLiveSession } from '../../hooks/useLiveSession';
 import { useNextScheduledSession } from '../../hooks/useScheduledSessions';
 import { ContentCard } from '../../components/ContentCard';
 import { NextLiveCard } from '../../components/NextLiveCard';
+import { BilingualText } from '../../components/BilingualText';
 import { type as typeP } from '../../lib/typography';
 
 function formatIslamicDate(): string {
@@ -69,9 +70,12 @@ export default function HomeScreen() {
               <View style={[styles.liveDot, { backgroundColor: c.liveRed }]} />
               <Text style={[styles.liveLabel, { color: c.liveRed }]}>LIVE NOW</Text>
             </View>
-            <Text style={[styles.liveTitle, { color: c.primary }]} numberOfLines={1}>
-              {language === 'ur' ? liveSession.title_ur : liveSession.title_en}
-            </Text>
+            <BilingualText
+              en={liveSession.title_en}
+              ur={liveSession.title_ur}
+              style={[styles.liveTitle, { color: c.primary }]}
+              numberOfLines={1}
+            />
             <View style={[styles.liveBtn, { backgroundColor: c.primary }]}>
               <Text style={styles.liveBtnText}>JOIN SESSION</Text>
             </View>

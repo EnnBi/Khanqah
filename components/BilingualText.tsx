@@ -9,6 +9,32 @@ interface BilingualTextProps {
   numberOfLines?: number;
 }
 
+// Shared Urdu (Nastaleeq) text style — reuse anywhere Urdu text is rendered.
+export const urduTextStyle: TextStyle = {
+  fontFamily: 'NastaleeqUrdu',
+  writingDirection: 'rtl',
+  textAlign: 'right',
+  lineHeight: 32,
+};
+
+/**
+ * Pick text and style based on current language.
+ * Use when you can't use BilingualText directly (e.g. for passing to props that accept strings).
+ */
+export function useBilingual() {
+  const { language } = useI18n();
+  const isUrdu = language === 'ur';
+
+  function pick(en: string, ur: string): { text: string; style: TextStyle } {
+    return {
+      text: isUrdu ? ur : en,
+      style: isUrdu ? urduTextStyle : ({} as TextStyle),
+    };
+  }
+
+  return { isUrdu, pick };
+}
+
 export function BilingualText({ en, ur, style, numberOfLines }: BilingualTextProps) {
   const { language } = useI18n();
   const text = language === 'ur' ? ur : en;
@@ -16,22 +42,10 @@ export function BilingualText({ en, ur, style, numberOfLines }: BilingualTextPro
 
   return (
     <Text
-      style={[
-        isUrdu && styles.urdu,
-        style,
-      ]}
+      style={[isUrdu && urduTextStyle, style]}
       numberOfLines={numberOfLines}
     >
       {text}
     </Text>
   );
 }
-
-const styles = StyleSheet.create({
-  urdu: {
-    fontFamily: 'NastaleeqUrdu',
-    writingDirection: 'rtl',
-    textAlign: 'right',
-    lineHeight: 32,
-  },
-});

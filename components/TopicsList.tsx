@@ -66,7 +66,8 @@ export function TopicsList({ contentId, currentPosition }: TopicsListProps) {
     <View style={[styles.container, { backgroundColor: c.surface }]}>
       {topics.map((topic, idx) => {
         const isActive = idx === activeIndex;
-        const title = language === 'ur' ? topic.title_ur : topic.title_en;
+        const isUrdu = language === 'ur';
+        const title = isUrdu ? topic.title_ur : topic.title_en;
         return (
           <TouchableOpacity
             key={topic.id}
@@ -79,7 +80,11 @@ export function TopicsList({ contentId, currentPosition }: TopicsListProps) {
             activeOpacity={0.7}
           >
             <Text
-              style={[styles.topicTitle, { color: isActive ? c.gold : c.text }]}
+              style={[
+                styles.topicTitle,
+                { color: isActive ? c.gold : c.text },
+                isUrdu && { fontFamily: 'NastaleeqUrdu', writingDirection: 'rtl', textAlign: 'right', lineHeight: 32 },
+              ]}
               numberOfLines={2}
             >
               {title}

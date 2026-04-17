@@ -32,12 +32,13 @@ export default function LibraryScreen() {
 
   const renderItem = ({ item }: { item: Category | null }) => {
     if (!item) return <View style={styles.tilePlaceholder} />;
-    const name = language === 'ur' ? item.name_ur : item.name_en;
     const icon = CATEGORY_SYMBOL[item.type] ?? '❖';
     return (
       <CategoryTile
         icon={icon}
-        name={name}
+        name={item.name_en}
+        nameEn={item.name_en}
+        nameUr={item.name_ur}
         count={0}
         type={item.type}
         onPress={() => router.push(`/library/${item.id}` as any)}

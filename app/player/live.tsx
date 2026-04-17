@@ -261,7 +261,14 @@ export default function LivePlayerScreen() {
 
         {/* ── Track info ── */}
         <View style={styles.trackInfo}>
-          <Text style={[styles.trackTitle, { color: c.text }]} numberOfLines={2}>
+          <Text
+            style={[
+              styles.trackTitle,
+              { color: c.text },
+              language === 'ur' && { fontFamily: 'NastaleeqUrdu', writingDirection: 'rtl', textAlign: 'center', lineHeight: 40 },
+            ]}
+            numberOfLines={2}
+          >
             {title || '—'}
           </Text>
           <Text style={[styles.trackArtist, { color: c.textMuted }]} numberOfLines={1}>
@@ -321,7 +328,13 @@ export default function LivePlayerScreen() {
 
         {/* ── Session info ── */}
         <View style={[styles.sessionInfo, { borderTopColor: c.hairline }]}>
-          <Text style={[styles.sessionTitle, { color: c.text }]}>
+          <Text
+            style={[
+              styles.sessionTitle,
+              { color: c.text },
+              language === 'ur' && { fontFamily: 'NastaleeqUrdu', writingDirection: 'rtl', textAlign: 'center', lineHeight: 32 },
+            ]}
+          >
             {title}
           </Text>
           {liveSession.started_at ? (

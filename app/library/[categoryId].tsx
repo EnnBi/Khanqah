@@ -191,7 +191,14 @@ export default function CategoryListingScreen() {
       ) : null}
 
       {/* Category title */}
-      <Text style={[styles.heroTitle, { color: '#f7f5f0' }]} numberOfLines={2}>
+      <Text
+        style={[
+          styles.heroTitle,
+          { color: '#f7f5f0' },
+          language === 'ur' && { fontFamily: 'NastaleeqUrdu', writingDirection: 'rtl', textAlign: 'right', lineHeight: 52 },
+        ]}
+        numberOfLines={2}
+      >
         {categoryName}
       </Text>
 
