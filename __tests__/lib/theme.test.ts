@@ -1,17 +1,17 @@
 import { lightTheme, darkTheme } from '../../lib/theme';
 
 describe('theme', () => {
-  it('light theme has correct primary color', () => {
-    expect(lightTheme.colors.primary).toBe('#047857');
+  it('light theme primary is deep forest green', () => {
+    expect(lightTheme.colors.primary).toBe('#0f2e24');
   });
-  it('dark theme has correct primary color', () => {
-    expect(darkTheme.colors.primary).toBe('#047857');
+  it('dark theme primary is gold (leads in dark mode)', () => {
+    expect(darkTheme.colors.primary).toBe('#d4a853');
   });
-  it('light theme has white-ish background', () => {
-    expect(lightTheme.colors.background).toBe('#fafafa');
+  it('light theme has cream paper background', () => {
+    expect(lightTheme.colors.background).toBe('#f7f5f0');
   });
-  it('dark theme has dark background', () => {
-    expect(darkTheme.colors.background).toBe('#09090b');
+  it('dark theme has deep forest ink background', () => {
+    expect(darkTheme.colors.background).toBe('#081a15');
   });
   it('both themes have all required color keys', () => {
     const requiredKeys = [
