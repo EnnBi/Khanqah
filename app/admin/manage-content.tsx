@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   ScrollView,
   RefreshControl,
+  Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../providers/ThemeProvider';
@@ -410,6 +411,44 @@ export default function ManageContentScreen() {
       color: c.textMuted,
       marginTop: 8,
     },
+
+    // ── Mirror-failed modal ───────────────────────────────────
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      justifyContent: 'flex-end',
+    },
+    modalSheet: {
+      borderTopLeftRadius: 18,
+      borderTopRightRadius: 18,
+      padding: 24,
+      paddingBottom: 36,
+      gap: 12,
+    },
+    modalTitle: {
+      fontFamily: 'CrimsonPro-SemiBold',
+      fontSize: 20,
+    },
+    modalMessage: {
+      fontFamily: 'DMSans',
+      fontSize: 13,
+      lineHeight: 18,
+    },
+    modalButtons: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      gap: 24,
+      marginTop: 8,
+    },
+    modalBtn: {
+      paddingVertical: 8,
+      paddingHorizontal: 4,
+    },
+    modalBtnText: {
+      fontFamily: 'DMSans-SemiBold',
+      fontSize: 12,
+      letterSpacing: 1.5,
+    },
   });
 
   const renderItem = ({ item }: { item: Content }) => {
@@ -574,6 +613,48 @@ export default function ManageContentScreen() {
         }
         showsVerticalScrollIndicator={false}
       />
+
+      <Modal
+        visible={!!failedRow}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setFailedRow(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalSheet, { backgroundColor: c.surface }]}>
+            <Text style={[styles.modalTitle, { color: c.text }]}>Mirror failed</Text>
+            <Text style={[styles.modalMessage, { color: c.textMuted }]}>
+              {failedRow?.mirror_error ?? 'Unknown error'}
+            </Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.modalBtn}
+                onPress={() => setFailedRow(null)}
+              >
+                <Text style={[styles.modalBtnText, { color: c.textMuted }]}>CANCEL</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalBtn}
+                onPress={async () => {
+                  if (!failedRow) return;
+                  await supabase
+                    .from('content')
+                    .update({
+                      mirror_status: 'pending',
+                      mirror_attempts: 0,
+                      mirror_error: null,
+                      mirror_updated_at: new Date().toISOString(),
+                    })
+                    .eq('id', failedRow.id);
+                  setFailedRow(null);
+                }}
+              >
+                <Text style={[styles.modalBtnText, { color: c.primary }]}>RETRY</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
