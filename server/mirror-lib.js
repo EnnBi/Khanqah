@@ -1,2 +1,56 @@
 // Pure helpers for the mirror worker. No IO. Unit-tested in isolation.
-module.exports = {};
+
+function buildYtDlpArgs(format, outPathTemplate, url) {
+  if (format === 'audio') {
+    return [
+      '-x', '--audio-format', 'mp3', '--audio-quality', '128K',
+      '-o', outPathTemplate, url,
+    ];
+  }
+  if (format === 'video') {
+    return [
+      '-f', 'bv*[height<=720]+ba/b[height<=720]',
+      '--merge-output-format', 'mp4',
+      '-o', outPathTemplate, url,
+    ];
+  }
+  throw new Error(`unknown format: ${format}`);
+}
+
+function buildArchiveIdentifier(contentId) {
+  return `khanqah-yt-${contentId}`;
+}
+
+function buildArchiveDownloadUrl(identifier, filename) {
+  return `https://archive.org/download/${identifier}/${filename}`;
+}
+
+function buildArchiveUploadUrl(identifier, filename) {
+  return `http://s3.us.archive.org/${identifier}/${filename}`;
+}
+
+function buildArchiveHeaders({ format, title, accessKey, secretKey }) {
+  const isAudio = format === 'audio';
+  return {
+    'x-amz-auto-make-bucket': '1',
+    'x-archive-meta-collection': isAudio ? 'opensource_audio' : 'opensource_movies',
+    'x-archive-meta-mediatype':  isAudio ? 'audio'             : 'movies',
+    'x-archive-meta-title':      title,
+    authorization:               `LOW ${accessKey}:${secretKey}`,
+  };
+}
+
+function tailStderr(stderr, limit = 2000) {
+  if (!stderr) return '';
+  const s = String(stderr);
+  return s.length <= limit ? s : s.slice(-limit);
+}
+
+module.exports = {
+  buildYtDlpArgs,
+  buildArchiveIdentifier,
+  buildArchiveDownloadUrl,
+  buildArchiveUploadUrl,
+  buildArchiveHeaders,
+  tailStderr,
+};
