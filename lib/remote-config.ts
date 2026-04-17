@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const CONFIG_CACHE_KEY = 'app_remote_config';
+const CONFIG_CACHE_KEY = 'app_remote_config_v2';
 const CONFIG_URL = 'http://165.22.208.103/api/config.json';
 const CONFIG_TTL_MS = 60 * 60 * 1000; // Re-fetch every 1 hour
 
