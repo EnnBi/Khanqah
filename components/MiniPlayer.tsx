@@ -1,14 +1,19 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePlayer } from '../hooks/usePlayer';
 import { useTheme } from '../providers/ThemeProvider';
+
+// Approximate tab bar height (content + safe-area)
+const TAB_BAR_HEIGHT = 64;
 
 export function MiniPlayer() {
   const { currentContent, isPlaying, position, duration, resume, pause } = usePlayer();
   const { theme } = useTheme();
   const c = theme.colors;
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   if (!currentContent) return null;
 
@@ -20,7 +25,15 @@ export function MiniPlayer() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: c.primary }]}>
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: c.primary,
+          bottom: TAB_BAR_HEIGHT + Math.max(insets.bottom, 10),
+        },
+      ]}
+    >
       {/* Gold progress bar at top */}
       <View style={[styles.progressTrack, { backgroundColor: 'rgba(212, 168, 83, 0.2)' }]}>
         <View style={[styles.progressFill, { width: progressWidth as any, backgroundColor: c.accent }]} />
@@ -67,7 +80,6 @@ export function MiniPlayer() {
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    bottom: 50,
     left: 0,
     right: 0,
     shadowColor: '#000',
