@@ -27,8 +27,13 @@ export function initSupabase(): SupabaseClient {
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: false,
-      // Force immediate session check so subsequent calls don't block
       flowType: 'pkce',
+      // Supabase's default web lock uses navigator.locks to coordinate
+      // auth calls across tabs. In this app it gets stuck and every auth
+      // call (getSession, signInWithPassword, signOut, refresh) hangs
+      // forever. We only run one tab at a time, so a no-op lock that
+      // just invokes the callback is fine and removes the hang.
+      lock: async (_name, _acquireTimeout, fn) => fn(),
     },
     // Disable realtime on web to avoid websocket init hangs.
     // Re-enable later when Go Live broadcasting is integrated.
