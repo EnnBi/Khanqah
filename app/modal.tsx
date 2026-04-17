@@ -1,35 +1,26 @@
-import { StatusBar } from 'expo-status-bar';
-import { Platform, StyleSheet } from 'react-native';
+import { useEffect } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { View, ActivityIndicator } from 'react-native';
+import { useTheme } from '../providers/ThemeProvider';
 
-import EditScreenInfo from '@/components/EditScreenInfo';
-import { Text, View } from '@/components/Themed';
+export default function Modal() {
+  const params = useLocalSearchParams<{ type?: string; id?: string }>();
+  const router = useRouter();
+  const { theme } = useTheme();
 
-export default function ModalScreen() {
+  useEffect(() => {
+    if (params.type === 'live') {
+      router.replace('/player/live');
+    } else if (params.type === 'content' && params.id) {
+      router.replace(`/player/${params.id}`);
+    } else {
+      router.back();
+    }
+  }, [params.type, params.id]);
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Modal</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-      <EditScreenInfo path="app/modal.tsx" />
-
-      {/* Use a light status bar on iOS to account for the black space above the modal */}
-      <StatusBar style={Platform.OS === 'ios' ? 'light' : 'auto'} />
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background }}>
+      <ActivityIndicator size="large" color={theme.colors.primary} />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: '80%',
-  },
-});
