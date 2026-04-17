@@ -12,6 +12,8 @@ import { AuthProvider, useAuth } from '../providers/AuthProvider';
 import { PlayerProvider } from '../providers/PlayerProvider';
 import { initNotifications, registerDevice } from '../services/notifications';
 
+import { BugReporterButton } from '../components/BugReporterButton';
+
 // Bug reporter (dev-only)
 import {
   installConsolePatch,
@@ -88,6 +90,7 @@ function RootLayoutInner() {
       <StatusBar style={theme.dark ? 'light' : 'dark'} />
       <AuthGate />
       <BugReporterPathnameTracker />
+      <BugReporterButton />
     </>
   );
 }
