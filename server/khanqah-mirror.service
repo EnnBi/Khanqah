@@ -6,7 +6,7 @@ Wants=network-online.target
 [Service]
 Type=simple
 WorkingDirectory=/opt/khanqah
-EnvironmentFile=/opt/khanqah/.env
+EnvironmentFile=-/opt/khanqah/.env
 ExecStart=/usr/bin/node /opt/khanqah/mirror-worker.js
 Restart=always
 RestartSec=10

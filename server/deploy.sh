@@ -69,7 +69,8 @@ cp package.json     /opt/khanqah/package.json
 
 cp khanqah-mirror.service /etc/systemd/system/khanqah-mirror.service
 systemctl daemon-reload
-systemctl enable --now khanqah-mirror
+systemctl enable khanqah-mirror
+systemctl restart khanqah-mirror
 
 # Test nginx config
 nginx -t
