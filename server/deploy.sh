@@ -57,8 +57,11 @@ rm -f /etc/nginx/sites-enabled/default
 cp record-and-upload.sh /opt/khanqah/record-and-upload.sh
 chmod +x /opt/khanqah/record-and-upload.sh
 
-# Copy remote config (edit this file with your real values!)
-cp config.json /opt/khanqah/config.json
+# Copy remote config template ONLY if no real config exists yet — running
+# deploy.sh again must not blow away the admin's edited values.
+if [ ! -f /opt/khanqah/config.json ]; then
+  cp config.json /opt/khanqah/config.json
+fi
 
 # Mirror worker: copy sources, install deps, enable systemd unit.
 cp mirror-worker.js /opt/khanqah/mirror-worker.js
