@@ -99,7 +99,9 @@ export default function RootLayout() {
   const [configLoaded, setConfigLoaded] = useState(false);
   const [configError, setConfigError] = useState<string | null>(null);
 
-  const [fontsLoaded, fontError] = useFonts({
+  // Load fonts in the background. Don't block the app — text falls back to
+  // system fonts until the real ones load.
+  useFonts({
     'NastaleeqUrdu': require('../assets/fonts/JameelNooriNastaleeq.ttf'),
     'CrimsonPro': require('@expo-google-fonts/crimson-pro/400Regular/CrimsonPro_400Regular.ttf'),
     'CrimsonPro-Italic': require('@expo-google-fonts/crimson-pro/400Regular_Italic/CrimsonPro_400Regular_Italic.ttf'),
@@ -111,23 +113,18 @@ export default function RootLayout() {
     'DMSans-Bold': require('@expo-google-fonts/dm-sans/700Bold/DMSans_700Bold.ttf'),
   });
 
-  // If fonts error out, still render — text falls back to system fonts.
-  const fontsReady = fontsLoaded || !!fontError;
-
-  // Safety net: don't block the app forever on fonts (web font loading can
-  // stall in some browsers). If fonts haven't loaded after 3s, proceed anyway.
-  const [fontTimeoutElapsed, setFontTimeoutElapsed] = useState(false);
   useEffect(() => {
-    if (fontsReady) return;
-    const t = setTimeout(() => setFontTimeoutElapsed(true), 3000);
-    return () => clearTimeout(t);
-  }, [fontsReady]);
-
-  useEffect(() => {
+    console.log('[bootstrap] loadConfig starting…');
     loadConfig()
-      .then(() => {
-        initSupabase();
-        // Best-effort: propagate version to bug reporter
+      .then((cfg) => {
+        console.log('[bootstrap] loadConfig resolved:', cfg.supabaseUrl ? 'OK' : 'EMPTY');
+        try {
+          initSupabase();
+          console.log('[bootstrap] initSupabase OK');
+        } catch (e) {
+          console.error('[bootstrap] initSupabase threw:', e);
+          throw e;
+        }
         if (__DEV__) {
           try {
             setAppVersion(getConfig().appVersion || '0.0.0');
@@ -136,9 +133,11 @@ export default function RootLayout() {
           }
         }
         setConfigLoaded(true);
+        console.log('[bootstrap] configLoaded = true');
       })
       .catch((err) => {
-        setConfigError(err.message || 'Failed to load configuration');
+        console.error('[bootstrap] bootstrap failed:', err);
+        setConfigError(err?.message || String(err) || 'Failed to load configuration');
       });
   }, []);
 
@@ -203,7 +202,7 @@ export default function RootLayout() {
     );
   }
 
-  if (!configLoaded || (!fontsReady && !fontTimeoutElapsed)) {
+  if (!configLoaded) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#09090b' }}>
         <ActivityIndicator size="large" color="#047857" />
