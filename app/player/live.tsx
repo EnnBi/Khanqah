@@ -5,6 +5,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  Animated,
+  Easing,
   Share,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -16,20 +18,7 @@ import { usePlayer } from '../../hooks/usePlayer';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useI18n } from '../../providers/I18nProvider';
 
-const ARTWORK_SIZE = 180;
-
-// Red palette overrides
-const RED = {
-  primary: '#dc2626',
-  primaryDark: '#991b1b',
-  deepDark: '#3b0a0a',
-  deepDarkest: '#1a0505',
-  muted: '#fca5a5',
-  liveDot: '#ef4444',
-  shadow: 'rgba(220,38,38,0.45)',
-  pillBg: 'rgba(220,38,38,0.15)',
-  pillBorder: 'rgba(220,38,38,0.35)',
-};
+const ARTWORK_SIZE = 240;
 
 function formatElapsed(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -39,6 +28,11 @@ function formatElapsed(seconds: number): string {
     return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   }
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+function formatStartedAt(isoString: string): string {
+  const d = new Date(isoString);
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
 export default function LivePlayerScreen() {
@@ -54,6 +48,33 @@ export default function LivePlayerScreen() {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const hasStartedPlayback = useRef(false);
 
+  // Pulsing animation for live dot
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  // Scale animation for play button press
+  const playBtnScale = useRef(new Animated.Value(1)).current;
+
+  // Start continuous pulse loop
+  useEffect(() => {
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.6,
+          duration: 800,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 800,
+          easing: Easing.in(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    pulse.start();
+    return () => pulse.stop();
+  }, []);
+
   // Calculate elapsed time from started_at
   useEffect(() => {
     if (!liveSession?.started_at) return;
@@ -66,7 +87,7 @@ export default function LivePlayerScreen() {
       setElapsedSeconds(diff);
     };
 
-    tick(); // immediate first tick
+    tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
   }, [liveSession?.started_at]);
@@ -103,6 +124,10 @@ export default function LivePlayerScreen() {
   };
 
   const handlePlayPause = async () => {
+    Animated.sequence([
+      Animated.timing(playBtnScale, { toValue: 0.92, duration: 80, useNativeDriver: true }),
+      Animated.timing(playBtnScale, { toValue: 1, duration: 120, useNativeDriver: true }),
+    ]).start();
     if (isPlaying) {
       await pause();
     } else {
@@ -128,30 +153,29 @@ export default function LivePlayerScreen() {
       : liveSession.title_en
     : '';
 
-  const bgTop = RED.deepDark;
-  const bgBottom = theme.dark ? '#09090b' : '#1a0505';
-
-  // ── Loading state ────────────────────────────────────────────────────────
+  // ── Loading state ─────────────────────────────────────────────────────────
   if (loading) {
     return (
       <View style={[styles.screen, { backgroundColor: c.background }]}>
-        <ActivityIndicator size="large" color={RED.primary} style={{ flex: 1 }} />
+        <ActivityIndicator size="large" color={c.liveRed} style={{ flex: 1 }} />
       </View>
     );
   }
 
-  // ── No live session ──────────────────────────────────────────────────────
+  // ── No live session ───────────────────────────────────────────────────────
   if (!liveSession) {
     return (
       <View style={[styles.screen, { backgroundColor: c.background }]}>
         <View style={[styles.emptyContainer, { paddingTop: insets.top + 16 }]}>
           <TouchableOpacity onPress={() => router.back()} style={styles.emptyBack}>
-            <Text style={[styles.headerBtnText, { color: RED.primary }]}>‹</Text>
+            <Text style={[styles.backBtnText, { color: c.primary }]}>‹ Back</Text>
           </TouchableOpacity>
           <View style={styles.emptyBody}>
-            <Text style={styles.emptyDot}>🔴</Text>
-            <Text style={[styles.emptyTitle, { color: c.text }]}>No live session</Text>
-            <Text style={[styles.emptySubtitle, { color: c.textMuted }]}>
+            <Text style={[styles.emptySymbol, { color: c.liveRed }]}>◉</Text>
+            <Text style={[styles.emptyTitle, { color: c.text, fontFamily: 'CrimsonPro' }]}>
+              No Live Session
+            </Text>
+            <Text style={[styles.emptySubtitle, { color: c.textMuted, fontFamily: 'DMSans' }]}>
               There is no broadcast in progress right now.
             </Text>
           </View>
@@ -160,17 +184,9 @@ export default function LivePlayerScreen() {
     );
   }
 
-  // ── Live player ──────────────────────────────────────────────────────────
+  // ── Live player ───────────────────────────────────────────────────────────
   return (
-    <View style={[styles.screen, { backgroundColor: bgBottom }]}>
-      {/* Dark red gradient top half */}
-      <View
-        style={[
-          StyleSheet.absoluteFillObject,
-          { backgroundColor: bgTop, height: '55%', top: 0 },
-        ]}
-      />
-
+    <View style={[styles.screen, { backgroundColor: c.background }]}>
       <View
         style={[
           styles.container,
@@ -179,17 +195,36 @@ export default function LivePlayerScreen() {
       >
         {/* ── Header ── */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={handleBack} style={styles.headerBtn} accessibilityLabel="Back">
-            <Text style={[styles.headerBtnText, { color: RED.muted }]}>‹</Text>
+          <TouchableOpacity
+            onPress={handleBack}
+            style={styles.headerBtn}
+            accessibilityLabel="Back"
+          >
+            <Text style={[styles.backBtnText, { color: c.primary }]}>‹ Back</Text>
           </TouchableOpacity>
 
-          <View style={styles.headerCenter}>
-            <View style={[styles.liveDot, { backgroundColor: RED.liveDot }]} />
-            <Text style={styles.liveLabel}>LIVE</Text>
+          {/* LIVE badge */}
+          <View style={[styles.liveBadge, { backgroundColor: c.liveRed }]}>
+            {/* Pulsing dot */}
+            <Animated.View
+              style={[
+                styles.liveDotRing,
+                {
+                  borderColor: c.liveRed,
+                  transform: [{ scale: pulseAnim }],
+                  opacity: pulseAnim.interpolate({
+                    inputRange: [1, 1.6],
+                    outputRange: [0.6, 0],
+                  }),
+                },
+              ]}
+            />
+            <View style={styles.liveDotInner} />
+            <Text style={styles.liveBadgeText}>LIVE · 127 LISTENING</Text>
           </View>
 
           <TouchableOpacity style={styles.headerBtn} accessibilityLabel="Options">
-            <Text style={[styles.headerBtnText, { color: RED.muted }]}>⋮</Text>
+            <Text style={[styles.optionsBtnText, { color: c.primary }]}>⋮</Text>
           </TouchableOpacity>
         </View>
 
@@ -198,74 +233,102 @@ export default function LivePlayerScreen() {
           <View
             style={[
               styles.artwork,
-              {
-                backgroundColor: RED.deepDarkest,
-                shadowColor: RED.shadow,
-              },
+              { backgroundColor: c.primary },
             ]}
           >
-            {/* Arabic pattern overlay */}
-            <Text style={styles.arabicOverlay}>ﷲ</Text>
-            {/* Mic emoji */}
-            <Text style={styles.artworkEmoji}>🎙</Text>
+            {/* Low-opacity geometric decoration */}
+            <Text style={styles.geometricPattern}>✦ ✧ ✦ ✧ ✦</Text>
+            <Text style={styles.geometricPatternB}>✧ ✦ ✧ ✦ ✧</Text>
+
+            {/* Red glowing orb in center */}
+            <View style={styles.redOrbOuter}>
+              <Animated.View
+                style={[
+                  styles.redOrbGlow,
+                  {
+                    transform: [{ scale: pulseAnim }],
+                    opacity: pulseAnim.interpolate({
+                      inputRange: [1, 1.6],
+                      outputRange: [0.4, 0],
+                    }),
+                  },
+                ]}
+              />
+              <View style={[styles.redOrb, { backgroundColor: c.liveRed }]} />
+            </View>
           </View>
         </View>
 
         {/* ── Track info ── */}
         <View style={styles.trackInfo}>
-          <Text style={[styles.trackTitle, { color: '#fff' }]} numberOfLines={2}>
+          <Text style={[styles.trackTitle, { color: c.text }]} numberOfLines={2}>
             {title || '—'}
           </Text>
-          <Text style={[styles.trackArtist, { color: RED.muted }]} numberOfLines={1}>
+          <Text style={[styles.trackArtist, { color: c.textMuted }]} numberOfLines={1}>
             Hazrat Mufti Abdur Rasheed Miftahi Sahab
           </Text>
         </View>
 
-        {/* ── Live badge ── */}
-        <View style={styles.liveBadgeRow}>
-          <View
+        {/* ── Red hairline accent + elapsed timer ── */}
+        <View style={styles.timerSection}>
+          <View style={[styles.timerHairline, { backgroundColor: c.liveRed }]} />
+          <Text
             style={[
-              styles.liveBadge,
-              { backgroundColor: RED.pillBg, borderColor: RED.pillBorder },
+              styles.timerText,
+              { color: c.text, fontFamily: 'CrimsonPro' },
             ]}
           >
-            <View style={[styles.liveBadgeDot, { backgroundColor: RED.liveDot }]} />
-            <Text style={[styles.liveBadgeText, { color: RED.muted }]}>
-              Live • 127 listening
-            </Text>
-          </View>
-        </View>
-
-        {/* ── Elapsed timer ── */}
-        <View style={styles.timerRow}>
-          <Text style={[styles.timerText, { color: '#fff' }]}>
             {formatElapsed(elapsedSeconds)}
           </Text>
+          <View style={[styles.timerHairline, { backgroundColor: c.liveRed }]} />
         </View>
 
         {/* ── Controls ── */}
         <View style={styles.controls}>
           {/* Volume */}
           <TouchableOpacity style={styles.sideBtn} accessibilityLabel="Volume">
-            <Text style={styles.sideBtnIcon}>🔊</Text>
+            <Text style={[styles.sideBtnText, { color: c.textMuted }]}>◁)</Text>
+            <Text style={[styles.sideBtnLabel, { color: c.textMuted }]}>VOLUME</Text>
           </TouchableOpacity>
 
-          {/* Play / Pause */}
-          <TouchableOpacity
-            onPress={handlePlayPause}
-            style={[styles.playBtn, { shadowColor: RED.shadow }]}
-            accessibilityLabel={isPlaying ? 'Pause' : 'Play'}
-          >
-            {/* Red gradient approximated with a solid + overlay */}
-            <View style={[StyleSheet.absoluteFillObject, styles.playBtnGradientTop]} />
-            <View style={[StyleSheet.absoluteFillObject, styles.playBtnGradientBottom]} />
-            <Text style={styles.playBtnIcon}>{isPlaying ? '⏸' : '▶'}</Text>
-          </TouchableOpacity>
+          {/* Play / Pause — big red circle */}
+          <Animated.View style={{ transform: [{ scale: playBtnScale }] }}>
+            <TouchableOpacity
+              onPress={handlePlayPause}
+              style={[
+                styles.playBtn,
+                {
+                  backgroundColor: c.liveRed,
+                  shadowColor: c.liveRed,
+                },
+              ]}
+              accessibilityLabel={isPlaying ? 'Pause' : 'Play'}
+            >
+              <Text style={styles.playBtnIcon}>{isPlaying ? '▌▌' : '▶'}</Text>
+            </TouchableOpacity>
+          </Animated.View>
 
           {/* Share */}
-          <TouchableOpacity onPress={handleShare} style={styles.sideBtn} accessibilityLabel="Share">
-            <Text style={styles.sideBtnIcon}>🔀</Text>
+          <TouchableOpacity
+            onPress={handleShare}
+            style={styles.sideBtn}
+            accessibilityLabel="Share"
+          >
+            <Text style={[styles.sideBtnText, { color: c.textMuted }]}>↗</Text>
+            <Text style={[styles.sideBtnLabel, { color: c.textMuted }]}>SHARE</Text>
           </TouchableOpacity>
+        </View>
+
+        {/* ── Session info ── */}
+        <View style={[styles.sessionInfo, { borderTopColor: c.hairline }]}>
+          <Text style={[styles.sessionTitle, { color: c.text }]}>
+            {title}
+          </Text>
+          {liveSession.started_at ? (
+            <Text style={[styles.sessionStarted, { color: c.textMuted }]}>
+              STARTED AT {formatStartedAt(liveSession.started_at)}
+            </Text>
+          ) : null}
         </View>
       </View>
     </View>
@@ -287,9 +350,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   emptyBack: {
-    width: 36,
     height: 36,
-    alignItems: 'center',
     justifyContent: 'center',
   },
   emptyBody: {
@@ -298,21 +359,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 12,
   },
-  emptyDot: {
+  emptySymbol: {
     fontSize: 48,
     marginBottom: 8,
   },
   emptyTitle: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 26,
+    lineHeight: 32,
+    textAlign: 'center',
   },
   emptySubtitle: {
     fontSize: 14,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 22,
   },
 
-  // Header
+  // ── Header ──
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -320,34 +382,53 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   headerBtn: {
-    width: 36,
+    minWidth: 64,
     height: 36,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerBtnText: {
-    fontSize: 28,
-    fontWeight: '300',
-    lineHeight: 32,
+  backBtnText: {
+    fontFamily: 'CrimsonPro-Italic',
+    fontSize: 17,
+    letterSpacing: 0.2,
   },
-  headerCenter: {
+  optionsBtnText: {
+    fontSize: 22,
+    lineHeight: 26,
+  },
+
+  // LIVE badge
+  liveBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 100,
   },
-  liveDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+  liveDotRing: {
+    position: 'absolute',
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 2,
+    left: 8,
   },
-  liveLabel: {
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 2,
-    color: '#ef4444',
+  liveDotInner: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#ffffff',
+  },
+  liveBadgeText: {
+    fontFamily: 'DMSans-SemiBold',
+    fontSize: 10,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    color: '#ffffff',
   },
 
-  // Artwork
+  // ── Artwork ──
   artworkContainer: {
     alignItems: 'center',
     marginBottom: 28,
@@ -355,96 +436,114 @@ const styles = StyleSheet.create({
   artwork: {
     width: ARTWORK_SIZE,
     height: ARTWORK_SIZE,
-    borderRadius: 20,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.6,
-    shadowRadius: 20,
-    elevation: 14,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 18,
+    elevation: 10,
   },
-  arabicOverlay: {
+  geometricPattern: {
     position: 'absolute',
-    fontSize: 120,
-    color: 'rgba(255,100,100,0.08)',
-    fontWeight: '400',
+    top: 28,
+    fontSize: 13,
+    letterSpacing: 18,
+    color: 'rgba(212, 168, 83, 0.06)',
+    fontFamily: 'DMSans',
   },
-  artworkEmoji: {
-    fontSize: 64,
-    zIndex: 1,
-    color: '#fca5a5',
+  geometricPatternB: {
+    position: 'absolute',
+    bottom: 28,
+    fontSize: 13,
+    letterSpacing: 18,
+    color: 'rgba(212, 168, 83, 0.06)',
+    fontFamily: 'DMSans',
+  },
+  redOrbOuter: {
+    width: 72,
+    height: 72,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  redOrbGlow: {
+    position: 'absolute',
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: '#c23e3e',
+  },
+  redOrb: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
   },
 
-  // Track info
+  // ── Track info ──
   trackInfo: {
     alignItems: 'center',
-    marginBottom: 20,
-    gap: 6,
+    marginBottom: 24,
+    gap: 8,
+    paddingHorizontal: 8,
   },
   trackTitle: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'CrimsonPro',
+    fontSize: 26,
+    lineHeight: 32,
     textAlign: 'center',
-    lineHeight: 22,
   },
   trackArtist: {
-    fontSize: 12,
+    fontFamily: 'DMSans',
+    fontSize: 11,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
     textAlign: 'center',
   },
 
-  // Live badge
-  liveBadgeRow: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  liveBadge: {
+  // ── Timer ──
+  timerSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 100,
-    borderWidth: 1,
+    justifyContent: 'center',
+    gap: 12,
+    marginBottom: 36,
   },
-  liveBadgeDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  liveBadgeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    letterSpacing: 0.3,
-  },
-
-  // Timer
-  timerRow: {
-    alignItems: 'center',
-    marginBottom: 40,
+  timerHairline: {
+    flex: 1,
+    height: 1,
+    maxWidth: 60,
   },
   timerText: {
     fontSize: 52,
-    fontWeight: '200',
+    lineHeight: 60,
     letterSpacing: 4,
     fontVariant: ['tabular-nums'],
   },
 
-  // Controls
+  // ── Controls ──
   controls: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 36,
+    gap: 40,
+    marginBottom: 36,
   },
   sideBtn: {
-    width: 48,
-    height: 48,
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 5,
+    minWidth: 52,
   },
-  sideBtnIcon: {
-    fontSize: 24,
+  sideBtnText: {
+    fontSize: 20,
+    lineHeight: 24,
+  },
+  sideBtnLabel: {
+    fontFamily: 'DMSans',
+    fontSize: 10,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
   },
   playBtn: {
     width: 72,
@@ -453,26 +552,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.55,
-    shadowRadius: 12,
+    shadowOpacity: 0.45,
+    shadowRadius: 14,
     elevation: 10,
-    overflow: 'hidden',
-  },
-  playBtnGradientTop: {
-    borderRadius: 36,
-    backgroundColor: '#dc2626',
-    top: 0,
-    bottom: '50%',
-  },
-  playBtnGradientBottom: {
-    borderRadius: 36,
-    backgroundColor: '#991b1b',
-    top: '50%',
-    bottom: 0,
   },
   playBtnIcon: {
-    fontSize: 28,
-    color: '#fff',
-    zIndex: 1,
+    fontSize: 26,
+    color: '#ffffff',
+    marginLeft: 2,
+  },
+
+  // ── Session info ──
+  sessionInfo: {
+    alignItems: 'center',
+    gap: 6,
+    borderTopWidth: 1,
+    paddingTop: 20,
+  },
+  sessionTitle: {
+    fontFamily: 'CrimsonPro-Italic',
+    fontSize: 20,
+    lineHeight: 26,
+    textAlign: 'center',
+  },
+  sessionStarted: {
+    fontFamily: 'DMSans',
+    fontSize: 11,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
   },
 });

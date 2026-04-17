@@ -9,21 +9,19 @@ import {
   PanResponder,
   Animated,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { supabase } from '../../lib/supabase';
-import { Content } from '../../lib/types';
+import { Content, ContentType } from '../../lib/types';
 import { usePlayer } from '../../hooks/usePlayer';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useI18n } from '../../providers/I18nProvider';
-import { PlayerControls } from '../../components/PlayerControls';
 import { TopicsList } from '../../components/TopicsList';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const ARTWORK_SIZE = 180;
+const ARTWORK_SIZE = 240;
 const PROGRESS_BAR_WIDTH = SCREEN_WIDTH - 48;
 
 function formatTime(seconds: number): string {
@@ -37,6 +35,15 @@ function formatTime(seconds: number): string {
 }
 
 const SPEED_OPTIONS = [0.75, 1.0, 1.25, 1.5, 1.75, 2.0];
+
+const TYPE_SYMBOL: Record<ContentType, string> = {
+  bayan: '♪',
+  clip: '▸',
+  nazam: '✧',
+  quran: '☪',
+  hamd_naat: '✦',
+  book: '❖',
+};
 
 export default function PlayerScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -53,14 +60,22 @@ export default function PlayerScreen() {
     duration,
     playbackSpeed,
     playContent,
+    pause,
+    resume,
     seekTo,
+    seekBy,
     setSpeed,
+    skipToNext,
+    skipToPrevious,
   } = usePlayer();
 
   const [content, setContent] = useState<Content | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSeeking, setIsSeeking] = useState(false);
   const [seekPosition, setSeekPosition] = useState(0);
+
+  // Animated scale for play button press
+  const playBtnScale = useRef(new Animated.Value(1)).current;
 
   // Fetch content from supabase
   useEffect(() => {
@@ -91,6 +106,18 @@ export default function PlayerScreen() {
     const idx = SPEED_OPTIONS.indexOf(playbackSpeed);
     const next = SPEED_OPTIONS[(idx + 1) % SPEED_OPTIONS.length];
     setSpeed(next);
+  };
+
+  const handlePlayPause = () => {
+    Animated.sequence([
+      Animated.timing(playBtnScale, { toValue: 0.92, duration: 80, useNativeDriver: true }),
+      Animated.timing(playBtnScale, { toValue: 1, duration: 120, useNativeDriver: true }),
+    ]).start();
+    if (isPlaying) {
+      pause();
+    } else {
+      resume();
+    }
   };
 
   const displayPosition = isSeeking ? seekPosition : position;
@@ -128,8 +155,7 @@ export default function PlayerScreen() {
       : content.title_en
     : '';
 
-  const bgTop = theme.dark ? c.primaryDark : '#d1fae5';
-  const bgBottom = theme.dark ? '#09090b' : '#ffffff';
+  const contentSymbol = content ? (TYPE_SYMBOL[content.type] ?? '♪') : '♪';
 
   if (loading) {
     return (
@@ -140,46 +166,53 @@ export default function PlayerScreen() {
   }
 
   return (
-    <View style={[styles.screen, { backgroundColor: bgBottom }]}>
-      {/* Background gradient simulation */}
-      <View
-        style={[
-          StyleSheet.absoluteFillObject,
-          { backgroundColor: bgTop, height: '50%', top: 0 },
-        ]}
-      />
-
+    <View style={[styles.screen, { backgroundColor: c.background }]}>
       <ScrollView
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 24 },
+          { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 32 },
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
+        {/* ── Header ── */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.headerBtn} accessibilityLabel="Back">
-            <Text style={[styles.headerBtnText, { color: theme.dark ? c.text : c.primaryDark }]}>‹</Text>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.headerBtn}
+            accessibilityLabel="Back"
+          >
+            <Text style={[styles.backBtnText, { color: c.primary }]}>‹ Back</Text>
           </TouchableOpacity>
-          <Text style={[styles.nowPlayingLabel, { color: theme.dark ? c.textSecondary : c.primaryDark }]}>
-            {t('player.nowPlaying')}
+
+          <Text style={[styles.nowPlayingLabel, { color: c.textMuted }]}>
+            NOW PLAYING
           </Text>
+
           <TouchableOpacity style={styles.headerBtn} accessibilityLabel="Options">
-            <Text style={[styles.headerBtnText, { color: theme.dark ? c.text : c.primaryDark }]}>⋮</Text>
+            <Text style={[styles.optionsBtnText, { color: c.primary }]}>⋮</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Artwork */}
+        {/* ── Artwork ── */}
         <View style={styles.artworkContainer}>
-          <View style={[styles.artwork, { backgroundColor: c.primaryDark }]}>
-            {/* Islamic pattern overlay */}
-            <Text style={styles.arabicOverlay}>ﷲ</Text>
-            {/* Content emoji */}
-            <Text style={styles.artworkEmoji}>🎙</Text>
+          {/* Outer gold ring */}
+          <View style={[styles.artworkRing, { borderColor: c.gold }]}>
+            <View
+              style={[
+                styles.artwork,
+                { backgroundColor: c.primary },
+              ]}
+            >
+              {/* Low-opacity geometric pattern */}
+              <Text style={styles.geometricPattern}>✦ ✧ ✦ ✧ ✦</Text>
+              <Text style={styles.geometricPatternB}>✧ ✦ ✧ ✦ ✧</Text>
+              {/* Content-type symbol */}
+              <Text style={[styles.artworkSymbol, { color: c.gold }]}>{contentSymbol}</Text>
+            </View>
           </View>
         </View>
 
-        {/* Track Info */}
+        {/* ── Track Info ── */}
         <View style={styles.trackInfo}>
           <Text style={[styles.trackTitle, { color: c.text }]} numberOfLines={2}>
             {title || '—'}
@@ -189,19 +222,24 @@ export default function PlayerScreen() {
           </Text>
         </View>
 
-        {/* Progress Bar */}
+        {/* ── Progress Bar ── */}
         <View style={styles.progressSection}>
           <View
             ref={progressBarRef}
-            style={styles.progressTrack}
+            style={[styles.progressTrack, { backgroundColor: c.border }]}
             {...panResponder.panHandlers}
             accessible={false}
           >
-            <View style={[styles.progressFill, { backgroundColor: c.primary, width: `${progress * 100}%` }]} />
-            {/* Gold dot */}
             <View
               style={[
-                styles.progressDot,
+                styles.progressFill,
+                { backgroundColor: c.gold, width: `${progress * 100}%` },
+              ]}
+            />
+            {/* Gold handle circle */}
+            <View
+              style={[
+                styles.progressHandle,
                 { backgroundColor: c.gold, left: `${progress * 100}%` as any },
               ]}
             />
@@ -212,42 +250,119 @@ export default function PlayerScreen() {
           </View>
         </View>
 
-        {/* Player Controls */}
-        <PlayerControls />
-
-        {/* Actions Row */}
-        <View style={[styles.actionsRow, { borderTopColor: c.border, borderBottomColor: c.border }]}>
-          {/* Speed */}
-          <TouchableOpacity style={styles.actionBtn} onPress={handleSpeedPress} accessibilityLabel="Playback speed">
-            <Text style={[styles.actionIcon, { color: c.primary }]}>🔁</Text>
-            <Text style={[styles.actionLabel, { color: c.textSecondary }]}>
-              {playbackSpeed.toFixed(2).replace(/\.?0+$/, '')}x
-            </Text>
+        {/* ── Player Controls ── */}
+        <View style={styles.controlsRow}>
+          {/* Previous */}
+          <TouchableOpacity
+            onPress={skipToPrevious}
+            style={styles.sideControl}
+            accessibilityLabel="Previous"
+          >
+            <Text style={[styles.serifNavText, { color: c.textMuted }]}>‹‹</Text>
           </TouchableOpacity>
 
+          {/* Seek back 15s */}
+          <TouchableOpacity
+            onPress={() => seekBy(-15)}
+            style={styles.seekControl}
+            accessibilityLabel="Seek back 15 seconds"
+          >
+            <Text style={[styles.seekText, { color: c.textMuted }]}>−15s</Text>
+          </TouchableOpacity>
+
+          {/* Play / Pause */}
+          <Animated.View style={{ transform: [{ scale: playBtnScale }] }}>
+            <TouchableOpacity
+              onPress={handlePlayPause}
+              style={[
+                styles.playBtn,
+                {
+                  backgroundColor: c.primary,
+                  borderColor: c.gold,
+                  shadowColor: c.gold,
+                },
+              ]}
+              accessibilityLabel={isPlaying ? 'Pause' : 'Play'}
+            >
+              <Text style={[styles.playBtnIcon, { color: c.gold }]}>
+                {isPlaying ? '▌▌' : '▶'}
+              </Text>
+            </TouchableOpacity>
+          </Animated.View>
+
+          {/* Seek forward 15s */}
+          <TouchableOpacity
+            onPress={() => seekBy(15)}
+            style={styles.seekControl}
+            accessibilityLabel="Seek forward 15 seconds"
+          >
+            <Text style={[styles.seekText, { color: c.textMuted }]}>+15s</Text>
+          </TouchableOpacity>
+
+          {/* Next */}
+          <TouchableOpacity
+            onPress={skipToNext}
+            style={styles.sideControl}
+            accessibilityLabel="Next"
+          >
+            <Text style={[styles.serifNavText, { color: c.textMuted }]}>››</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* ── Speed pill ── */}
+        <View style={styles.speedRow}>
+          <TouchableOpacity
+            onPress={handleSpeedPress}
+            style={[styles.speedPill, { borderColor: c.border }]}
+            accessibilityLabel="Playback speed"
+          >
+            <Text style={[styles.speedPillText, { color: c.primary }]}>
+              {playbackSpeed % 1 === 0
+                ? `${playbackSpeed.toFixed(1)}×`
+                : `${playbackSpeed}×`}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* ── Actions Row ── */}
+        <View style={[styles.actionsRow, { borderTopColor: c.hairline, borderBottomColor: c.hairline }]}>
           {/* Save */}
           <TouchableOpacity style={styles.actionBtn} accessibilityLabel="Save offline">
-            <Text style={styles.actionIcon}>⬇</Text>
-            <Text style={[styles.actionLabel, { color: c.textSecondary }]}>{t('player.save')}</Text>
+            <Text style={[styles.actionIcon, { color: c.primary }]}>↓</Text>
+            <Text style={[styles.actionLabel, { color: c.textMuted }]}>SAVE</Text>
           </TouchableOpacity>
 
           {/* Share */}
           <TouchableOpacity style={styles.actionBtn} accessibilityLabel="Share">
-            <Text style={styles.actionIcon}>🔀</Text>
-            <Text style={[styles.actionLabel, { color: c.textSecondary }]}>{t('player.share')}</Text>
+            <Text style={[styles.actionIcon, { color: c.primary }]}>↗</Text>
+            <Text style={[styles.actionLabel, { color: c.textMuted }]}>SHARE</Text>
           </TouchableOpacity>
 
           {/* Queue */}
           <TouchableOpacity style={styles.actionBtn} accessibilityLabel="Queue">
-            <Text style={styles.actionIcon}>☰</Text>
-            <Text style={[styles.actionLabel, { color: c.textSecondary }]}>{t('player.queue')}</Text>
+            <Text style={[styles.actionIcon, { color: c.primary }]}>≡</Text>
+            <Text style={[styles.actionLabel, { color: c.textMuted }]}>QUEUE</Text>
+          </TouchableOpacity>
+
+          {/* Speed (repeat here for quick access) */}
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={handleSpeedPress}
+            accessibilityLabel="Playback speed"
+          >
+            <Text style={[styles.actionIcon, { color: c.primary }]}>⟳</Text>
+            <Text style={[styles.actionLabel, { color: c.textMuted }]}>SPEED</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Topics Panel */}
+        {/* ── Topics Panel ── */}
         {content && (
           <View style={styles.topicsSection}>
-            <Text style={[styles.topicsHeading, { color: c.text }]}>{t('player.topics')}</Text>
+            {/* Section header */}
+            <View style={styles.topicsHeader}>
+              <Text style={[styles.topicsLabel, { color: c.textMuted }]}>TOPICS</Text>
+              <Text style={[styles.topicsHeading, { color: c.text }]}>Chapters</Text>
+            </View>
             <TopicsList contentId={content.id} currentPosition={position} />
           </View>
         )}
@@ -269,104 +384,126 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
 
-  // Header
+  // ── Header ──
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 24,
+    marginBottom: 32,
   },
   headerBtn: {
-    width: 36,
+    minWidth: 64,
     height: 36,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerBtnText: {
-    fontSize: 28,
-    fontWeight: '300',
-    lineHeight: 32,
+  backBtnText: {
+    fontFamily: 'CrimsonPro-Italic',
+    fontSize: 17,
+    letterSpacing: 0.2,
   },
   nowPlayingLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 1.5,
+    fontFamily: 'DMSans',
+    fontSize: 11,
+    letterSpacing: 2,
     textTransform: 'uppercase',
   },
+  optionsBtnText: {
+    fontSize: 22,
+    lineHeight: 26,
+  },
 
-  // Artwork
+  // ── Artwork ──
   artworkContainer: {
     alignItems: 'center',
-    marginBottom: 28,
+    marginBottom: 32,
+  },
+  artworkRing: {
+    borderRadius: 28,
+    borderWidth: 2,
+    padding: 4,
+    shadowColor: '#d4a853',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 18,
+    elevation: 8,
   },
   artwork: {
     width: ARTWORK_SIZE,
     height: ARTWORK_SIZE,
-    borderRadius: 20,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 10,
     overflow: 'hidden',
   },
-  arabicOverlay: {
+  geometricPattern: {
     position: 'absolute',
-    fontSize: 120,
-    color: 'rgba(255,255,255,0.07)',
-    fontWeight: '400',
+    top: 28,
+    fontSize: 13,
+    letterSpacing: 18,
+    color: 'rgba(212, 168, 83, 0.08)',
+    fontFamily: 'DMSans',
   },
-  artworkEmoji: {
-    fontSize: 64,
+  geometricPatternB: {
+    position: 'absolute',
+    bottom: 28,
+    fontSize: 13,
+    letterSpacing: 18,
+    color: 'rgba(212, 168, 83, 0.08)',
+    fontFamily: 'DMSans',
+  },
+  artworkSymbol: {
+    fontSize: 72,
     zIndex: 1,
   },
 
-  // Track info
+  // ── Track info ──
   trackInfo: {
     alignItems: 'center',
-    marginBottom: 24,
-    gap: 6,
+    marginBottom: 28,
+    gap: 8,
+    paddingHorizontal: 8,
   },
   trackTitle: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'CrimsonPro',
+    fontSize: 28,
+    lineHeight: 34,
     textAlign: 'center',
-    lineHeight: 22,
   },
   trackArtist: {
-    fontSize: 12,
+    fontFamily: 'DMSans',
+    fontSize: 11,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
     textAlign: 'center',
   },
 
-  // Progress
+  // ── Progress ──
   progressSection: {
-    marginBottom: 8,
+    marginBottom: 28,
   },
   progressTrack: {
-    height: 4,
-    backgroundColor: 'rgba(150,150,150,0.25)',
-    borderRadius: 2,
+    height: 2,
+    borderRadius: 1,
     width: PROGRESS_BAR_WIDTH,
     alignSelf: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
     position: 'relative',
     justifyContent: 'center',
   },
   progressFill: {
-    height: 4,
-    borderRadius: 2,
+    height: 2,
+    borderRadius: 1,
     position: 'absolute',
     left: 0,
     top: 0,
   },
-  progressDot: {
+  progressHandle: {
     position: 'absolute',
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginLeft: -6,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginLeft: -5,
     top: -4,
   },
   timeRow: {
@@ -375,39 +512,117 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
   },
   timeText: {
+    fontFamily: 'DMSans',
     fontSize: 12,
     fontVariant: ['tabular-nums'],
   },
 
-  // Actions
+  // ── Controls ──
+  controlsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+    marginBottom: 20,
+  },
+  sideControl: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  serifNavText: {
+    fontFamily: 'CrimsonPro',
+    fontSize: 22,
+    lineHeight: 26,
+  },
+  seekControl: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  seekText: {
+    fontFamily: 'DMSans',
+    fontSize: 12,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  playBtn: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  playBtnIcon: {
+    fontSize: 22,
+    marginLeft: 2,
+  },
+
+  // ── Speed pill ──
+  speedRow: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  speedPill: {
+    borderWidth: 1,
+    borderRadius: 100,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+  },
+  speedPillText: {
+    fontFamily: 'DMSans-Medium',
+    fontSize: 13,
+    letterSpacing: 0.3,
+  },
+
+  // ── Actions ──
   actionsRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    paddingVertical: 14,
-    marginVertical: 16,
+    paddingVertical: 16,
+    marginBottom: 28,
   },
   actionBtn: {
     alignItems: 'center',
-    gap: 4,
-    minWidth: 60,
+    gap: 5,
+    minWidth: 56,
   },
   actionIcon: {
     fontSize: 18,
+    lineHeight: 22,
   },
   actionLabel: {
-    fontSize: 11,
-    fontWeight: '500',
+    fontFamily: 'DMSans',
+    fontSize: 10,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
   },
 
-  // Topics
+  // ── Topics ──
   topicsSection: {
     gap: 12,
   },
+  topicsHeader: {
+    gap: 2,
+  },
+  topicsLabel: {
+    fontFamily: 'DMSans',
+    fontSize: 11,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+  },
   topicsHeading: {
-    fontSize: 15,
-    fontWeight: '700',
-    letterSpacing: 0.3,
+    fontFamily: 'CrimsonPro-Italic',
+    fontSize: 22,
+    lineHeight: 28,
   },
 });
