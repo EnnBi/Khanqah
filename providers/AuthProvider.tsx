@@ -55,50 +55,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let cancelled = false;
 
-    // Race getSession against a 3s timeout. If it hangs (bad token, internal
-    // deadlock), fall through to signOut so the stored token is cleared and
-    // the user can re-authenticate cleanly.
-    async function bootstrapSession() {
-      try {
-        const result = await Promise.race([
-          supabase.auth.getSession(),
-          new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error('getSession timeout')), 3000),
-          ),
-        ]);
-
-        if (cancelled) return;
-        const s = result?.data?.session ?? null;
-        setSession(s);
-        if (s?.user) {
-          try {
-            const profile = await fetchUserProfile(s.user.id);
-            if (!cancelled) setUser(profile);
-          } catch (err) {
-            console.warn('[auth] profile fetch failed:', err);
-          }
-        }
-      } catch (err: any) {
-        console.warn('[auth] getSession failed, clearing session:', err?.message ?? err);
-        // Clear the bad token so future calls don't keep hanging
-        try {
-          await supabase.auth.signOut();
-        } catch {
-          /* best effort */
-        }
-        if (!cancelled) setSession(null);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    bootstrapSession();
+    // Safety timer: if the auth listener hasn't fired within 2 s we flip
+    // loading off so the UI becomes interactive as a guest. We never touch
+    // the Supabase client or stored tokens from here — if a session shows
+    // up later, onAuthStateChange updates state and the UI upgrades.
+    let safetyTimer: ReturnType<typeof setTimeout> | null = setTimeout(() => {
+      if (!cancelled) setLoading(false);
+      safetyTimer = null;
+    }, 2000);
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, s) => {
         if (cancelled) return;
-        setSession(s);
         try {
+          setSession(s);
           if (s?.user) {
             const profile = await fetchUserProfile(s.user.id);
             if (!cancelled) setUser(profile);
@@ -107,14 +77,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         } catch (err) {
           console.warn('[auth] onAuthStateChange failed:', err);
+        } finally {
+          if (!cancelled) setLoading(false);
+          if (safetyTimer) { clearTimeout(safetyTimer); safetyTimer = null; }
         }
-        if (!cancelled) setLoading(false);
-      }
+      },
     );
 
     return () => {
       cancelled = true;
       subscription.unsubscribe();
+      if (safetyTimer) clearTimeout(safetyTimer);
     };
   }, []);
 
