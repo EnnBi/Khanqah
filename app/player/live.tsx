@@ -115,6 +115,12 @@ export default function LivePlayerScreen() {
       uploaded_by: liveSession.started_by,
       created_at: liveSession.started_at,
       updated_at: liveSession.started_at,
+      mirror_status: 'not_applicable',
+      mirror_format: null,
+      mirror_source_url: null,
+      mirror_error: null,
+      mirror_attempts: 0,
+      mirror_updated_at: liveSession.started_at,
     };
 
     playContent(syntheticContent);

@@ -14,6 +14,16 @@ export interface Category {
   type: ContentType; parent_id: string | null; sort_order: number;
 }
 
+export type MirrorStatus =
+  | 'pending'
+  | 'downloading'
+  | 'uploading'
+  | 'ready'
+  | 'failed'
+  | 'not_applicable';
+
+export type MirrorFormat = 'audio' | 'video';
+
 export interface Content {
   id: string; title_en: string; title_ur: string;
   description_en: string | null; description_ur: string | null;
@@ -21,6 +31,12 @@ export interface Content {
   thumbnail_url: string | null; duration: number | null;
   file_size: number | null; is_video: boolean;
   uploaded_by: string; created_at: string; updated_at: string;
+  mirror_status: MirrorStatus;
+  mirror_format: MirrorFormat | null;
+  mirror_source_url: string | null;
+  mirror_error: string | null;
+  mirror_attempts: number;
+  mirror_updated_at: string;
 }
 
 export interface Topic {

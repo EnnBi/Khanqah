@@ -22,6 +22,9 @@ describe('types', () => {
       thumbnail_url: null, duration: 2700, file_size: null,
       is_video: false, uploaded_by: '789',
       created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z',
+      mirror_status: 'not_applicable', mirror_format: null,
+      mirror_source_url: null, mirror_error: null,
+      mirror_attempts: 0, mirror_updated_at: '2026-01-01T00:00:00Z',
     };
     expect(content.type).toBe('bayan');
     expect(content.is_video).toBe(false);
