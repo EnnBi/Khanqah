@@ -637,7 +637,7 @@ export default function ManageContentScreen() {
                 style={styles.modalBtn}
                 onPress={async () => {
                   if (!failedRow) return;
-                  await supabase
+                  const { error } = await supabase
                     .from('content')
                     .update({
                       mirror_status: 'pending',
@@ -646,6 +646,15 @@ export default function ManageContentScreen() {
                       mirror_updated_at: new Date().toISOString(),
                     })
                     .eq('id', failedRow.id);
+                  if (!error) {
+                    setItems((prev) =>
+                      prev.map((i) =>
+                        i.id === failedRow.id
+                          ? { ...i, mirror_status: 'pending', mirror_attempts: 0, mirror_error: null }
+                          : i,
+                      ),
+                    );
+                  }
                   setFailedRow(null);
                 }}
               >

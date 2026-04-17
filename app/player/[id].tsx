@@ -99,6 +99,7 @@ export default function PlayerScreen() {
   // Start playback if this content isn't already playing
   useEffect(() => {
     if (!content) return;
+    if (!content.media_url) return;
     if (currentContent?.id !== content.id) {
       playContent(content);
     }
@@ -243,8 +244,19 @@ export default function PlayerScreen() {
           </Text>
         </View>
 
-        {/* ── Progress Bar (hidden for YouTube — its iframe has its own) ── */}
-        {!isYouTube && (
+        {/* ── Mirror-processing placeholder (no media_url yet) ── */}
+        {content && !content.media_url && content.mirror_status !== 'ready' && content.mirror_status !== 'not_applicable' && (
+          <View style={{ alignItems: 'center', paddingVertical: 32, paddingHorizontal: 24 }}>
+            <Text style={[{ color: c.textMuted, fontFamily: 'DMSans', textAlign: 'center', lineHeight: 18, fontSize: 13 }]}>
+              {content.mirror_status === 'failed'
+                ? 'The mirror for this content failed. Retry from the admin dashboard.'
+                : 'Mirroring this track to the archive — usually takes 5–15 min. This row is only visible to admins.'}
+            </Text>
+          </View>
+        )}
+
+        {/* ── Progress Bar (hidden for YouTube or when media_url is absent) ── */}
+        {!isYouTube && !!content?.media_url && (
         <View style={styles.progressSection}>
           <View
             ref={progressBarRef}
@@ -273,8 +285,8 @@ export default function PlayerScreen() {
         </View>
         )}
 
-        {/* ── Player Controls (hidden for YouTube) ── */}
-        {!isYouTube && (
+        {/* ── Player Controls (hidden for YouTube or when media_url is absent) ── */}
+        {!isYouTube && !!content?.media_url && (
         <View style={styles.controlsRow}>
           {/* Previous */}
           <TouchableOpacity
@@ -334,8 +346,8 @@ export default function PlayerScreen() {
         </View>
         )}
 
-        {/* ── Speed pill (hidden for YouTube) ── */}
-        {!isYouTube && (
+        {/* ── Speed pill (hidden for YouTube or when media_url is absent) ── */}
+        {!isYouTube && !!content?.media_url && (
         <View style={styles.speedRow}>
           <TouchableOpacity
             onPress={handleSpeedPress}
