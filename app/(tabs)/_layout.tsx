@@ -29,7 +29,7 @@ export default function TabLayout() {
           borderTopColor: colors.border,
           borderTopWidth: 1,
         },
-        tabBarActiveTintColor: colors.primaryLight,
+        tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarLabelStyle: {
           fontFamily: 'DMSans-Medium',
@@ -37,7 +37,6 @@ export default function TabLayout() {
           letterSpacing: 1.5,
           textTransform: 'uppercase',
         },
-        tabBarActiveTintColor: colors.primary,
       }}
     >
       <Tabs.Screen
