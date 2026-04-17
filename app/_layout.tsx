@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, View, Text } from 'react-native';
 import { Slot, useRouter, useSegments, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -59,14 +59,22 @@ function AuthGate() {
   }, [user?.id]);
 
   // App is public by default — no forced login redirect.
-  // Only redirect logged-in users away from the auth screens.
+  // Only redirect to tabs after a FRESH sign-in, not on every session detection.
+  // If the user is intentionally on the login screen, leave them alone.
+  const wasLoading = useRef(loading);
   useEffect(() => {
-    if (loading) return;
-    const inAuthGroup = segments[0] === '(auth)';
+    if (loading) {
+      wasLoading.current = true;
+      return;
+    }
 
-    if (session && inAuthGroup) {
+    // Only redirect if we just finished loading AND they're on an auth screen
+    // AND they have a fresh session. Don't fight the user's navigation later.
+    const inAuthGroup = segments[0] === '(auth)';
+    if (wasLoading.current && session && inAuthGroup) {
       router.replace('/(tabs)');
     }
+    wasLoading.current = false;
   }, [session, loading, segments]);
 
   if (loading) {

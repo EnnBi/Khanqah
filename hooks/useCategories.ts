@@ -9,21 +9,27 @@ export function useCategories() {
   useEffect(() => {
     let cancelled = false;
 
-    async function fetch() {
+    async function fetchCats() {
+      console.log('[useCategories] fetching');
       setLoading(true);
-      const { data } = await supabase
-        .from('categories')
-        .select('*')
-        .is('parent_id', null)
-        .order('sort_order', { ascending: true });
-
-      if (!cancelled) {
-        setCategories(data ?? []);
-        setLoading(false);
+      try {
+        const { data, error } = await supabase
+          .from('categories')
+          .select('*')
+          .is('parent_id', null)
+          .order('sort_order', { ascending: true });
+        console.log('[useCategories] response', { rows: data?.length, err: error?.message });
+        if (!cancelled) {
+          setCategories(data ?? []);
+          setLoading(false);
+        }
+      } catch (e: any) {
+        console.error('[useCategories] threw', e?.message ?? e);
+        if (!cancelled) setLoading(false);
       }
     }
 
-    fetch();
+    fetchCats();
     return () => { cancelled = true; };
   }, []);
 

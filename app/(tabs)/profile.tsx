@@ -214,7 +214,10 @@ export default function ProfileScreen() {
               </Text>
               <TouchableOpacity
                 style={[styles.signInBtn, { backgroundColor: c.accent }]}
-                onPress={() => router.push('/(auth)/login')}
+                onPress={() => {
+                  console.log('[profile] navigating to /login');
+                  router.push('/login' as any);
+                }}
                 activeOpacity={0.8}
               >
                 <Text style={[styles.signInText, { color: c.primary }]}>
