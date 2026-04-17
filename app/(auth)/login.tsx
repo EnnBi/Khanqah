@@ -74,6 +74,7 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       await verifyOtp(phone.trim(), otp.trim());
+      router.replace('/(tabs)');
     } catch (err: any) {
       showError(err?.message ?? 'Invalid code. Please try again.');
     } finally {
@@ -98,6 +99,7 @@ export default function LoginScreen() {
       } else {
         await signInWithEmail(email.trim(), password);
       }
+      router.replace('/(tabs)');
     } catch (err: any) {
       showError(err?.message ?? 'Something went wrong.');
     } finally {
@@ -110,6 +112,7 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       await signInWithGoogle();
+      router.replace('/(tabs)');
     } catch (err: any) {
       showError(err?.message ?? 'Google sign-in failed.');
     } finally {
