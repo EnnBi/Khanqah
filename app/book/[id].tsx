@@ -35,6 +35,7 @@ export default function BookViewerScreen() {
   const [webViewLoading, setWebViewLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   // Fetch content from supabase
   useEffect(() => {
@@ -101,7 +102,7 @@ export default function BookViewerScreen() {
       const { uri } = await FileSystem.downloadAsync(content.media_url, destPath);
       setDownloading(false);
       Alert.alert('Download complete', `Saved to:\n${uri}`);
-    } catch (err) {
+    } catch {
       setDownloading(false);
       Alert.alert('Download failed', 'Could not download the book. Please try again.');
     }
@@ -110,9 +111,6 @@ export default function BookViewerScreen() {
   const title = content
     ? content.title_en || content.title_ur || 'Book'
     : 'Book';
-
-  const headerBg = c.headerBg;
-  const headerText = '#ffffff';
 
   // --- Loading state ---
   if (loading) {
@@ -126,29 +124,34 @@ export default function BookViewerScreen() {
   // --- Error state ---
   if (error || !content) {
     return (
-      <View style={[styles.screen, { backgroundColor: c.background, paddingTop: insets.top }]}>
-        <View style={[styles.header, { backgroundColor: headerBg }]}>
+      <View style={[styles.screen, { backgroundColor: c.background }]}>
+        <View
+          style={[
+            styles.topBar,
+            { backgroundColor: c.background, paddingTop: insets.top + 8, borderBottomColor: c.hairline },
+          ]}
+        >
           <TouchableOpacity
-            style={styles.headerBtn}
+            style={styles.topBarBtn}
             onPress={() => router.back()}
             accessibilityLabel="Go back"
           >
-            <Text style={[styles.backArrow, { color: headerText }]}>‹</Text>
+            <Text style={[styles.backArrow, { color: c.primary }]}>{'‹'}</Text>
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: headerText }]} numberOfLines={1}>
+          <Text style={[styles.topBarTitle, { color: c.text }]} numberOfLines={1}>
             Book
           </Text>
-          <View style={styles.headerBtn} />
+          <View style={styles.topBarBtn} />
         </View>
         <View style={styles.centered}>
-          <Text style={[styles.errorText, { color: c.textSecondary }]}>
+          <Text style={[styles.errorText, { color: c.textMuted }]}>
             {error ?? 'Something went wrong.'}
           </Text>
           <TouchableOpacity
             style={[styles.retryBtn, { backgroundColor: c.primary }]}
             onPress={() => router.back()}
           >
-            <Text style={styles.retryBtnText}>Go Back</Text>
+            <Text style={[styles.retryBtnText, { color: c.gold }]}>GO BACK</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -159,41 +162,47 @@ export default function BookViewerScreen() {
 
   return (
     <View style={[styles.screen, { backgroundColor: c.background }]}>
-      {/* Header */}
+      {/* Minimal top bar */}
       <View
         style={[
-          styles.header,
-          { backgroundColor: headerBg, paddingTop: insets.top },
+          styles.topBar,
+          { backgroundColor: c.background, paddingTop: insets.top + 8, borderBottomColor: c.hairline },
         ]}
       >
+        {/* Back */}
         <TouchableOpacity
-          style={styles.headerBtn}
+          style={styles.topBarBtn}
           onPress={() => router.back()}
           accessibilityLabel="Go back"
         >
-          <Text style={[styles.backArrow, { color: headerText }]}>‹</Text>
+          <Text style={[styles.backArrow, { color: c.primary }]}>{'‹'}</Text>
         </TouchableOpacity>
 
-        <Text style={[styles.headerTitle, { color: headerText }]} numberOfLines={1}>
+        {/* Title */}
+        <Text style={[styles.topBarTitle, { color: c.text }]} numberOfLines={1}>
           {title}
         </Text>
 
+        {/* Menu (⋮) — triggers download */}
         <TouchableOpacity
-          style={styles.headerBtn}
-          onPress={handleDownload}
+          style={styles.topBarBtn}
+          onPress={() => {
+            setMenuOpen(!menuOpen);
+            handleDownload();
+          }}
           disabled={downloading}
-          accessibilityLabel="Download book"
+          accessibilityLabel="More options"
         >
           {downloading ? (
-            <ActivityIndicator size="small" color={headerText} />
+            <ActivityIndicator size="small" color={c.primary} />
           ) : (
-            <Text style={[styles.downloadIcon, { color: headerText }]}>⬇</Text>
+            <Text style={[styles.menuIcon, { color: c.primary }]}>{'⋮'}</Text>
           )}
         </TouchableOpacity>
       </View>
 
-      {/* WebView */}
-      <View style={styles.webViewContainer}>
+      {/* WebView area with cream surround */}
+      <View style={[styles.webViewSurround, { backgroundColor: c.background }]}>
         <WebView
           source={{ uri: viewerUrl }}
           style={styles.webView}
@@ -205,7 +214,7 @@ export default function BookViewerScreen() {
           domStorageEnabled
           startInLoadingState={false}
           allowsInlineMediaPlayback
-          onNavigationStateChange={(navState: WebViewNavigation) => {
+          onNavigationStateChange={(_navState: WebViewNavigation) => {
             // Allow navigation within the viewer
           }}
           onError={() => {
@@ -218,7 +227,7 @@ export default function BookViewerScreen() {
         {webViewLoading && (
           <View style={[styles.webViewOverlay, { backgroundColor: c.background }]}>
             <ActivityIndicator size="large" color={c.primary} />
-            <Text style={[styles.loadingText, { color: c.textSecondary }]}>
+            <Text style={[styles.loadingText, { color: c.textMuted }]}>
               Loading book...
             </Text>
           </View>
@@ -236,44 +245,45 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 16,
+    gap: 20,
     padding: 24,
   },
 
-  // Header
-  header: {
+  // Top bar
+  topBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 8,
+    paddingHorizontal: 12,
     paddingBottom: 10,
-    minHeight: 52,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  headerBtn: {
+  topBarBtn: {
     width: 44,
     height: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
   backArrow: {
-    fontSize: 32,
-    fontWeight: '300',
-    lineHeight: 36,
-    marginTop: -4,
+    fontFamily: 'CrimsonPro',
+    fontSize: 34,
+    lineHeight: 38,
   },
-  headerTitle: {
+  topBarTitle: {
     flex: 1,
-    fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'CrimsonPro-Medium',
+    fontSize: 17,
     textAlign: 'center',
     marginHorizontal: 4,
   },
-  downloadIcon: {
-    fontSize: 20,
+  menuIcon: {
+    fontSize: 22,
+    fontWeight: '700',
+    lineHeight: 24,
   },
 
   // WebView
-  webViewContainer: {
+  webViewSurround: {
     flex: 1,
     position: 'relative',
   },
@@ -287,23 +297,26 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   loadingText: {
-    fontSize: 14,
+    fontFamily: 'CrimsonPro-Italic',
+    fontSize: 16,
   },
 
   // Error
   errorText: {
-    fontSize: 15,
+    fontFamily: 'CrimsonPro-Italic',
+    fontSize: 18,
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: 26,
   },
   retryBtn: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+    borderRadius: 4,
   },
   retryBtnText: {
-    color: '#ffffff',
-    fontSize: 15,
-    fontWeight: '600',
+    fontFamily: 'DMSans-SemiBold',
+    fontSize: 11,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
   },
 });

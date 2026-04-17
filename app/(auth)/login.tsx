@@ -11,6 +11,7 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useI18n } from '../../providers/I18nProvider';
 import { useAuth } from '../../providers/AuthProvider';
@@ -20,6 +21,7 @@ type AuthMode = 'phone' | 'email' | 'signup';
 export default function LoginScreen() {
   const { theme } = useTheme();
   const { t } = useI18n();
+  const router = useRouter();
   const {
     signInWithEmail, signUpWithEmail,
     signInWithPhone, verifyOtp,
@@ -28,6 +30,7 @@ export default function LoginScreen() {
 
   const [mode, setMode] = useState<AuthMode>('phone');
   const [loading, setLoading] = useState(false);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
 
   // Phone OTP state
   const [phone, setPhone] = useState('');
@@ -106,237 +109,435 @@ export default function LoginScreen() {
     }
   }
 
+  function getInputStyle(fieldName: string) {
+    return [
+      styles.input,
+      { color: c.text, borderBottomColor: focusedField === fieldName ? c.gold : c.border },
+    ];
+  }
+
   return (
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor: c.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={[styles.appName, { color: c.primary }]}>Khanqah Maseeh-ul-Ummah</Text>
-          <Text style={[styles.arabicText, { color: c.gold }]}>خانقاہ مسیح الامت</Text>
-          <Text style={[styles.subtitle, { color: c.textSecondary }]}>
-            Hazrat Mufti Abdur Rasheed Miftahi Sahab
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Logo block */}
+        <View style={styles.logoBlock}>
+          <Text style={[styles.logoTitle, { color: c.primary }]}>Khanqah</Text>
+          <Text style={[styles.logoSubtitle, { color: c.textSecondary }]}>
+            Maseeh-ul-Ummah
+          </Text>
+          <Text style={[styles.logoUrdu, { color: c.gold }]}>
+            خانقاہ مسیح الامت
+          </Text>
+          <Text style={[styles.tagline, { color: c.textMuted }]}>
+            SEEKING NEARNESS THROUGH SOUND
           </Text>
         </View>
 
-        <View style={[styles.card, { backgroundColor: c.surface }]}>
-
-          {/* Google Sign In */}
-          <TouchableOpacity
-            style={[styles.googleBtn, { borderColor: c.border }]}
-            onPress={handleGoogleSignIn}
-            disabled={loading}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.googleIcon}>G</Text>
-            <Text style={[styles.googleText, { color: c.text }]}>
-              {t('auth.googleSignIn') || 'Continue with Google'}
-            </Text>
-          </TouchableOpacity>
-
-          {/* Divider */}
-          <View style={styles.dividerRow}>
-            <View style={[styles.dividerLine, { backgroundColor: c.border }]} />
-            <Text style={[styles.dividerText, { color: c.textMuted }]}>or</Text>
-            <View style={[styles.dividerLine, { backgroundColor: c.border }]} />
-          </View>
-
-          {/* Mode tabs: Phone | Email */}
-          <View style={styles.modeTabs}>
-            <TouchableOpacity
-              style={[
-                styles.modeTab,
-                (mode === 'phone') && { borderBottomColor: c.primary, borderBottomWidth: 2 },
-              ]}
-              onPress={() => { setMode('phone'); setOtpSent(false); setOtp(''); }}
-            >
-              <Text style={[styles.modeTabText, { color: mode === 'phone' ? c.primary : c.textMuted }]}>
-                Phone
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.modeTab,
-                (mode === 'email' || mode === 'signup') && { borderBottomColor: c.primary, borderBottomWidth: 2 },
-              ]}
-              onPress={() => setMode('email')}
-            >
-              <Text style={[styles.modeTabText, { color: (mode === 'email' || mode === 'signup') ? c.primary : c.textMuted }]}>
-                Email
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Phone OTP Form */}
-          {mode === 'phone' && (
-            <View style={styles.form}>
-              {!otpSent ? (
-                <>
-                  <Text style={[styles.label, { color: c.textSecondary }]}>Phone Number</Text>
-                  <TextInput
-                    style={[styles.input, { backgroundColor: c.surface2, color: c.text, borderColor: c.border }]}
-                    placeholder="+91 98765 43210"
-                    placeholderTextColor={c.textMuted}
-                    value={phone}
-                    onChangeText={setPhone}
-                    keyboardType="phone-pad"
-                    autoComplete="tel"
-                  />
-                  <TouchableOpacity
-                    style={[styles.button, { backgroundColor: c.primary }, loading && styles.buttonDisabled]}
-                    onPress={handleSendOtp}
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <ActivityIndicator color="#fff" />
-                    ) : (
-                      <Text style={styles.buttonText}>Send OTP</Text>
-                    )}
-                  </TouchableOpacity>
-                </>
-              ) : (
-                <>
-                  <Text style={[styles.otpInfo, { color: c.textSecondary }]}>
-                    Code sent to {phone}
-                  </Text>
-                  <TextInput
-                    style={[styles.input, styles.otpInput, { backgroundColor: c.surface2, color: c.text, borderColor: c.border }]}
-                    placeholder="000000"
-                    placeholderTextColor={c.textMuted}
-                    value={otp}
-                    onChangeText={setOtp}
-                    keyboardType="number-pad"
-                    maxLength={6}
-                    autoFocus
-                  />
-                  <TouchableOpacity
-                    style={[styles.button, { backgroundColor: c.primary }, loading && styles.buttonDisabled]}
-                    onPress={handleVerifyOtp}
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <ActivityIndicator color="#fff" />
-                    ) : (
-                      <Text style={styles.buttonText}>Verify</Text>
-                    )}
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => { setOtpSent(false); setOtp(''); }} style={styles.resendBtn}>
-                    <Text style={[styles.resendText, { color: c.primary }]}>Resend code</Text>
-                  </TouchableOpacity>
-                </>
-              )}
-            </View>
-          )}
-
-          {/* Email Form */}
-          {(mode === 'email' || mode === 'signup') && (
-            <View style={styles.form}>
-              {mode === 'signup' && (
-                <>
-                  <Text style={[styles.label, { color: c.textSecondary }]}>Name</Text>
-                  <TextInput
-                    style={[styles.input, { backgroundColor: c.surface2, color: c.text, borderColor: c.border }]}
-                    placeholder="Your name"
-                    placeholderTextColor={c.textMuted}
-                    value={name}
-                    onChangeText={setName}
-                    autoCapitalize="words"
-                  />
-                </>
-              )}
-              <Text style={[styles.label, { color: c.textSecondary }]}>{t('auth.email') || 'Email'}</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: c.surface2, color: c.text, borderColor: c.border }]}
-                placeholder="you@example.com"
-                placeholderTextColor={c.textMuted}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-              <Text style={[styles.label, { color: c.textSecondary }]}>{t('auth.password') || 'Password'}</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: c.surface2, color: c.text, borderColor: c.border }]}
-                placeholder="••••••••"
-                placeholderTextColor={c.textMuted}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-              />
+        {/* Tabs: Phone / Email / Google */}
+        <View style={[styles.tabRow, { borderBottomColor: c.hairline }]}>
+          {(['phone', 'email'] as AuthMode[]).map((tab) => {
+            const isActive = mode === tab || (tab === 'email' && mode === 'signup');
+            return (
               <TouchableOpacity
-                style={[styles.button, { backgroundColor: c.primary }, loading && styles.buttonDisabled]}
-                onPress={handleEmailSubmit}
-                disabled={loading}
+                key={tab}
+                style={styles.tab}
+                onPress={() => {
+                  if (tab === 'phone') { setMode('phone'); setOtpSent(false); setOtp(''); }
+                  else { setMode('email'); }
+                }}
+                activeOpacity={0.7}
               >
-                {loading ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={styles.buttonText}>
-                    {mode === 'signup' ? (t('auth.signUp') || 'Sign Up') : (t('auth.signIn') || 'Sign In')}
-                  </Text>
+                <Text style={[styles.tabText, { color: isActive ? c.primary : c.textMuted }]}>
+                  {tab === 'phone' ? 'Phone' : 'Email'}
+                </Text>
+                {isActive && (
+                  <View style={[styles.tabUnderline, { backgroundColor: c.gold }]} />
                 )}
               </TouchableOpacity>
-              <View style={styles.toggleRow}>
-                <Text style={[styles.toggleLabel, { color: c.textSecondary }]}>
-                  {mode === 'signup' ? (t('auth.haveAccount') || 'Already have an account?') : (t('auth.noAccount') || "Don't have an account?")}
-                </Text>
-                <TouchableOpacity onPress={() => setMode(mode === 'signup' ? 'email' : 'signup')}>
-                  <Text style={[styles.toggleLink, { color: c.primary }]}>
-                    {mode === 'signup' ? (t('auth.signIn') || 'Sign In') : (t('auth.signUp') || 'Sign Up')}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-
+            );
+          })}
         </View>
+
+        {/* Phone OTP Form */}
+        {mode === 'phone' && (
+          <View style={styles.form}>
+            {!otpSent ? (
+              <>
+                <Text style={[styles.label, { color: c.textMuted }]}>PHONE NUMBER</Text>
+                <TextInput
+                  style={getInputStyle('phone')}
+                  placeholder="+91 98765 43210"
+                  placeholderTextColor={c.textMuted}
+                  value={phone}
+                  onChangeText={setPhone}
+                  keyboardType="phone-pad"
+                  autoComplete="tel"
+                  onFocus={() => setFocusedField('phone')}
+                  onBlur={() => setFocusedField(null)}
+                />
+                <TouchableOpacity
+                  style={[styles.primaryBtn, { backgroundColor: c.primary }, loading && styles.btnDisabled]}
+                  onPress={handleSendOtp}
+                  disabled={loading}
+                  activeOpacity={0.85}
+                >
+                  {loading ? (
+                    <ActivityIndicator color={c.gold} />
+                  ) : (
+                    <Text style={[styles.primaryBtnText, { color: c.gold }]}>SEND CODE</Text>
+                  )}
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <Text style={[styles.otpHint, { color: c.textMuted }]}>
+                  Code sent to {phone}
+                </Text>
+                <TextInput
+                  style={[getInputStyle('otp'), styles.otpInput, { color: c.text }]}
+                  placeholder="000000"
+                  placeholderTextColor={c.textMuted}
+                  value={otp}
+                  onChangeText={setOtp}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  autoFocus
+                  onFocus={() => setFocusedField('otp')}
+                  onBlur={() => setFocusedField(null)}
+                />
+                <TouchableOpacity
+                  style={[styles.primaryBtn, { backgroundColor: c.primary }, loading && styles.btnDisabled]}
+                  onPress={handleVerifyOtp}
+                  disabled={loading}
+                  activeOpacity={0.85}
+                >
+                  {loading ? (
+                    <ActivityIndicator color={c.gold} />
+                  ) : (
+                    <Text style={[styles.primaryBtnText, { color: c.gold }]}>VERIFY</Text>
+                  )}
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.resendRow}
+                  onPress={() => { setOtpSent(false); setOtp(''); }}
+                >
+                  <Text style={[styles.resendText, { color: c.textMuted }]}>RESEND CODE</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        )}
+
+        {/* Email Form */}
+        {(mode === 'email' || mode === 'signup') && (
+          <View style={styles.form}>
+            {mode === 'signup' && (
+              <>
+                <Text style={[styles.label, { color: c.textMuted }]}>YOUR NAME</Text>
+                <TextInput
+                  style={getInputStyle('name')}
+                  placeholder="Full name"
+                  placeholderTextColor={c.textMuted}
+                  value={name}
+                  onChangeText={setName}
+                  autoCapitalize="words"
+                  onFocus={() => setFocusedField('name')}
+                  onBlur={() => setFocusedField(null)}
+                />
+              </>
+            )}
+            <Text style={[styles.label, { color: c.textMuted }]}>
+              {t('auth.email') || 'EMAIL ADDRESS'}
+            </Text>
+            <TextInput
+              style={getInputStyle('email')}
+              placeholder="you@example.com"
+              placeholderTextColor={c.textMuted}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              onFocus={() => setFocusedField('email')}
+              onBlur={() => setFocusedField(null)}
+            />
+            <Text style={[styles.label, { color: c.textMuted }]}>
+              {t('auth.password') || 'PASSWORD'}
+            </Text>
+            <TextInput
+              style={getInputStyle('password')}
+              placeholder="••••••••"
+              placeholderTextColor={c.textMuted}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              onFocus={() => setFocusedField('password')}
+              onBlur={() => setFocusedField(null)}
+            />
+            <TouchableOpacity
+              style={[styles.primaryBtn, { backgroundColor: c.primary }, loading && styles.btnDisabled]}
+              onPress={handleEmailSubmit}
+              disabled={loading}
+              activeOpacity={0.85}
+            >
+              {loading ? (
+                <ActivityIndicator color={c.gold} />
+              ) : (
+                <Text style={[styles.primaryBtnText, { color: c.gold }]}>
+                  {mode === 'signup'
+                    ? (t('auth.signUp') || 'CREATE ACCOUNT')
+                    : (t('auth.signIn') || 'SIGN IN')}
+                </Text>
+              )}
+            </TouchableOpacity>
+            <View style={styles.toggleRow}>
+              <Text style={[styles.toggleLabel, { color: c.textMuted }]}>
+                {mode === 'signup'
+                  ? (t('auth.haveAccount') || 'Already have an account?')
+                  : (t('auth.noAccount') || "Don't have an account?")}
+              </Text>
+              <TouchableOpacity onPress={() => setMode(mode === 'signup' ? 'email' : 'signup')}>
+                <Text style={[styles.toggleLink, { color: c.primary }]}>
+                  {mode === 'signup'
+                    ? (t('auth.signIn') || ' Sign In')
+                    : (t('auth.signUp') || ' Sign Up')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* Divider */}
+        <View style={styles.dividerRow}>
+          <View style={[styles.dividerLine, { backgroundColor: c.hairline }]} />
+          <Text style={[styles.dividerText, { color: c.textMuted }]}>or</Text>
+          <View style={[styles.dividerLine, { backgroundColor: c.hairline }]} />
+        </View>
+
+        {/* Google button */}
+        <TouchableOpacity
+          style={[styles.googleBtn, { borderColor: c.border }]}
+          onPress={handleGoogleSignIn}
+          disabled={loading}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.googleG, { color: '#4285F4' }]}>G</Text>
+          <Text style={[styles.googleBtnText, { color: c.text }]}>
+            {t('auth.googleSignIn') || 'Continue with Google'}
+          </Text>
+        </TouchableOpacity>
+
+        {/* Guest link */}
+        <TouchableOpacity
+          style={styles.guestRow}
+          onPress={() => router.replace('/(tabs)')}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.guestText, { color: c.textMuted }]}>CONTINUE AS GUEST</Text>
+        </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  scroll: { flexGrow: 1, justifyContent: 'center', padding: 24 },
-  header: { alignItems: 'center', marginBottom: 32 },
-  appName: { fontSize: 24, fontWeight: '700', textAlign: 'center', marginBottom: 6 },
-  arabicText: { fontFamily: 'NastaleeqUrdu', fontSize: 26, textAlign: 'center', marginBottom: 4, lineHeight: 42 },
-  subtitle: { fontSize: 13, textAlign: 'center' },
-  card: { borderRadius: 16, padding: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 3 },
+  container: {
+    flex: 1,
+  },
+  scroll: {
+    flexGrow: 1,
+    paddingHorizontal: 32,
+    paddingTop: 72,
+    paddingBottom: 40,
+  },
 
-  // Google button
-  googleBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 10, paddingVertical: 12, gap: 10 },
-  googleIcon: { fontSize: 18, fontWeight: '700', color: '#4285F4' },
-  googleText: { fontSize: 15, fontWeight: '500' },
+  // Logo block
+  logoBlock: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  logoTitle: {
+    fontFamily: 'CrimsonPro-SemiBold',
+    fontSize: 48,
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  logoSubtitle: {
+    fontFamily: 'CrimsonPro-Italic',
+    fontSize: 20,
+    marginBottom: 8,
+  },
+  logoUrdu: {
+    fontFamily: 'NastaleeqUrdu',
+    fontSize: 28,
+    lineHeight: 48,
+    textAlign: 'center',
+    writingDirection: 'rtl',
+    marginBottom: 12,
+  },
+  tagline: {
+    fontFamily: 'DMSans',
+    fontSize: 10,
+    letterSpacing: 2.5,
+    textTransform: 'uppercase',
+  },
 
-  // Divider
-  dividerRow: { flexDirection: 'row', alignItems: 'center', marginVertical: 16 },
-  dividerLine: { flex: 1, height: 1 },
-  dividerText: { marginHorizontal: 12, fontSize: 13 },
-
-  // Mode tabs
-  modeTabs: { flexDirection: 'row', marginBottom: 16 },
-  modeTab: { flex: 1, alignItems: 'center', paddingBottom: 10, borderBottomWidth: 2, borderBottomColor: 'transparent' },
-  modeTabText: { fontSize: 15, fontWeight: '600' },
+  // Tabs
+  tabRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    marginBottom: 28,
+  },
+  tab: {
+    flex: 1,
+    alignItems: 'center',
+    paddingBottom: 10,
+  },
+  tabText: {
+    fontFamily: 'DMSans-Medium',
+    fontSize: 13,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+  },
+  tabUnderline: {
+    position: 'absolute',
+    bottom: -1,
+    left: '20%',
+    right: '20%',
+    height: 2,
+    borderRadius: 1,
+  },
 
   // Form
-  form: { marginTop: 4 },
-  label: { fontSize: 13, marginBottom: 6, marginTop: 10 },
-  input: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15 },
-  button: { borderRadius: 10, paddingVertical: 14, alignItems: 'center', marginTop: 20 },
-  buttonDisabled: { opacity: 0.65 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  form: {
+    marginBottom: 8,
+  },
+  label: {
+    fontFamily: 'DMSans',
+    fontSize: 10,
+    letterSpacing: 1.8,
+    textTransform: 'uppercase',
+    marginTop: 20,
+    marginBottom: 6,
+  },
+  input: {
+    fontFamily: 'CrimsonPro',
+    fontSize: 18,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    backgroundColor: 'transparent',
+  },
+
+  // Primary button
+  primaryBtn: {
+    height: 52,
+    borderRadius: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 28,
+  },
+  btnDisabled: {
+    opacity: 0.65,
+  },
+  primaryBtnText: {
+    fontFamily: 'DMSans-SemiBold',
+    fontSize: 12,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+  },
 
   // OTP
-  otpInfo: { fontSize: 13, textAlign: 'center', marginBottom: 12 },
-  otpInput: { textAlign: 'center', fontSize: 24, letterSpacing: 8 },
-  resendBtn: { alignItems: 'center', marginTop: 16 },
-  resendText: { fontSize: 14, fontWeight: '500' },
+  otpHint: {
+    fontFamily: 'DMSans',
+    fontSize: 13,
+    textAlign: 'center',
+    marginBottom: 16,
+    marginTop: 8,
+  },
+  otpInput: {
+    textAlign: 'center',
+    fontSize: 28,
+    letterSpacing: 10,
+  },
+  resendRow: {
+    alignItems: 'center',
+    marginTop: 18,
+  },
+  resendText: {
+    fontFamily: 'DMSans',
+    fontSize: 10,
+    letterSpacing: 1.8,
+    textTransform: 'uppercase',
+  },
 
-  // Toggle
-  toggleRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 16, flexWrap: 'wrap' },
-  toggleLabel: { fontSize: 14 },
-  toggleLink: { fontSize: 14, fontWeight: '600', marginLeft: 4 },
+  // Toggle sign-in / sign-up
+  toggleRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 18,
+    flexWrap: 'wrap',
+    gap: 4,
+  },
+  toggleLabel: {
+    fontFamily: 'DMSans',
+    fontSize: 13,
+  },
+  toggleLink: {
+    fontFamily: 'DMSans-SemiBold',
+    fontSize: 13,
+  },
+
+  // Divider
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 24,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+  },
+  dividerText: {
+    fontFamily: 'DMSans',
+    fontSize: 12,
+    marginHorizontal: 16,
+  },
+
+  // Google button
+  googleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderRadius: 4,
+    paddingVertical: 14,
+    gap: 12,
+  },
+  googleG: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  googleBtnText: {
+    fontFamily: 'CrimsonPro',
+    fontSize: 17,
+  },
+
+  // Guest link
+  guestRow: {
+    alignItems: 'center',
+    marginTop: 24,
+    paddingVertical: 4,
+  },
+  guestText: {
+    fontFamily: 'DMSans',
+    fontSize: 10,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+  },
 });

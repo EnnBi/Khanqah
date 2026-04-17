@@ -9,6 +9,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
 import { Content, Category } from '../../lib/types';
 import { ContentCard } from '../../components/ContentCard';
@@ -17,11 +18,22 @@ import { useI18n } from '../../providers/I18nProvider';
 
 const PAGE_SIZE = 20;
 
+// Map content type to a display kicker label
+const TYPE_KICKER: Record<string, string> = {
+  bayan: 'BAYANS · DISCOURSES',
+  clip: 'CLIPS · HIGHLIGHTS',
+  nazam: 'NAZAMS · POETRY',
+  quran: 'QURAN · RECITATION',
+  hamd_naat: 'HAMD & NAAT',
+  book: 'BOOKS · TEXTS',
+};
+
 export default function CategoryListingScreen() {
   const { categoryId } = useLocalSearchParams<{ categoryId: string }>();
   const router = useRouter();
   const { theme } = useTheme();
   const { language } = useI18n();
+  const insets = useSafeAreaInsets();
 
   const [category, setCategory] = useState<Category | null>(null);
   const [content, setContent] = useState<Content[]>([]);
@@ -29,6 +41,8 @@ export default function CategoryListingScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+
+  const c = theme.colors;
 
   // Fetch category name
   useEffect(() => {
@@ -124,6 +138,10 @@ export default function CategoryListingScreen() {
       : category.name_en
     : '';
 
+  const categoryNameArabic = category ? category.name_ur : '';
+  const kicker = category ? (TYPE_KICKER[category.type] ?? 'CONTENT') : '';
+  const contentCount = content.length;
+
   const renderItem = ({ item }: { item: Content }) => (
     <ContentCard
       content={item}
@@ -136,7 +154,7 @@ export default function CategoryListingScreen() {
     if (loading) return null;
     return (
       <View style={styles.emptyContainer}>
-        <Text style={[styles.emptyText, { color: theme.colors.textMuted }]}>
+        <Text style={[styles.emptyText, { color: c.textMuted }]}>
           No content available
         </Text>
       </View>
@@ -147,33 +165,67 @@ export default function CategoryListingScreen() {
     if (!loadingMore) return null;
     return (
       <View style={styles.footerLoader}>
-        <ActivityIndicator size="small" color={theme.colors.primary} />
+        <ActivityIndicator size="small" color={c.primary} />
       </View>
     );
   };
 
-  return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: theme.colors.headerBg }]}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backIcon}>‹</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>
-          {categoryName}
-        </Text>
-        <View style={styles.backBtn} />
+  // Hero header rendered as FlatList ListHeaderComponent
+  const renderHeader = () => (
+    <View style={[styles.hero, { backgroundColor: c.primary, paddingTop: insets.top + 12 }]}>
+      {/* Concentric circles decoration (top-right) */}
+      <View style={styles.circlesWrap} pointerEvents="none">
+        <View style={[styles.circle, styles.circle1, { borderColor: 'rgba(212,168,83,0.12)' }]} />
+        <View style={[styles.circle, styles.circle2, { borderColor: 'rgba(212,168,83,0.08)' }]} />
+        <View style={[styles.circle, styles.circle3, { borderColor: 'rgba(212,168,83,0.05)' }]} />
       </View>
 
+      {/* Back button */}
+      <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
+        <Text style={[styles.backText, { color: c.gold }]}>{'‹ BACK'}</Text>
+      </TouchableOpacity>
+
+      {/* Kicker */}
+      {kicker ? (
+        <Text style={[styles.kicker, { color: c.gold }]}>{kicker}</Text>
+      ) : null}
+
+      {/* Category title */}
+      <Text style={[styles.heroTitle, { color: '#f7f5f0' }]} numberOfLines={2}>
+        {categoryName}
+      </Text>
+
+      {/* Arabic / Urdu name */}
+      {categoryNameArabic ? (
+        <Text style={[styles.heroArabic, { color: c.gold }]}>
+          {categoryNameArabic}
+        </Text>
+      ) : null}
+
+      {/* Count */}
+      {!loading && (
+        <Text style={[styles.heroCount, { color: 'rgba(247,245,240,0.55)' }]}>
+          {contentCount} {contentCount === 1 ? 'ITEM' : 'ITEMS'}
+        </Text>
+      )}
+    </View>
+  );
+
+  return (
+    <View style={[styles.container, { backgroundColor: c.background }]}>
       {loading ? (
-        <View style={styles.loaderWrapper}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-        </View>
+        <>
+          {renderHeader()}
+          <View style={styles.loaderWrapper}>
+            <ActivityIndicator size="large" color={c.primary} />
+          </View>
+        </>
       ) : (
         <FlatList
           data={content}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
+          ListHeaderComponent={renderHeader}
           ListEmptyComponent={renderEmpty}
           ListFooterComponent={renderFooter}
           onEndReached={handleEndReached}
@@ -182,7 +234,7 @@ export default function CategoryListingScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              tintColor={theme.colors.primary}
+              tintColor={c.primary}
             />
           }
           contentContainerStyle={styles.list}
@@ -197,47 +249,98 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 56,
-    paddingBottom: 16,
-    paddingHorizontal: 12,
+
+  // Hero
+  hero: {
+    paddingHorizontal: 24,
+    paddingBottom: 28,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  circlesWrap: {
+    position: 'absolute',
+    top: -60,
+    right: -60,
+  },
+  circle: {
+    position: 'absolute',
+    borderWidth: 1,
+    borderRadius: 999,
+  },
+  circle1: {
+    width: 160,
+    height: 160,
+    top: 0,
+    right: 0,
+  },
+  circle2: {
+    width: 240,
+    height: 240,
+    top: -40,
+    right: -40,
+  },
+  circle3: {
+    width: 320,
+    height: 320,
+    top: -80,
+    right: -80,
   },
   backBtn: {
-    width: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignSelf: 'flex-start',
+    marginBottom: 20,
+    paddingVertical: 4,
   },
-  backIcon: {
-    fontSize: 32,
-    color: '#ffffff',
-    lineHeight: 36,
+  backText: {
+    fontFamily: 'DMSans-Medium',
+    fontSize: 11,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
   },
-  headerTitle: {
-    flex: 1,
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#ffffff',
-    textAlign: 'center',
+  kicker: {
+    fontFamily: 'DMSans',
+    fontSize: 10,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginBottom: 8,
   },
+  heroTitle: {
+    fontFamily: 'CrimsonPro-SemiBold',
+    fontSize: 38,
+    lineHeight: 44,
+    marginBottom: 8,
+  },
+  heroArabic: {
+    fontFamily: 'NastaleeqUrdu',
+    fontSize: 24,
+    lineHeight: 40,
+    writingDirection: 'rtl',
+    textAlign: 'left',
+    marginBottom: 10,
+  },
+  heroCount: {
+    fontFamily: 'DMSans',
+    fontSize: 10,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    marginTop: 4,
+  },
+
+  // List
   loaderWrapper: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   list: {
-    paddingTop: 8,
     paddingBottom: 80,
   },
   emptyContainer: {
-    flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
     paddingTop: 80,
   },
   emptyText: {
-    fontSize: 16,
+    fontFamily: 'CrimsonPro-Italic',
+    fontSize: 18,
   },
   footerLoader: {
     paddingVertical: 16,
