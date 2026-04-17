@@ -1,10 +1,10 @@
-// Web storage backend for bug-reporter using IndexedDB.
-// Metro resolves this file on web and the .ts file on native.
+// Web entry point for bug-reporter.
+// Re-exports the platform-agnostic core and adds IndexedDB storage.
 
-import type { Storage } from './bug-reporter';
+import type { Storage } from './bug-reporter-core';
 import { BugReport } from './bug-reporter-types';
 
-export * from './bug-reporter';
+export * from './bug-reporter-core';
 
 const DB_NAME = 'khanqah-bug-reports';
 const STORE = 'reports';
