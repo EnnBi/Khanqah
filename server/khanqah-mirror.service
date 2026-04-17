@@ -1,0 +1,18 @@
+[Unit]
+Description=Khanqah YouTube → archive.org mirror worker
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/khanqah
+EnvironmentFile=/opt/khanqah/.env
+ExecStart=/usr/bin/node /opt/khanqah/mirror-worker.js
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target

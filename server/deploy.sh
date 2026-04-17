@@ -11,7 +11,7 @@ echo "=== Khanqah Live Streaming Server Setup ==="
 
 # Install dependencies
 apt-get update
-apt-get install -y nginx libnginx-mod-rtmp ffmpeg curl
+apt-get install -y nginx libnginx-mod-rtmp ffmpeg curl yt-dlp
 
 # Create directories
 mkdir -p /tmp/recordings /tmp/hls /opt/khanqah
@@ -60,6 +60,17 @@ chmod +x /opt/khanqah/record-and-upload.sh
 # Copy remote config (edit this file with your real values!)
 cp config.json /opt/khanqah/config.json
 
+# Mirror worker: copy sources, install deps, enable systemd unit.
+cp mirror-worker.js /opt/khanqah/mirror-worker.js
+cp mirror-jobs.js   /opt/khanqah/mirror-jobs.js
+cp mirror-lib.js    /opt/khanqah/mirror-lib.js
+cp package.json     /opt/khanqah/package.json
+(cd /opt/khanqah && npm install --omit=dev --no-audit --no-fund)
+
+cp khanqah-mirror.service /etc/systemd/system/khanqah-mirror.service
+systemctl daemon-reload
+systemctl enable --now khanqah-mirror
+
 # Test nginx config
 nginx -t
 
@@ -84,3 +95,5 @@ echo "  IA_ACCESS_KEY=your-internet-archive-access-key"
 echo "  IA_SECRET_KEY=your-internet-archive-secret-key"
 echo "  SUPABASE_URL=your-supabase-url"
 echo "  SUPABASE_SERVICE_KEY=your-supabase-service-role-key"
+echo "Mirror worker:   systemctl status khanqah-mirror"
+echo "Mirror logs:     journalctl -u khanqah-mirror -f"
