@@ -1,8 +1,8 @@
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import type { Content } from '../lib/types';
 
-// Web stub — react-native-track-player is not available on web.
-// Provides no-op player context so the app doesn't crash.
+// Web PlayerProvider — uses HTML5 <audio> since react-native-track-player
+// is native-only. Supports play/pause/seek/speed and queueing.
 
 interface PlayerContextValue {
   currentContent: Content | null;
@@ -23,7 +23,7 @@ interface PlayerContextValue {
 
 const noop = async () => {};
 
-const defaultValue: PlayerContextValue = {
+const PlayerContext = createContext<PlayerContextValue>({
   currentContent: null,
   isPlaying: false,
   position: 0,
@@ -38,12 +38,155 @@ const defaultValue: PlayerContextValue = {
   skipToNext: noop,
   skipToPrevious: noop,
   addToQueue: noop,
-};
-
-const PlayerContext = createContext<PlayerContextValue>(defaultValue);
+});
 
 export function PlayerProvider({ children }: { children: React.ReactNode }) {
-  return <PlayerContext.Provider value={defaultValue}>{children}</PlayerContext.Provider>;
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const queueRef = useRef<Content[]>([]);
+  const queueIndexRef = useRef<number>(-1);
+
+  const [currentContent, setCurrentContent] = useState<Content | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [position, setPosition] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [playbackSpeed, setPlaybackSpeedState] = useState(1);
+
+  // Lazy-create the audio element on first use so SSR doesn't fail.
+  const getAudio = useCallback((): HTMLAudioElement => {
+    if (!audioRef.current) {
+      const el = new Audio();
+      el.preload = 'metadata';
+      el.addEventListener('play', () => setIsPlaying(true));
+      el.addEventListener('pause', () => setIsPlaying(false));
+      el.addEventListener('ended', () => {
+        setIsPlaying(false);
+        // advance in queue if possible
+        const next = queueIndexRef.current + 1;
+        if (next < queueRef.current.length) {
+          queueIndexRef.current = next;
+          playContentInternal(queueRef.current[next]);
+        }
+      });
+      el.addEventListener('timeupdate', () => {
+        setPosition(el.currentTime || 0);
+      });
+      el.addEventListener('loadedmetadata', () => {
+        setDuration(isFinite(el.duration) ? el.duration : 0);
+      });
+      el.addEventListener('error', (e) => {
+        console.warn('[player] audio error:', el.error);
+      });
+      audioRef.current = el;
+    }
+    return audioRef.current;
+  }, []);
+
+  const playContentInternal = useCallback(
+    async (content: Content) => {
+      try {
+        const audio = getAudio();
+        // If same src, just play; otherwise load new source
+        if (audio.src !== content.media_url) {
+          audio.src = content.media_url;
+          setPosition(0);
+          setDuration(0);
+        }
+        audio.playbackRate = playbackSpeed;
+        setCurrentContent(content);
+        await audio.play();
+      } catch (err) {
+        console.warn('[player] play failed:', err);
+      }
+    },
+    [playbackSpeed, getAudio],
+  );
+
+  const playContent = useCallback(
+    async (content: Content) => {
+      // Reset queue to just this content (manual play overrides queue)
+      queueRef.current = [content];
+      queueIndexRef.current = 0;
+      await playContentInternal(content);
+    },
+    [playContentInternal],
+  );
+
+  const pause = useCallback(async () => {
+    audioRef.current?.pause();
+  }, []);
+
+  const resume = useCallback(async () => {
+    try {
+      await audioRef.current?.play();
+    } catch (err) {
+      console.warn('[player] resume failed:', err);
+    }
+  }, []);
+
+  const seekTo = useCallback(async (seconds: number) => {
+    if (audioRef.current) audioRef.current.currentTime = seconds;
+  }, []);
+
+  const seekBy = useCallback(async (seconds: number) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.currentTime = Math.max(0, Math.min((audio.duration || 0), audio.currentTime + seconds));
+  }, []);
+
+  const setSpeed = useCallback(async (rate: number) => {
+    if (audioRef.current) audioRef.current.playbackRate = rate;
+    setPlaybackSpeedState(rate);
+  }, []);
+
+  const skipToNext = useCallback(async () => {
+    const next = queueIndexRef.current + 1;
+    if (next < queueRef.current.length) {
+      queueIndexRef.current = next;
+      await playContentInternal(queueRef.current[next]);
+    }
+  }, [playContentInternal]);
+
+  const skipToPrevious = useCallback(async () => {
+    const prev = queueIndexRef.current - 1;
+    if (prev >= 0) {
+      queueIndexRef.current = prev;
+      await playContentInternal(queueRef.current[prev]);
+    } else {
+      // Restart current track
+      if (audioRef.current) audioRef.current.currentTime = 0;
+    }
+  }, [playContentInternal]);
+
+  const addToQueue = useCallback(async (contents: Content[]) => {
+    queueRef.current = queueRef.current.concat(contents);
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      audioRef.current?.pause();
+      audioRef.current = null;
+    };
+  }, []);
+
+  const value: PlayerContextValue = {
+    currentContent,
+    isPlaying,
+    position,
+    duration,
+    playbackSpeed,
+    playContent,
+    pause,
+    resume,
+    seekTo,
+    seekBy,
+    setSpeed,
+    skipToNext,
+    skipToPrevious,
+    addToQueue,
+  };
+
+  return <PlayerContext.Provider value={value}>{children}</PlayerContext.Provider>;
 }
 
 export function usePlayer() {
