@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import type { Content } from '../lib/types';
+import { isYouTubeUrl } from '../components/YouTubeEmbed';
 
 // Web PlayerProvider — uses HTML5 <audio> since react-native-track-player
 // is native-only. Supports play/pause/seek/speed and queueing.
@@ -83,6 +84,17 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
   const playContentInternal = useCallback(
     async (content: Content) => {
+      // YouTube URLs can't stream through <audio>. The player screen
+      // renders an <iframe> for them — just track the state here so
+      // the mini-player and queue reflect what the user is viewing.
+      if (isYouTubeUrl(content.media_url)) {
+        audioRef.current?.pause();
+        setCurrentContent(content);
+        setPosition(0);
+        setDuration(0);
+        setIsPlaying(false);
+        return;
+      }
       try {
         const audio = getAudio();
         // If same src, just play; otherwise load new source

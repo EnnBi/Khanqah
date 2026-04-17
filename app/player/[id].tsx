@@ -20,6 +20,7 @@ import { useSafeBack } from '../../hooks/useSafeBack';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useI18n } from '../../providers/I18nProvider';
 import { TopicsList } from '../../components/TopicsList';
+import { YouTubeEmbed, isYouTubeUrl } from '../../components/YouTubeEmbed';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const ARTWORK_SIZE = 240;
@@ -162,6 +163,7 @@ export default function PlayerScreen() {
     : '';
 
   const contentSymbol = content ? (TYPE_SYMBOL[content.type] ?? '♪') : '♪';
+  const isYouTube = isYouTubeUrl(content?.media_url);
 
   if (loading) {
     return (
@@ -199,24 +201,30 @@ export default function PlayerScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* ── Artwork ── */}
-        <View style={styles.artworkContainer}>
-          {/* Outer gold ring */}
-          <View style={[styles.artworkRing, { borderColor: c.gold }]}>
-            <View
-              style={[
-                styles.artwork,
-                { backgroundColor: c.primary },
-              ]}
-            >
-              {/* Low-opacity geometric pattern */}
-              <Text style={styles.geometricPattern}>✦ ✧ ✦ ✧ ✦</Text>
-              <Text style={styles.geometricPatternB}>✧ ✦ ✧ ✦ ✧</Text>
-              {/* Content-type symbol */}
-              <Text style={[styles.artworkSymbol, { color: c.onPrimary }]}>{contentSymbol}</Text>
+        {/* ── Artwork / YouTube embed ── */}
+        {isYouTube && content ? (
+          <View style={styles.youtubeContainer}>
+            <YouTubeEmbed url={content.media_url} title={content.title_en} />
+          </View>
+        ) : (
+          <View style={styles.artworkContainer}>
+            {/* Outer gold ring */}
+            <View style={[styles.artworkRing, { borderColor: c.gold }]}>
+              <View
+                style={[
+                  styles.artwork,
+                  { backgroundColor: c.primary },
+                ]}
+              >
+                {/* Low-opacity geometric pattern */}
+                <Text style={styles.geometricPattern}>✦ ✧ ✦ ✧ ✦</Text>
+                <Text style={styles.geometricPatternB}>✧ ✦ ✧ ✦ ✧</Text>
+                {/* Content-type symbol */}
+                <Text style={[styles.artworkSymbol, { color: c.onPrimary }]}>{contentSymbol}</Text>
+              </View>
             </View>
           </View>
-        </View>
+        )}
 
         {/* ── Track Info ── */}
         <View style={styles.trackInfo}>
@@ -235,7 +243,8 @@ export default function PlayerScreen() {
           </Text>
         </View>
 
-        {/* ── Progress Bar ── */}
+        {/* ── Progress Bar (hidden for YouTube — its iframe has its own) ── */}
+        {!isYouTube && (
         <View style={styles.progressSection}>
           <View
             ref={progressBarRef}
@@ -262,8 +271,10 @@ export default function PlayerScreen() {
             <Text style={[styles.timeText, { color: c.textMuted }]}>{remaining}</Text>
           </View>
         </View>
+        )}
 
-        {/* ── Player Controls ── */}
+        {/* ── Player Controls (hidden for YouTube) ── */}
+        {!isYouTube && (
         <View style={styles.controlsRow}>
           {/* Previous */}
           <TouchableOpacity
@@ -321,8 +332,10 @@ export default function PlayerScreen() {
             <Text style={[styles.serifNavText, { color: c.textMuted }]}>››</Text>
           </TouchableOpacity>
         </View>
+        )}
 
-        {/* ── Speed pill ── */}
+        {/* ── Speed pill (hidden for YouTube) ── */}
+        {!isYouTube && (
         <View style={styles.speedRow}>
           <TouchableOpacity
             onPress={handleSpeedPress}
@@ -336,6 +349,7 @@ export default function PlayerScreen() {
             </Text>
           </TouchableOpacity>
         </View>
+        )}
 
         {/* ── Actions Row ── */}
         <View style={[styles.actionsRow, { borderTopColor: c.hairline, borderBottomColor: c.hairline }]}>
@@ -424,6 +438,12 @@ const styles = StyleSheet.create({
   optionsBtnText: {
     fontSize: 22,
     lineHeight: 26,
+  },
+
+  // ── YouTube ──
+  youtubeContainer: {
+    width: '100%',
+    marginBottom: 24,
   },
 
   // ── Artwork ──
