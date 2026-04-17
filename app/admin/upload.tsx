@@ -12,7 +12,7 @@ import {
   Modal,
   ActivityIndicator,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useI18n } from '../../providers/I18nProvider';
 import { useAuth } from '../../hooks/useAuth';
@@ -43,6 +43,7 @@ export default function UploadContentScreen() {
   const { t } = useI18n();
   const { user } = useAuth();
   const router = useRouter();
+  const { editId } = useLocalSearchParams<{ editId?: string }>();
   const c = theme.colors;
 
   // Form state
@@ -61,9 +62,45 @@ export default function UploadContentScreen() {
   // Submit state
   const [submitting, setSubmitting] = useState(false);
 
+  // Edit mode: loading state
+  const [loadingEdit, setLoadingEdit] = useState(false);
+
+  // Fetch existing content when in edit mode
+  useEffect(() => {
+    if (!editId) return;
+    async function fetchContent() {
+      setLoadingEdit(true);
+      const { data, error } = await supabase
+        .from('content')
+        .select('*')
+        .eq('id', editId)
+        .single();
+      if (error || !data) {
+        Alert.alert('Error', 'Could not load content for editing.');
+        setLoadingEdit(false);
+        return;
+      }
+      setSelectedType(data.type as ContentType);
+      setTitleEn(data.title_en ?? '');
+      setTitleUr(data.title_ur ?? '');
+      setMediaUrl(data.media_url ?? '');
+      setThumbnailUrl(data.thumbnail_url ?? '');
+      // category will be resolved once categories load
+      setPendingCategoryId(data.category_id ?? null);
+      setLoadingEdit(false);
+    }
+    fetchContent();
+  }, [editId]);
+
+  // Holds the category_id to match after categories are loaded in edit mode
+  const [pendingCategoryId, setPendingCategoryId] = useState<string | null>(null);
+
   // Fetch categories when content type changes
   useEffect(() => {
-    setSelectedCategory(null);
+    // Only reset selected category when the type changes outside of the initial edit load
+    if (!pendingCategoryId) {
+      setSelectedCategory(null);
+    }
     async function fetchCategories() {
       setCategoriesLoading(true);
       const { data } = await supabase
@@ -71,7 +108,14 @@ export default function UploadContentScreen() {
         .select('*')
         .eq('type', selectedType)
         .order('sort_order', { ascending: true });
-      setCategories(data ?? []);
+      const loaded = data ?? [];
+      setCategories(loaded);
+      // Resolve pending category from edit mode
+      if (pendingCategoryId) {
+        const match = loaded.find((cat) => cat.id === pendingCategoryId);
+        if (match) setSelectedCategory(match);
+        setPendingCategoryId(null);
+      }
       setCategoriesLoading(false);
     }
     fetchCategories();
@@ -99,20 +143,34 @@ export default function UploadContentScreen() {
 
     const isVideo = isYouTubeUrl(mediaUrl.trim()) || selectedType === 'clip';
 
-    const { error } = await supabase.from('content').insert({
-      title_en: titleEn.trim(),
-      title_ur: titleUr.trim(),
-      type: selectedType,
-      category_id: selectedCategory.id,
-      media_url: mediaUrl.trim(),
-      thumbnail_url: thumbnailUrl.trim() || null,
-      is_video: isVideo,
-      duration: selectedType === 'book' ? null : null,
-      uploaded_by: user?.id ?? '',
-      description_en: null,
-      description_ur: null,
-      file_size: null,
-    });
+    let error;
+
+    if (editId) {
+      ({ error } = await supabase.from('content').update({
+        title_en: titleEn.trim(),
+        title_ur: titleUr.trim(),
+        type: selectedType,
+        category_id: selectedCategory.id,
+        media_url: mediaUrl.trim(),
+        thumbnail_url: thumbnailUrl.trim() || null,
+        is_video: isVideo,
+      }).eq('id', editId));
+    } else {
+      ({ error } = await supabase.from('content').insert({
+        title_en: titleEn.trim(),
+        title_ur: titleUr.trim(),
+        type: selectedType,
+        category_id: selectedCategory.id,
+        media_url: mediaUrl.trim(),
+        thumbnail_url: thumbnailUrl.trim() || null,
+        is_video: isVideo,
+        duration: null,
+        uploaded_by: user?.id ?? '',
+        description_en: null,
+        description_ur: null,
+        file_size: null,
+      }));
+    }
 
     setSubmitting(false);
 
@@ -121,20 +179,26 @@ export default function UploadContentScreen() {
       return;
     }
 
-    Alert.alert('Success', 'Content published successfully!', [
-      {
-        text: 'OK',
-        onPress: () => {
-          // Reset form
-          setSelectedType('bayan');
-          setTitleEn('');
-          setTitleUr('');
-          setSelectedCategory(null);
-          setMediaUrl('');
-          setThumbnailUrl('');
+    if (editId) {
+      Alert.alert('Success', 'Content updated successfully!', [
+        { text: 'OK', onPress: () => router.back() },
+      ]);
+    } else {
+      Alert.alert('Success', 'Content published successfully!', [
+        {
+          text: 'OK',
+          onPress: () => {
+            // Reset form
+            setSelectedType('bayan');
+            setTitleEn('');
+            setTitleUr('');
+            setSelectedCategory(null);
+            setMediaUrl('');
+            setThumbnailUrl('');
+          },
         },
-      },
-    ]);
+      ]);
+    }
   }
 
   const styles = StyleSheet.create({
@@ -410,17 +474,23 @@ export default function UploadContentScreen() {
             <Text style={styles.backBtnText}>‹ Back</Text>
           </TouchableOpacity>
           <View style={styles.headerSpacer} />
-          <Text style={styles.headerLabel}>UPLOAD</Text>
+          <Text style={styles.headerLabel}>{editId ? 'EDIT' : 'UPLOAD'}</Text>
         </View>
 
         {/* Hero */}
-        <View style={styles.hero}>
-          <Text style={styles.heroKicker}>NEW CONTENT</Text>
-          <Text style={styles.heroTitle}>
-            Add a{' '}
-            <Text style={styles.heroTitleItalic}>bayan</Text>
-          </Text>
-        </View>
+        {loadingEdit ? (
+          <View style={[styles.hero, { alignItems: 'center' }]}>
+            <ActivityIndicator color={c.primary} />
+          </View>
+        ) : (
+          <View style={styles.hero}>
+            <Text style={styles.heroKicker}>{editId ? 'EDIT CONTENT' : 'NEW CONTENT'}</Text>
+            <Text style={styles.heroTitle}>
+              {editId ? 'Edit ' : 'Add a '}
+              <Text style={styles.heroTitleItalic}>bayan</Text>
+            </Text>
+          </View>
+        )}
 
         <View style={styles.form}>
           {/* Content Type */}
@@ -523,7 +593,7 @@ export default function UploadContentScreen() {
             {submitting ? (
               <ActivityIndicator color={c.accent} />
             ) : (
-              <Text style={styles.publishButtonText}>PUBLISH CONTENT</Text>
+              <Text style={styles.publishButtonText}>{editId ? 'UPDATE CONTENT' : 'PUBLISH CONTENT'}</Text>
             )}
           </TouchableOpacity>
         </View>
