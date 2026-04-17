@@ -115,6 +115,10 @@ export default function UploadContentScreen() {
         const match = loaded.find((cat) => cat.id === pendingCategoryId);
         if (match) setSelectedCategory(match);
         setPendingCategoryId(null);
+      } else if (loaded.length >= 1) {
+        // Default to the first category so the admin doesn't have to pick
+        // one when there's only one sensible option for this type.
+        setSelectedCategory(loaded[0]);
       }
       setCategoriesLoading(false);
     }
@@ -537,23 +541,29 @@ export default function UploadContentScreen() {
             />
           </View>
 
-          {/* Category */}
-          <Text style={styles.sectionLabel}>CATEGORY</Text>
-          <TouchableOpacity
-            style={styles.categoryPicker}
-            onPress={() => setCategoryModalVisible(true)}
-            activeOpacity={0.7}
-          >
-            <Text
-              style={[
-                styles.categoryPickerText,
-                selectedCategory && styles.categoryPickerTextSelected,
-              ]}
-            >
-              {selectedCategory ? selectedCategory.name_en : 'Select category'}
-            </Text>
-            <Text style={styles.categoryPickerChevron}>›</Text>
-          </TouchableOpacity>
+          {/* Category — only shown when there are sub-categories to choose
+              from. For a single category the content-type pill already covers
+              it and we auto-select on fetch. */}
+          {categories.length > 1 && (
+            <>
+              <Text style={styles.sectionLabel}>CATEGORY</Text>
+              <TouchableOpacity
+                style={styles.categoryPicker}
+                onPress={() => setCategoryModalVisible(true)}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={[
+                    styles.categoryPickerText,
+                    selectedCategory && styles.categoryPickerTextSelected,
+                  ]}
+                >
+                  {selectedCategory ? selectedCategory.name_en : 'Select category'}
+                </Text>
+                <Text style={styles.categoryPickerChevron}>›</Text>
+              </TouchableOpacity>
+            </>
+          )}
 
           {/* Media URL */}
           <Text style={styles.sectionLabel}>MEDIA URL</Text>
