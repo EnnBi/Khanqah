@@ -18,6 +18,7 @@ import { useAuth } from '../../providers/AuthProvider';
 import { supabase } from '../../lib/supabase';
 import { Content, ContentType } from '../../lib/types';
 import { type as typeP, font } from '../../lib/typography';
+import { MirrorStatusChip } from '../../components/MirrorStatusChip';
 
 const PAGE_SIZE = 20;
 
@@ -97,6 +98,7 @@ export default function ManageContentScreen() {
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(0);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [failedRow, setFailedRow] = useState<Content | null>(null);
 
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchValueRef = useRef(search);
@@ -430,6 +432,14 @@ export default function ManageContentScreen() {
           <Text style={styles.itemTitle} numberOfLines={2}>
             {item.title_en}
           </Text>
+          <MirrorStatusChip
+            status={item.mirror_status}
+            onRetryPress={
+              item.mirror_status === 'failed'
+                ? () => setFailedRow(item)
+                : undefined
+            }
+          />
           <Text style={styles.itemMeta} numberOfLines={1}>
             {metaLine}
           </Text>
