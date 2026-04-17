@@ -4,6 +4,7 @@ import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../providers/ThemeProvider';
+import { useAuth } from '../providers/AuthProvider';
 
 type IconName = React.ComponentProps<typeof Feather>['name'];
 
@@ -21,6 +22,7 @@ const ADMIN_CONFIG = { icon: 'sliders' as IconName, label: 'Admin' };
 export function CustomTabBar(props: BottomTabBarProps) {
   const { state, descriptors, navigation } = props;
   const { theme } = useTheme();
+  const { user } = useAuth();
   const c = theme.colors;
   const insets = useSafeAreaInsets();
 
@@ -45,6 +47,9 @@ export function CustomTabBar(props: BottomTabBarProps) {
 
           // Skip hidden routes (href === null means hidden from tab bar)
           if ((options as any).href === null) return null;
+
+          // Hide the Collection/Saved tab for guests — they have nothing saved
+          if (route.name === 'collection' && !user) return null;
 
           const config = TAB_CONFIG[route.name] ?? { icon: 'circle' as IconName, label: route.name };
 
