@@ -17,6 +17,7 @@ import { useI18n } from '../../providers/I18nProvider';
 import { useAuth } from '../../providers/AuthProvider';
 import { supabase } from '../../lib/supabase';
 import { Content, ContentType } from '../../lib/types';
+import { type as typeP, font } from '../../lib/typography';
 
 const PAGE_SIZE = 20;
 
@@ -27,27 +28,15 @@ interface FilterPill {
   label: string;
 }
 
-function getTypeEmoji(type: ContentType): string {
+function getTypeSymbol(type: ContentType): string {
   switch (type) {
-    case 'bayan': return '🎙';
-    case 'clip': return '✂️';
-    case 'nazam': return '🎵';
-    case 'quran': return '📖';
-    case 'hamd_naat': return '🎶';
-    case 'book': return '📚';
-    default: return '📄';
-  }
-}
-
-function getTypeColor(type: ContentType): string {
-  switch (type) {
-    case 'bayan': return '#047857';
-    case 'clip': return '#7c3aed';
-    case 'nazam': return '#0369a1';
-    case 'quran': return '#b45309';
-    case 'hamd_naat': return '#be185d';
-    case 'book': return '#065f46';
-    default: return '#52525b';
+    case 'bayan': return '◉';
+    case 'clip': return '▶';
+    case 'nazam': return '♪';
+    case 'quran': return '◈';
+    case 'hamd_naat': return '◆';
+    case 'book': return '▬';
+    default: return '◯';
   }
 }
 
@@ -66,10 +55,10 @@ function getTypeLabel(type: ContentType): string {
 function formatDuration(seconds: number | null): string {
   if (seconds == null) return '';
   const mins = Math.round(seconds / 60);
-  if (mins < 60) return `${mins} min`;
+  if (mins < 60) return `${mins} MIN`;
   const hrs = Math.floor(mins / 60);
   const rem = mins % 60;
-  return rem > 0 ? `${hrs}h ${rem}m` : `${hrs}h`;
+  return rem > 0 ? `${hrs}H ${rem}M` : `${hrs}H`;
 }
 
 function relativeTime(dateStr: string): string {
@@ -84,13 +73,13 @@ function relativeTime(dateStr: string): string {
   const diffMonths = Math.floor(diffDays / 30);
   const diffYears = Math.floor(diffDays / 365);
 
-  if (diffSecs < 60) return 'just now';
-  if (diffMins < 60) return `${diffMins} min ago`;
-  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-  if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-  if (diffWeeks < 5) return `${diffWeeks} week${diffWeeks > 1 ? 's' : ''} ago`;
-  if (diffMonths < 12) return `${diffMonths} month${diffMonths > 1 ? 's' : ''} ago`;
-  return `${diffYears} year${diffYears > 1 ? 's' : ''} ago`;
+  if (diffSecs < 60) return 'JUST NOW';
+  if (diffMins < 60) return `${diffMins} MIN AGO`;
+  if (diffHours < 24) return `${diffHours} HOUR${diffHours > 1 ? 'S' : ''} AGO`;
+  if (diffDays < 7) return `${diffDays} DAY${diffDays > 1 ? 'S' : ''} AGO`;
+  if (diffWeeks < 5) return `${diffWeeks} WEEK${diffWeeks > 1 ? 'S' : ''} AGO`;
+  if (diffMonths < 12) return `${diffMonths} MONTH${diffMonths > 1 ? 'S' : ''} AGO`;
+  return `${diffYears} YEAR${diffYears > 1 ? 'S' : ''} AGO`;
 }
 
 export default function ManageContentScreen() {
@@ -98,7 +87,7 @@ export default function ManageContentScreen() {
   const { t } = useI18n();
   const { isAdmin, isEditor } = useAuth();
   const router = useRouter();
-  const colors = theme.colors;
+  const c = theme.colors;
 
   const [search, setSearch] = useState('');
   const [selectedType, setSelectedType] = useState<FilterType>('All');
@@ -239,116 +228,173 @@ export default function ManageContentScreen() {
   };
 
   const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: colors.background },
+    container: { flex: 1, backgroundColor: c.background },
+
+    // ── Header ───────────────────────────────────────────────
     header: {
       flexDirection: 'row',
       alignItems: 'center',
       paddingHorizontal: 20,
       paddingTop: 60,
-      paddingBottom: 16,
-      gap: 12,
+      paddingBottom: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: c.border,
     },
-    headerTitle: { fontSize: 28, fontWeight: '700', color: colors.text },
-    adminBadge: {
-      backgroundColor: colors.gold,
-      borderRadius: 6,
-      paddingHorizontal: 8,
-      paddingVertical: 3,
+    backBtn: { paddingRight: 16 },
+    backBtnText: {
+      fontFamily: font.serif,
+      fontSize: 22,
+      color: c.primary,
+      lineHeight: 26,
     },
-    adminBadgeText: {
-      fontSize: 11,
-      fontWeight: '700',
-      color: '#ffffff',
-      letterSpacing: 1,
+    headerSpacer: { flex: 1 },
+    headerLabel: {
+      ...typeP.label,
+      color: c.textMuted,
     },
-    searchContainer: {
+
+    // ── Hero ─────────────────────────────────────────────────
+    hero: {
+      paddingHorizontal: 28,
+      paddingTop: 24,
+      paddingBottom: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: c.border,
+    },
+    heroKicker: {
+      ...typeP.label,
+      color: c.textMuted,
+      marginBottom: 6,
+    },
+    heroTitle: {
+      fontFamily: font.serif,
+      fontSize: 28,
+      color: c.primary,
+      letterSpacing: -0.3,
+      lineHeight: 34,
+    },
+    heroTitleItalic: {
+      fontFamily: font.serifItalic,
+    },
+
+    // ── Search ───────────────────────────────────────────────
+    searchWrap: {
       marginHorizontal: 16,
-      marginBottom: 12,
+      marginTop: 16,
+      marginBottom: 4,
+      borderBottomWidth: 1,
+      borderBottomColor: c.border,
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: colors.surface,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: colors.border,
-      paddingHorizontal: 14,
       gap: 8,
+      paddingBottom: 10,
     },
-    searchIcon: { fontSize: 16, color: colors.textMuted },
+    searchIcon: {
+      fontFamily: font.sans,
+      fontSize: 14,
+      color: c.textMuted,
+    },
     searchInput: {
       flex: 1,
-      fontSize: 15,
-      color: colors.text,
-      paddingVertical: 12,
+      fontFamily: font.serif,
+      fontSize: 16,
+      color: c.text,
+      paddingVertical: 4,
     },
+
+    // ── Filter pills ─────────────────────────────────────────
     filterRow: {
       paddingHorizontal: 16,
       paddingBottom: 12,
+      paddingTop: 10,
     },
     filterPill: {
       paddingHorizontal: 14,
       paddingVertical: 7,
       borderRadius: 20,
       borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.surface,
+      borderColor: c.border,
+      backgroundColor: c.surface,
       marginRight: 8,
     },
     filterPillActive: {
-      backgroundColor: colors.primary,
-      borderColor: colors.primary,
+      backgroundColor: c.primary,
+      borderColor: c.primary,
     },
     filterPillText: {
-      fontSize: 13,
-      fontWeight: '500',
-      color: colors.textSecondary,
+      fontFamily: font.sansMedium,
+      fontSize: 12,
+      letterSpacing: 0.3,
+      color: c.textMuted,
     },
     filterPillTextActive: {
       color: '#ffffff',
     },
+
+    // ── List ─────────────────────────────────────────────────
     listContent: { paddingHorizontal: 16, paddingBottom: 40 },
     itemRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: colors.surface,
-      borderRadius: 14,
+      backgroundColor: c.surface,
+      borderRadius: 4,
       borderWidth: 1,
-      borderColor: colors.border,
-      padding: 12,
+      borderColor: c.border,
+      padding: 14,
       marginBottom: 10,
-      gap: 12,
+      gap: 14,
     },
-    thumbnail: {
-      width: 52,
-      height: 52,
-      borderRadius: 10,
+    thumbBox: {
+      width: 48,
+      height: 48,
+      backgroundColor: c.primary,
+      borderRadius: 4,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    thumbnailEmoji: { fontSize: 24 },
+    thumbSymbol: {
+      fontFamily: font.serif,
+      fontSize: 20,
+      color: c.accent,
+    },
     itemInfo: { flex: 1 },
     itemTitle: {
-      fontSize: 14,
-      fontWeight: '600',
-      color: colors.text,
+      fontFamily: font.serif,
+      fontSize: 15,
+      color: c.text,
+      letterSpacing: -0.1,
       marginBottom: 4,
     },
-    itemMeta: { fontSize: 12, color: colors.textMuted },
+    itemMeta: {
+      ...typeP.meta,
+      color: c.textMuted,
+    },
     actions: { flexDirection: 'row', gap: 8 },
     actionBtn: {
-      width: 36,
-      height: 36,
-      borderRadius: 10,
+      width: 34,
+      height: 34,
+      borderRadius: 4,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: colors.surface2,
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: c.border,
+      backgroundColor: c.surface2,
     },
     actionBtnDelete: {
       backgroundColor: '#fef2f2',
       borderColor: '#fecaca',
     },
-    actionBtnText: { fontSize: 16 },
+    actionBtnText: {
+      fontFamily: font.sansMedium,
+      fontSize: 14,
+      color: c.textMuted,
+    },
+    actionBtnTextDelete: {
+      fontSize: 16,
+      color: '#ef4444',
+    },
+
+    // ── Footer / empty ───────────────────────────────────────
     footer: { paddingVertical: 20, alignItems: 'center' },
     emptyContainer: {
       flex: 1,
@@ -356,24 +402,28 @@ export default function ManageContentScreen() {
       justifyContent: 'center',
       paddingTop: 60,
     },
-    emptyText: { fontSize: 16, color: colors.textMuted, marginTop: 8 },
-    emptyEmoji: { fontSize: 40 },
+    emptyText: {
+      fontFamily: font.serifItalic,
+      fontSize: 16,
+      color: c.textMuted,
+      marginTop: 8,
+    },
   });
 
   const renderItem = ({ item }: { item: Content }) => {
-    const typeLabel = getTypeLabel(item.type);
+    const typeLabel = getTypeLabel(item.type).toUpperCase();
     const durationStr = formatDuration(item.duration);
     const timeStr = relativeTime(item.created_at);
 
-    const metaParts = [typeLabel, durationStr, timeStr].filter(Boolean);
-    const metaLine = metaParts.join(' • ');
+    const metaParts = [durationStr, timeStr, typeLabel].filter(Boolean);
+    const metaLine = metaParts.join(' · ');
 
     const isDeleting = deletingId === item.id;
 
     return (
       <View style={styles.itemRow}>
-        <View style={[styles.thumbnail, { backgroundColor: getTypeColor(item.type) + '22' }]}>
-          <Text style={styles.thumbnailEmoji}>{getTypeEmoji(item.type)}</Text>
+        <View style={styles.thumbBox}>
+          <Text style={styles.thumbSymbol}>{getTypeSymbol(item.type)}</Text>
         </View>
 
         <View style={styles.itemInfo}>
@@ -392,7 +442,7 @@ export default function ManageContentScreen() {
             activeOpacity={0.7}
             accessibilityLabel="Edit"
           >
-            <Text style={styles.actionBtnText}>✏️</Text>
+            <Text style={styles.actionBtnText}>✎</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -405,7 +455,7 @@ export default function ManageContentScreen() {
             {isDeleting ? (
               <ActivityIndicator size="small" color="#ef4444" />
             ) : (
-              <Text style={styles.actionBtnText}>🗑️</Text>
+              <Text style={styles.actionBtnTextDelete}>×</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -417,7 +467,7 @@ export default function ManageContentScreen() {
     if (!loading) return null;
     return (
       <View style={styles.footer}>
-        <ActivityIndicator color={colors.primary} />
+        <ActivityIndicator color={c.primary} />
       </View>
     );
   };
@@ -426,7 +476,6 @@ export default function ManageContentScreen() {
     if (loading) return null;
     return (
       <View style={styles.emptyContainer}>
-        <Text style={styles.emptyEmoji}>📭</Text>
         <Text style={styles.emptyText}>No content found</Text>
       </View>
     );
@@ -434,24 +483,31 @@ export default function ManageContentScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+      {/* Minimal header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7}>
-          <Text style={{ fontSize: 28, color: colors.text }}>‹</Text>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
+          <Text style={styles.backBtnText}>‹ Back</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('admin.content') || 'Content'}</Text>
-        <View style={styles.adminBadge}>
-          <Text style={styles.adminBadgeText}>ADMIN</Text>
-        </View>
+        <View style={styles.headerSpacer} />
+        <Text style={styles.headerLabel}>MANAGE</Text>
+      </View>
+
+      {/* Hero */}
+      <View style={styles.hero}>
+        <Text style={styles.heroKicker}>MANAGE</Text>
+        <Text style={styles.heroTitle}>
+          Browse{' '}
+          <Text style={styles.heroTitleItalic}>library</Text>
+        </Text>
       </View>
 
       {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <Text style={styles.searchIcon}>🔍</Text>
+      <View style={styles.searchWrap}>
+        <Text style={styles.searchIcon}>◎</Text>
         <TextInput
           style={styles.searchInput}
-          placeholder="Search by title…"
-          placeholderTextColor={colors.textMuted}
+          placeholder="Search by title..."
+          placeholderTextColor={c.textMuted}
           value={search}
           onChangeText={handleSearchChange}
           returnKeyType="search"
@@ -502,8 +558,8 @@ export default function ManageContentScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor={colors.primary}
-            colors={[colors.primary]}
+            tintColor={c.primary}
+            colors={[c.primary]}
           />
         }
         showsVerticalScrollIndicator={false}

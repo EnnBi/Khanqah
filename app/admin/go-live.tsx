@@ -18,6 +18,7 @@ import { useAuth } from '../../providers/AuthProvider';
 import { supabase } from '../../lib/supabase';
 import { getConfig } from '../../lib/remote-config';
 import { Audio } from 'expo-av';
+import { type as typeP, font } from '../../lib/typography';
 
 // ---------------------------------------------------------------------------
 // Audio streaming helpers
@@ -261,7 +262,7 @@ export default function GoLiveScreen() {
   const { theme } = useTheme();
   const { user } = useAuth();
   const router = useRouter();
-  const colors = theme.colors;
+  const c = theme.colors;
 
   // Form state (idle)
   const [titleEn, setTitleEn] = useState('');
@@ -282,32 +283,54 @@ export default function GoLiveScreen() {
   // Holds the stop() handle for the active audio stream
   const streamRef = useRef<{ stop: () => void; ws: WebSocket } | null>(null);
 
-  // Pulse animation for the record button
+  // Pulse animation for the orb
   const pulseAnim = useRef(new Animated.Value(1)).current;
+  const pulseOpacity = useRef(new Animated.Value(0.15)).current;
 
   useEffect(() => {
     if (!isBroadcasting) {
       pulseAnim.setValue(1);
+      pulseOpacity.setValue(0.15);
       return;
     }
     const pulse = Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
-          toValue: 1.12,
-          duration: 800,
+          toValue: 1.14,
+          duration: 900,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
         Animated.timing(pulseAnim, {
           toValue: 1,
-          duration: 800,
+          duration: 900,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    const opacityPulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseOpacity, {
+          toValue: 0.35,
+          duration: 900,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseOpacity, {
+          toValue: 0.12,
+          duration: 900,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
       ]),
     );
     pulse.start();
-    return () => pulse.stop();
+    opacityPulse.start();
+    return () => {
+      pulse.stop();
+      opacityPulse.stop();
+    };
   }, [isBroadcasting]);
 
   // Duration timer
@@ -436,233 +459,288 @@ export default function GoLiveScreen() {
 
   const styles = StyleSheet.create({
     flex: { flex: 1 },
-    container: { flex: 1, backgroundColor: colors.background },
+    container: { flex: 1, backgroundColor: c.background },
 
-    // ── Header ──────────────────────────────────────────────
+    // ── Minimal header ───────────────────────────────────────
     header: {
       flexDirection: 'row',
       alignItems: 'center',
       paddingHorizontal: 20,
       paddingTop: 60,
       paddingBottom: 20,
-      gap: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: c.border,
     },
-    backButton: { padding: 4, marginRight: 4 },
-    backButtonText: { fontSize: 22, color: colors.primary },
-    headerTitle: {
-      fontSize: 28,
-      fontWeight: '700',
-      color: colors.text,
-      flex: 1,
-    },
-    adminBadge: {
-      backgroundColor: colors.gold,
-      borderRadius: 6,
-      paddingHorizontal: 8,
-      paddingVertical: 3,
-    },
-    adminBadgeText: {
-      fontSize: 11,
-      fontWeight: '700',
-      color: '#ffffff',
-      letterSpacing: 1,
-    },
-
-    // ── Live header (during broadcast) ──────────────────────
-    liveHeaderCenter: {
-      flex: 1,
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-    },
-    liveDot: {
-      width: 10,
-      height: 10,
-      borderRadius: 5,
-      backgroundColor: '#ef4444',
-    },
-    liveText: {
+    backBtn: { paddingRight: 16 },
+    backBtnText: {
+      fontFamily: font.serif,
       fontSize: 22,
-      fontWeight: '700',
-      color: '#ef4444',
+      color: c.primary,
+      lineHeight: 26,
+    },
+    headerSpacer: { flex: 1 },
+    headerLabel: {
+      ...typeP.label,
+      color: c.textMuted,
     },
 
-    // ── Main action button ───────────────────────────────────
+    // ── Live header variant ──────────────────────────────────
+    liveHeaderDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: c.liveRed,
+      marginRight: 8,
+    },
+    liveHeaderText: {
+      fontFamily: font.sansBold,
+      fontSize: 11,
+      letterSpacing: 3,
+      textTransform: 'uppercase',
+      color: c.liveRed,
+    },
+
+    // ── Idle state ───────────────────────────────────────────
+    idleHero: {
+      alignItems: 'center',
+      paddingTop: 40,
+      paddingBottom: 20,
+      paddingHorizontal: 28,
+    },
+    idleHeading: {
+      fontFamily: font.serifItalic,
+      fontSize: 28,
+      color: c.primary,
+      letterSpacing: -0.3,
+      marginBottom: 10,
+    },
+    idleSubtext: {
+      fontFamily: font.sans,
+      fontSize: 14,
+      color: c.textMuted,
+      textAlign: 'center',
+      lineHeight: 20,
+    },
+
+    // ── Big mic button ───────────────────────────────────────
     buttonSection: {
       alignItems: 'center',
-      paddingVertical: 32,
+      paddingVertical: 36,
     },
     bigButton: {
       width: 120,
       height: 120,
       borderRadius: 60,
-      backgroundColor: '#dc2626',
+      backgroundColor: c.liveRed,
       alignItems: 'center',
       justifyContent: 'center',
-      shadowColor: '#dc2626',
+      shadowColor: c.liveRed,
       shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.5,
-      shadowRadius: 16,
+      shadowOpacity: 0.45,
+      shadowRadius: 20,
       elevation: 12,
-      gap: 4,
     },
-    bigButtonEmoji: { fontSize: 36 },
-    bigButtonLabel: {
-      fontSize: 11,
-      fontWeight: '800',
+    bigButtonMic: {
+      fontFamily: font.serif,
+      fontSize: 40,
       color: '#ffffff',
-      letterSpacing: 2,
+      lineHeight: 48,
+    },
+    bigButtonLabel: {
+      ...typeP.label,
+      color: '#ffffff',
+      marginTop: 14,
     },
 
-    // ── Form section (idle) ──────────────────────────────────
-    formSection: { paddingHorizontal: 20, paddingBottom: 60 },
-    sectionLabel: {
-      fontSize: 13,
-      fontWeight: '600',
-      color: colors.textMuted,
-      textTransform: 'uppercase',
-      letterSpacing: 0.8,
-      marginBottom: 10,
+    // ── Form (idle) ──────────────────────────────────────────
+    formSection: { paddingHorizontal: 20, paddingBottom: 32 },
+    fieldLabel: {
+      ...typeP.labelSmall,
+      color: c.textMuted,
       marginTop: 24,
+      marginBottom: 8,
     },
-    input: {
-      backgroundColor: colors.surface,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: colors.border,
-      paddingHorizontal: 14,
-      paddingVertical: 12,
-      fontSize: 15,
-      color: colors.text,
+    underlineInput: {
+      fontFamily: font.serif,
+      fontSize: 17,
+      color: c.text,
+      borderBottomWidth: 1,
+      borderBottomColor: c.border,
+      paddingVertical: 8,
+      paddingHorizontal: 0,
     },
-    inputRtl: { textAlign: 'right' },
+    underlineInputRtl: {
+      textAlign: 'right',
+      writingDirection: 'rtl',
+      fontFamily: font.urdu,
+      fontSize: 18,
+    },
 
-    // ── Stats row ────────────────────────────────────────────
-    statsRow: {
-      flexDirection: 'row',
-      gap: 12,
+    // ── Toggles ──────────────────────────────────────────────
+    togglesWrap: {
+      borderTopWidth: 1,
+      borderTopColor: c.border,
       marginHorizontal: 20,
-      marginTop: 16,
+      marginBottom: 48,
     },
-    statCard: {
-      flex: 1,
-      backgroundColor: colors.surface,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: colors.border,
-      paddingVertical: 14,
-      alignItems: 'center',
-      gap: 4,
-    },
-    statLabel: {
-      fontSize: 11,
-      fontWeight: '600',
-      color: colors.textMuted,
-      textTransform: 'uppercase',
-      letterSpacing: 0.6,
-    },
-    statValue: {
-      fontSize: 22,
-      fontWeight: '700',
-      color: colors.text,
-    },
-    statValueRed: { color: '#ef4444' },
-
-    // ── Toggle row ───────────────────────────────────────────
     toggleRow: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      paddingHorizontal: 20,
-      paddingVertical: 14,
+      paddingVertical: 16,
       borderBottomWidth: 1,
-      borderBottomColor: colors.border,
+      borderBottomColor: c.border,
     },
     toggleLabel: {
+      fontFamily: font.serif,
       fontSize: 15,
-      color: colors.text,
-      flex: 1,
+      color: c.text,
     },
 
-    // ── Duration timer (active) ──────────────────────────────
-    timerSection: { alignItems: 'center', paddingVertical: 16 },
+    // ── Stats row (idle preview) ─────────────────────────────
+    statsRow: {
+      flexDirection: 'row',
+      gap: 10,
+      marginHorizontal: 20,
+      marginTop: 4,
+      marginBottom: 24,
+    },
+    statCard: {
+      flex: 1,
+      backgroundColor: c.surface,
+      borderRadius: 4,
+      borderWidth: 1,
+      borderColor: c.border,
+      paddingVertical: 16,
+      paddingHorizontal: 14,
+    },
+    statLabel: {
+      ...typeP.labelSmall,
+      color: c.textMuted,
+      marginBottom: 6,
+    },
+    statValue: {
+      fontFamily: font.serif,
+      fontSize: 22,
+      color: c.primary,
+    },
+
+    // ── Broadcasting state ───────────────────────────────────
+    broadcastContainer: { flex: 1, backgroundColor: c.background },
+    orbSection: {
+      alignItems: 'center',
+      paddingVertical: 44,
+    },
+    orbOuter: {
+      width: 140,
+      height: 140,
+      borderRadius: 70,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    orbInner: {
+      width: 110,
+      height: 110,
+      borderRadius: 55,
+      backgroundColor: c.liveRed,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: c.liveRed,
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.5,
+      shadowRadius: 20,
+      elevation: 12,
+    },
+    orbMicText: {
+      fontFamily: font.serif,
+      fontSize: 44,
+      color: '#ffffff',
+      lineHeight: 52,
+    },
+    timerSection: { alignItems: 'center', paddingBottom: 8 },
     timerText: {
-      fontSize: 32,
-      fontWeight: '200',
-      color: colors.text,
+      fontFamily: font.serif,
+      fontSize: 40,
+      color: c.text,
       letterSpacing: 4,
       fontVariant: ['tabular-nums'],
+      lineHeight: 48,
+    },
+    broadcastStatsRow: {
+      flexDirection: 'row',
+      gap: 10,
+      marginHorizontal: 20,
+      marginTop: 20,
+      marginBottom: 8,
+    },
+    broadcastStatCard: {
+      flex: 1,
+      backgroundColor: c.surface,
+      borderRadius: 4,
+      borderWidth: 1,
+      borderColor: c.border,
+      paddingVertical: 14,
+      paddingHorizontal: 14,
+    },
+    broadcastStatLabel: {
+      ...typeP.labelSmall,
+      color: c.textMuted,
+      marginBottom: 4,
+    },
+    broadcastStatValue: {
+      fontFamily: font.serif,
+      fontSize: 20,
+      color: c.liveRed,
+    },
+    broadcastStatValueGreen: {
+      fontFamily: font.serif,
+      fontSize: 14,
+      color: '#16a34a',
     },
 
-    // ── Session title display (active) ───────────────────────
-    sessionTitleSection: {
+    // ── Session title display ────────────────────────────────
+    sessionTitleCard: {
       marginHorizontal: 20,
-      marginTop: 16,
-      backgroundColor: colors.surface,
-      borderRadius: 12,
+      marginTop: 8,
+      backgroundColor: c.surface,
+      borderRadius: 4,
       borderWidth: 1,
-      borderColor: colors.border,
-      padding: 14,
-      gap: 4,
+      borderColor: c.border,
+      padding: 16,
     },
     sessionTitleLabel: {
-      fontSize: 11,
-      fontWeight: '600',
-      color: colors.textMuted,
-      textTransform: 'uppercase',
-      letterSpacing: 0.6,
+      ...typeP.labelSmall,
+      color: c.textMuted,
+      marginBottom: 8,
     },
     sessionTitleEn: {
+      fontFamily: font.serif,
       fontSize: 16,
-      fontWeight: '600',
-      color: colors.text,
+      color: c.text,
+      marginBottom: 4,
     },
     sessionTitleUr: {
-      fontSize: 16,
-      fontWeight: '600',
-      color: colors.text,
+      fontFamily: font.urdu,
+      fontSize: 18,
+      color: c.text,
       textAlign: 'right',
-    },
-
-    // ── Recording status card ────────────────────────────────
-    recordingStatus: {
-      flex: 1,
-      backgroundColor: colors.surface,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: colors.border,
-      paddingVertical: 14,
-      alignItems: 'center',
-      gap: 6,
-    },
-    recordingStatusLabel: {
-      fontSize: 11,
-      fontWeight: '600',
-      color: colors.textMuted,
-      textTransform: 'uppercase',
-      letterSpacing: 0.6,
-    },
-    recordingStatusIcon: { fontSize: 20 },
-    recordingStatusText: {
-      fontSize: 13,
-      fontWeight: '600',
-      color: '#22c55e',
+      writingDirection: 'rtl',
     },
 
     // ── Stop button ──────────────────────────────────────────
     stopButton: {
       marginHorizontal: 20,
-      marginTop: 32,
+      marginTop: 28,
       marginBottom: 60,
-      backgroundColor: '#dc2626',
-      borderRadius: 14,
+      borderRadius: 4,
+      borderWidth: 1.5,
+      borderColor: c.liveRed,
       paddingVertical: 16,
       alignItems: 'center',
     },
     stopButtonText: {
-      fontSize: 16,
-      fontWeight: '700',
-      color: '#ffffff',
+      ...typeP.button,
+      color: c.liveRed,
     },
 
     // ── Error banner ─────────────────────────────────────────
@@ -670,15 +748,15 @@ export default function GoLiveScreen() {
       marginHorizontal: 20,
       marginTop: 12,
       backgroundColor: '#fef2f2',
-      borderRadius: 10,
+      borderRadius: 4,
       borderWidth: 1,
       borderColor: '#fca5a5',
       paddingHorizontal: 14,
       paddingVertical: 10,
     },
     errorBannerText: {
+      fontFamily: font.sansSemiBold,
       fontSize: 13,
-      fontWeight: '600',
       color: '#dc2626',
       textAlign: 'center',
     },
@@ -687,29 +765,30 @@ export default function GoLiveScreen() {
   // ── During broadcast ────────────────────────────────────────────────────
   if (isBroadcasting) {
     return (
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Header */}
+      <ScrollView style={styles.broadcastContainer} showsVerticalScrollIndicator={false}>
+        {/* Minimal live header */}
         <View style={styles.header}>
-          <View style={styles.liveHeaderCenter}>
-            <View style={styles.liveDot} />
-            <Text style={styles.liveText}>Live</Text>
-          </View>
-          <View style={styles.adminBadge}>
-            <Text style={styles.adminBadgeText}>ADMIN</Text>
-          </View>
+          <View style={styles.liveHeaderDot} />
+          <Text style={styles.liveHeaderText}>Live Broadcast</Text>
+          <View style={styles.headerSpacer} />
+          <Text style={styles.headerLabel}>GO LIVE</Text>
         </View>
 
-        {/* Big pulsing record button */}
-        <View style={styles.buttonSection}>
-          <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-            <View style={styles.bigButton}>
-              <Text style={styles.bigButtonEmoji}>🎤</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <View style={[styles.liveDot, { width: 6, height: 6, borderRadius: 3 }]} />
-                <Text style={styles.bigButtonLabel}>RECORDING</Text>
-              </View>
-            </View>
-          </Animated.View>
+        {/* Pulsing red orb */}
+        <View style={styles.orbSection}>
+          <Animated.View
+            style={[
+              styles.orbOuter,
+              {
+                transform: [{ scale: pulseAnim }],
+                backgroundColor: c.liveRed,
+                opacity: pulseOpacity,
+              },
+            ]}
+          />
+          <View style={[styles.orbInner, { position: 'absolute' }]}>
+            <Text style={styles.orbMicText}>◉</Text>
+          </View>
         </View>
 
         {/* Duration timer */}
@@ -718,15 +797,14 @@ export default function GoLiveScreen() {
         </View>
 
         {/* Stats row */}
-        <View style={styles.statsRow}>
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Listeners</Text>
-            <Text style={[styles.statValue, styles.statValueRed]}>{listenerCount}</Text>
+        <View style={styles.broadcastStatsRow}>
+          <View style={styles.broadcastStatCard}>
+            <Text style={styles.broadcastStatLabel}>LISTENERS</Text>
+            <Text style={styles.broadcastStatValue}>{listenerCount}</Text>
           </View>
-          <View style={styles.recordingStatus}>
-            <Text style={styles.recordingStatusLabel}>Recording</Text>
-            <Text style={styles.recordingStatusIcon}>✅</Text>
-            <Text style={styles.recordingStatusText}>Active</Text>
+          <View style={styles.broadcastStatCard}>
+            <Text style={styles.broadcastStatLabel}>RECORDING</Text>
+            <Text style={styles.broadcastStatValueGreen}>Active</Text>
           </View>
         </View>
 
@@ -738,8 +816,8 @@ export default function GoLiveScreen() {
         )}
 
         {/* Session title display */}
-        <View style={styles.sessionTitleSection}>
-          <Text style={styles.sessionTitleLabel}>Session</Text>
+        <View style={styles.sessionTitleCard}>
+          <Text style={styles.sessionTitleLabel}>SESSION</Text>
           <Text style={styles.sessionTitleEn}>{titleEn}</Text>
           <Text style={styles.sessionTitleUr}>{titleUr}</Text>
         </View>
@@ -752,7 +830,7 @@ export default function GoLiveScreen() {
           disabled={isStopping}
         >
           <Text style={styles.stopButtonText}>
-            {isStopping ? 'Stopping...' : 'Stop Broadcasting'}
+            {isStopping ? 'STOPPING...' : 'STOP BROADCAST'}
           </Text>
         </TouchableOpacity>
       </ScrollView>
@@ -770,15 +848,21 @@ export default function GoLiveScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Header */}
+        {/* Minimal header */}
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Text style={styles.backButtonText}>‹</Text>
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+            <Text style={styles.backBtnText}>‹ Back</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Go Live</Text>
-          <View style={styles.adminBadge}>
-            <Text style={styles.adminBadgeText}>ADMIN</Text>
-          </View>
+          <View style={styles.headerSpacer} />
+          <Text style={styles.headerLabel}>GO LIVE</Text>
+        </View>
+
+        {/* Idle hero text */}
+        <View style={styles.idleHero}>
+          <Text style={styles.idleHeading}>Ready to broadcast</Text>
+          <Text style={styles.idleSubtext}>
+            Fill in the session details below,{'\n'}then tap the button to go live.
+          </Text>
         </View>
 
         {/* Big START button */}
@@ -789,28 +873,30 @@ export default function GoLiveScreen() {
             activeOpacity={0.85}
             disabled={isStarting}
           >
-            <Text style={styles.bigButtonEmoji}>🎤</Text>
-            <Text style={styles.bigButtonLabel}>{isStarting ? '...' : 'START'}</Text>
+            <Text style={styles.bigButtonMic}>◉</Text>
           </TouchableOpacity>
+          <Text style={styles.bigButtonLabel}>
+            {isStarting ? 'STARTING...' : 'START BROADCAST'}
+          </Text>
         </View>
 
         {/* Form fields */}
         <View style={styles.formSection}>
-          <Text style={styles.sectionLabel}>Session Title (English)</Text>
+          <Text style={styles.fieldLabel}>SESSION TITLE (ENGLISH)</Text>
           <TextInput
-            style={styles.input}
+            style={styles.underlineInput}
             placeholder="Enter session title..."
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={c.textMuted}
             value={titleEn}
             onChangeText={setTitleEn}
             returnKeyType="next"
           />
 
-          <Text style={styles.sectionLabel}>Session Title (Urdu)</Text>
+          <Text style={styles.fieldLabel}>SESSION TITLE (URDU)</Text>
           <TextInput
-            style={[styles.input, styles.inputRtl]}
+            style={[styles.underlineInput, styles.underlineInputRtl]}
             placeholder="عنوان درج کریں..."
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={c.textMuted}
             value={titleUr}
             onChangeText={setTitleUr}
             textAlign="right"
@@ -821,24 +907,24 @@ export default function GoLiveScreen() {
         {/* Stats row */}
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Listeners</Text>
+            <Text style={styles.statLabel}>LISTENERS</Text>
             <Text style={styles.statValue}>0</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Duration</Text>
+            <Text style={styles.statLabel}>DURATION</Text>
             <Text style={styles.statValue}>00:00</Text>
           </View>
         </View>
 
         {/* Toggles */}
-        <View style={{ marginTop: 24, borderTopWidth: 1, borderTopColor: colors.border }}>
+        <View style={styles.togglesWrap}>
           <View style={styles.toggleRow}>
             <Text style={styles.toggleLabel}>Auto-save to archive.org</Text>
-            <ToggleSwitch value={autoSave} onValueChange={setAutoSave} colors={colors} />
+            <ToggleSwitch value={autoSave} onValueChange={setAutoSave} colors={c} />
           </View>
           <View style={styles.toggleRow}>
             <Text style={styles.toggleLabel}>Send push notification</Text>
-            <ToggleSwitch value={sendPush} onValueChange={setSendPush} colors={colors} />
+            <ToggleSwitch value={sendPush} onValueChange={setSendPush} colors={c} />
           </View>
         </View>
       </ScrollView>

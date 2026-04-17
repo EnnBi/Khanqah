@@ -21,6 +21,7 @@ import { useI18n } from '../../providers/I18nProvider';
 import { useAuth } from '../../providers/AuthProvider';
 import { supabase } from '../../lib/supabase';
 import { User, UserRole } from '../../lib/types';
+import { type as typeP, font } from '../../lib/typography';
 
 type InviteRole = 'admin' | 'editor';
 
@@ -29,7 +30,7 @@ export default function TeamScreen() {
   const { t } = useI18n();
   const { user: currentUser } = useAuth();
   const router = useRouter();
-  const colors = theme.colors;
+  const c = theme.colors;
 
   const [members, setMembers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -125,105 +126,140 @@ export default function TeamScreen() {
     await fetchTeam();
   };
 
-  const getAvatarBg = (role: UserRole): string => {
-    if (role === 'admin') return colors.gold + '33';
-    if (role === 'editor') return '#16a34a33';
-    return colors.surface2;
-  };
-
   const getAvatarInitial = (member: User): string => {
     if (member.display_name) return member.display_name.charAt(0).toUpperCase();
     if (member.email) return member.email.charAt(0).toUpperCase();
     return '?';
   };
 
-  const getRoleBadgeStyle = (role: UserRole) => {
+  const getRoleBadge = (role: UserRole) => {
     if (role === 'admin') {
-      return {
-        bg: colors.gold + '22',
-        border: colors.gold,
-        text: colors.gold,
-        label: 'Admin',
-      };
+      return { bg: c.accent + '28', border: c.accent, text: c.accent, label: 'ADMIN' };
     }
-    return {
-      bg: '#16a34a22',
-      border: '#16a34a',
-      text: '#16a34a',
-      label: 'Editor',
-    };
+    return { bg: '#16a34a28', border: '#16a34a', text: '#16a34a', label: 'EDITOR' };
   };
 
   const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: colors.background },
+    container: { flex: 1, backgroundColor: c.background },
+
+    // ── Header ───────────────────────────────────────────────
     header: {
       flexDirection: 'row',
       alignItems: 'center',
       paddingHorizontal: 20,
       paddingTop: 60,
+      paddingBottom: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: c.border,
+    },
+    backBtn: { paddingRight: 16 },
+    backBtnText: {
+      fontFamily: font.serif,
+      fontSize: 22,
+      color: c.primary,
+      lineHeight: 26,
+    },
+    headerSpacer: { flex: 1 },
+    headerLabel: {
+      ...typeP.label,
+      color: c.textMuted,
+    },
+
+    // ── Hero ─────────────────────────────────────────────────
+    hero: {
+      paddingHorizontal: 28,
+      paddingTop: 24,
+      paddingBottom: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: c.border,
+    },
+    heroKicker: {
+      ...typeP.label,
+      color: c.textMuted,
+      marginBottom: 6,
+    },
+    heroTitle: {
+      fontFamily: font.serif,
+      fontSize: 28,
+      color: c.primary,
+      letterSpacing: -0.3,
+      lineHeight: 34,
+    },
+    heroTitleItalic: {
+      fontFamily: font.serifItalic,
+    },
+
+    // ── Section label ────────────────────────────────────────
+    sectionWrap: {
+      paddingHorizontal: 28,
+      paddingTop: 28,
       paddingBottom: 16,
-      gap: 12,
     },
-    backBtn: { marginRight: 4 },
-    backText: { fontSize: 28, color: colors.text, lineHeight: 32 },
-    headerTitle: { fontSize: 28, fontWeight: '700', color: colors.text, flex: 1 },
-    adminBadge: {
-      backgroundColor: colors.gold,
-      borderRadius: 6,
-      paddingHorizontal: 8,
-      paddingVertical: 3,
+    sectionLabel: {
+      ...typeP.label,
+      color: c.textMuted,
+      marginBottom: 6,
     },
-    adminBadgeText: {
-      fontSize: 11,
-      fontWeight: '700',
-      color: '#ffffff',
-      letterSpacing: 1,
+    sectionSubtitle: {
+      fontFamily: font.serifItalic,
+      fontSize: 20,
+      color: c.primary,
+      letterSpacing: -0.3,
     },
+
+    // ── Member rows ──────────────────────────────────────────
     listContent: { paddingHorizontal: 16, paddingBottom: 20 },
     memberRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: colors.surface,
-      borderRadius: 14,
+      backgroundColor: c.surface,
+      borderRadius: 4,
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: c.border,
       padding: 14,
       marginBottom: 10,
-      gap: 12,
+      gap: 14,
     },
-    avatar: {
-      width: 46,
-      height: 46,
-      borderRadius: 23,
+    avatarBox: {
+      width: 44,
+      height: 44,
+      backgroundColor: c.primary,
+      borderRadius: 4,
       alignItems: 'center',
       justifyContent: 'center',
     },
     avatarText: {
+      fontFamily: font.serifSemiBold,
       fontSize: 18,
-      fontWeight: '700',
-      color: colors.text,
+      color: c.accent,
     },
     memberInfo: { flex: 1 },
     memberName: {
-      fontSize: 15,
-      fontWeight: '700',
-      color: colors.text,
+      fontFamily: font.serif,
+      fontSize: 16,
+      color: c.text,
+      letterSpacing: -0.1,
       marginBottom: 3,
     },
     memberEmail: {
-      fontSize: 13,
-      color: colors.textMuted,
+      fontFamily: font.sans,
+      fontSize: 12,
+      color: c.textMuted,
+      letterSpacing: 0.2,
     },
     roleBadge: {
-      borderRadius: 8,
+      borderRadius: 20,
       paddingHorizontal: 10,
       paddingVertical: 4,
       borderWidth: 1,
     },
     roleBadgeText: {
-      fontSize: 12,
-      fontWeight: '600',
+      fontFamily: font.sansMedium,
+      fontSize: 10,
+      letterSpacing: 1,
     },
+
+    // ── Invite button ────────────────────────────────────────
     inviteBtn: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -231,76 +267,81 @@ export default function TeamScreen() {
       marginHorizontal: 16,
       marginTop: 4,
       marginBottom: 16,
-      backgroundColor: colors.primary,
-      borderRadius: 12,
-      paddingVertical: 14,
+      backgroundColor: c.accent,
+      borderRadius: 4,
+      paddingVertical: 15,
       gap: 6,
     },
     inviteBtnText: {
-      fontSize: 15,
-      fontWeight: '600',
-      color: '#ffffff',
+      ...typeP.button,
+      color: c.primary,
     },
+
+    // ── Permissions card ─────────────────────────────────────
     permissionsCard: {
       marginHorizontal: 16,
+      marginTop: 8,
       marginBottom: 40,
-      backgroundColor: colors.surface,
-      borderRadius: 14,
+      backgroundColor: c.surface,
+      borderRadius: 4,
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: c.border,
       padding: 16,
     },
     permissionsTitle: {
-      fontSize: 12,
-      fontWeight: '700',
-      color: colors.textMuted,
-      textTransform: 'uppercase',
-      letterSpacing: 0.8,
-      marginBottom: 12,
+      ...typeP.labelSmall,
+      color: c.textMuted,
+      marginBottom: 14,
     },
     permissionRow: {
       flexDirection: 'row',
       marginBottom: 8,
-      gap: 8,
+      gap: 10,
     },
     permissionRoleLabel: {
-      fontSize: 13,
-      fontWeight: '700',
-      color: colors.text,
+      fontFamily: font.sansSemiBold,
+      fontSize: 12,
+      letterSpacing: 0.5,
       minWidth: 52,
     },
     permissionDesc: {
       flex: 1,
-      fontSize: 13,
-      color: colors.textSecondary,
-      lineHeight: 18,
+      fontFamily: font.serif,
+      fontSize: 14,
+      color: c.textMuted,
+      lineHeight: 20,
     },
     permissionDivider: {
       height: 1,
-      backgroundColor: colors.border,
-      marginVertical: 8,
+      backgroundColor: c.border,
+      marginVertical: 10,
     },
+
+    // ── Loading / empty ──────────────────────────────────────
     loadingContainer: {
       flex: 1,
       alignItems: 'center',
       justifyContent: 'center',
-      paddingTop: 60,
     },
     emptyContainer: {
       alignItems: 'center',
       justifyContent: 'center',
-      paddingTop: 60,
+      paddingTop: 48,
     },
-    emptyText: { fontSize: 15, color: colors.textMuted, marginTop: 8 },
-    emptyEmoji: { fontSize: 40 },
-    // Modal
+    emptyText: {
+      fontFamily: font.serifItalic,
+      fontSize: 15,
+      color: c.textMuted,
+    },
+
+    // ── Modal ────────────────────────────────────────────────
     modalOverlay: {
       flex: 1,
       backgroundColor: 'rgba(0,0,0,0.5)',
       justifyContent: 'flex-end',
     },
     modalSheet: {
-      backgroundColor: colors.surface,
+      backgroundColor: c.surface,
       borderTopLeftRadius: 20,
       borderTopRightRadius: 20,
       padding: 24,
@@ -310,31 +351,31 @@ export default function TeamScreen() {
       width: 36,
       height: 4,
       borderRadius: 2,
-      backgroundColor: colors.border,
+      backgroundColor: c.border,
       alignSelf: 'center',
       marginBottom: 20,
     },
     modalTitle: {
-      fontSize: 20,
-      fontWeight: '700',
-      color: colors.text,
+      fontFamily: font.serifItalic,
+      fontSize: 22,
+      color: c.primary,
       marginBottom: 20,
     },
     inputLabel: {
-      fontSize: 13,
-      fontWeight: '600',
-      color: colors.textSecondary,
-      marginBottom: 6,
+      ...typeP.labelSmall,
+      color: c.textMuted,
+      marginBottom: 8,
     },
     emailInput: {
-      backgroundColor: colors.surface2,
-      borderRadius: 10,
+      backgroundColor: c.surface2,
+      borderRadius: 8,
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: c.border,
       paddingHorizontal: 14,
       paddingVertical: 12,
-      fontSize: 15,
-      color: colors.text,
+      fontFamily: font.serif,
+      fontSize: 16,
+      color: c.text,
       marginBottom: 20,
     },
     rolePills: {
@@ -344,42 +385,38 @@ export default function TeamScreen() {
     },
     rolePill: {
       flex: 1,
-      paddingVertical: 10,
-      borderRadius: 10,
+      paddingVertical: 12,
+      borderRadius: 8,
       borderWidth: 1.5,
-      borderColor: colors.border,
-      backgroundColor: colors.surface2,
+      borderColor: c.border,
+      backgroundColor: c.surface2,
       alignItems: 'center',
     },
     rolePillAdmin: {
-      borderColor: colors.gold,
-      backgroundColor: colors.gold + '22',
+      borderColor: c.accent,
+      backgroundColor: c.accent + '22',
     },
     rolePillEditor: {
       borderColor: '#16a34a',
       backgroundColor: '#16a34a22',
     },
     rolePillText: {
-      fontSize: 14,
-      fontWeight: '600',
-      color: colors.textMuted,
+      fontFamily: font.sansMedium,
+      fontSize: 13,
+      letterSpacing: 0.5,
+      color: c.textMuted,
     },
-    rolePillTextAdmin: {
-      color: colors.gold,
-    },
-    rolePillTextEditor: {
-      color: '#16a34a',
-    },
+    rolePillTextAdmin: { color: c.accent },
+    rolePillTextEditor: { color: '#16a34a' },
     sendBtn: {
-      backgroundColor: colors.primary,
-      borderRadius: 12,
+      backgroundColor: c.primary,
+      borderRadius: 4,
       paddingVertical: 14,
       alignItems: 'center',
     },
     sendBtnText: {
-      fontSize: 16,
-      fontWeight: '600',
-      color: '#ffffff',
+      ...typeP.button,
+      color: c.accent,
     },
     cancelBtn: {
       marginTop: 12,
@@ -387,18 +424,19 @@ export default function TeamScreen() {
       paddingVertical: 10,
     },
     cancelBtnText: {
-      fontSize: 15,
-      color: colors.textMuted,
+      fontFamily: font.sansMedium,
+      fontSize: 14,
+      color: c.textMuted,
     },
   });
 
   const renderMember = ({ item }: { item: User }) => {
-    const badgeStyle = getRoleBadgeStyle(item.role);
+    const badge = getRoleBadge(item.role);
     const isCurrentUser = item.id === currentUser?.id;
 
     return (
       <View style={styles.memberRow}>
-        <View style={[styles.avatar, { backgroundColor: getAvatarBg(item.role) }]}>
+        <View style={styles.avatarBox}>
           <Text style={styles.avatarText}>{getAvatarInitial(item)}</Text>
         </View>
 
@@ -412,15 +450,8 @@ export default function TeamScreen() {
           </Text>
         </View>
 
-        <View
-          style={[
-            styles.roleBadge,
-            { backgroundColor: badgeStyle.bg, borderColor: badgeStyle.border },
-          ]}
-        >
-          <Text style={[styles.roleBadgeText, { color: badgeStyle.text }]}>
-            {badgeStyle.label}
-          </Text>
+        <View style={[styles.roleBadge, { backgroundColor: badge.bg, borderColor: badge.border }]}>
+          <Text style={[styles.roleBadgeText, { color: badge.text }]}>{badge.label}</Text>
         </View>
       </View>
     );
@@ -428,37 +459,37 @@ export default function TeamScreen() {
 
   const listHeader = (
     <>
+      {/* Section label */}
+      <View style={styles.sectionWrap}>
+        <Text style={styles.sectionLabel}>05 · MEMBERS</Text>
+        <Text style={styles.sectionSubtitle}>Your team</Text>
+      </View>
+
+      {/* Invite button */}
       <TouchableOpacity
         style={styles.inviteBtn}
         onPress={openInviteModal}
         activeOpacity={0.8}
       >
-        <Text style={{ fontSize: 18, color: '#ffffff' }}>+</Text>
-        <Text style={styles.inviteBtnText}>
-          {t('admin.inviteMember') || 'Invite Team Member'}
-        </Text>
+        <Text style={styles.inviteBtnText}>+ INVITE TEAM MEMBER</Text>
       </TouchableOpacity>
     </>
   );
 
   const listFooter = (
     <View style={styles.permissionsCard}>
-      <Text style={styles.permissionsTitle}>Role Permissions</Text>
+      <Text style={styles.permissionsTitle}>ROLE PERMISSIONS</Text>
 
       <View style={styles.permissionRow}>
-        <Text style={[styles.permissionRoleLabel, { color: colors.gold }]}>Admin</Text>
-        <Text style={styles.permissionDesc}>
-          Full access, manage team, go live
-        </Text>
+        <Text style={[styles.permissionRoleLabel, { color: c.accent }]}>Admin</Text>
+        <Text style={styles.permissionDesc}>Full access, manage team, go live</Text>
       </View>
 
       <View style={styles.permissionDivider} />
 
       <View style={styles.permissionRow}>
         <Text style={[styles.permissionRoleLabel, { color: '#16a34a' }]}>Editor</Text>
-        <Text style={styles.permissionDesc}>
-          Upload content, manage categories
-        </Text>
+        <Text style={styles.permissionDesc}>Upload content, manage categories</Text>
       </View>
     </View>
   );
@@ -467,7 +498,6 @@ export default function TeamScreen() {
     if (loading) return null;
     return (
       <View style={styles.emptyContainer}>
-        <Text style={styles.emptyEmoji}>👥</Text>
         <Text style={styles.emptyText}>No team members yet</Text>
       </View>
     );
@@ -475,7 +505,7 @@ export default function TeamScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+      {/* Minimal header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backBtn}
@@ -483,17 +513,24 @@ export default function TeamScreen() {
           activeOpacity={0.7}
           accessibilityLabel="Back"
         >
-          <Text style={styles.backText}>‹</Text>
+          <Text style={styles.backBtnText}>‹ Back</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('admin.team') || 'Team'}</Text>
-        <View style={styles.adminBadge}>
-          <Text style={styles.adminBadgeText}>ADMIN</Text>
-        </View>
+        <View style={styles.headerSpacer} />
+        <Text style={styles.headerLabel}>TEAM</Text>
+      </View>
+
+      {/* Hero */}
+      <View style={styles.hero}>
+        <Text style={styles.heroKicker}>THE TEAM</Text>
+        <Text style={styles.heroTitle}>
+          Admins &{' '}
+          <Text style={styles.heroTitleItalic}>editors</Text>
+        </Text>
       </View>
 
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator color={colors.primary} size="large" />
+          <ActivityIndicator color={c.primary} size="large" />
         </View>
       ) : (
         <FlatList
@@ -511,8 +548,8 @@ export default function TeamScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              tintColor={colors.primary}
-              colors={[colors.primary]}
+              tintColor={c.primary}
+              colors={[c.primary]}
             />
           }
           showsVerticalScrollIndicator={false}
@@ -539,11 +576,11 @@ export default function TeamScreen() {
             <View style={styles.modalHandle} />
             <Text style={styles.modalTitle}>Invite Team Member</Text>
 
-            <Text style={styles.inputLabel}>Email Address</Text>
+            <Text style={styles.inputLabel}>EMAIL ADDRESS</Text>
             <TextInput
               style={styles.emailInput}
               placeholder="user@example.com"
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={c.textMuted}
               value={inviteEmail}
               onChangeText={setInviteEmail}
               keyboardType="email-address"
@@ -552,13 +589,10 @@ export default function TeamScreen() {
               autoFocus
             />
 
-            <Text style={styles.inputLabel}>Role</Text>
+            <Text style={styles.inputLabel}>ROLE</Text>
             <View style={styles.rolePills}>
               <TouchableOpacity
-                style={[
-                  styles.rolePill,
-                  inviteRole === 'admin' && styles.rolePillAdmin,
-                ]}
+                style={[styles.rolePill, inviteRole === 'admin' && styles.rolePillAdmin]}
                 onPress={() => setInviteRole('admin')}
                 activeOpacity={0.7}
               >
@@ -573,10 +607,7 @@ export default function TeamScreen() {
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[
-                  styles.rolePill,
-                  inviteRole === 'editor' && styles.rolePillEditor,
-                ]}
+                style={[styles.rolePill, inviteRole === 'editor' && styles.rolePillEditor]}
                 onPress={() => setInviteRole('editor')}
                 activeOpacity={0.7}
               >
@@ -598,9 +629,9 @@ export default function TeamScreen() {
               disabled={inviting}
             >
               {inviting ? (
-                <ActivityIndicator color="#ffffff" />
+                <ActivityIndicator color={c.accent} />
               ) : (
-                <Text style={styles.sendBtnText}>Send Invite</Text>
+                <Text style={styles.sendBtnText}>SEND INVITE</Text>
               )}
             </TouchableOpacity>
 

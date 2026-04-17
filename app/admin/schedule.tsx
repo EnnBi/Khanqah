@@ -20,14 +20,15 @@ import { useTheme } from '../../providers/ThemeProvider';
 import { useAuth } from '../../providers/AuthProvider';
 import { supabase } from '../../lib/supabase';
 import { ScheduledSession } from '../../lib/types';
+import { type as typeP, font } from '../../lib/typography';
 
 const DAYS_SHORT = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-function formatSessionDate(isoString: string): string {
+function formatSessionDate(isoString: string): { dayTime: string; recurrenceHint: string } {
   const date = new Date(isoString);
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+  const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
   const day = dayNames[date.getDay()];
   const month = monthNames[date.getMonth()];
   const dateNum = date.getDate();
@@ -36,7 +37,10 @@ function formatSessionDate(isoString: string): string {
   const ampm = hours >= 12 ? 'PM' : 'AM';
   const displayHour = hours % 12 === 0 ? 12 : hours % 12;
   const displayMin = minutes.toString().padStart(2, '0');
-  return `${day}, ${month} ${dateNum} • ${displayHour}:${displayMin} ${ampm}`;
+  return {
+    dayTime: `${day}, ${month} ${dateNum} · ${displayHour}:${displayMin} ${ampm}`,
+    recurrenceHint: `EVERY ${day}`,
+  };
 }
 
 function buildRRule(dateStr: string): string {
@@ -74,7 +78,7 @@ export default function ScheduleScreen() {
   const { theme } = useTheme();
   const { user } = useAuth();
   const router = useRouter();
-  const colors = theme.colors;
+  const c = theme.colors;
 
   const [sessions, setSessions] = useState<ScheduledSession[]>([]);
   const [loading, setLoading] = useState(true);
@@ -227,80 +231,103 @@ export default function ScheduleScreen() {
   };
 
   const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: colors.background },
+    container: { flex: 1, backgroundColor: c.background },
+
+    // ── Header ───────────────────────────────────────────────
     header: {
       flexDirection: 'row',
       alignItems: 'center',
       paddingHorizontal: 20,
       paddingTop: 60,
-      paddingBottom: 16,
-      gap: 12,
+      paddingBottom: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: c.border,
     },
-    backBtn: { marginRight: 4 },
-    backBtnText: { fontSize: 28, color: colors.text },
-    headerTitle: { fontSize: 28, fontWeight: '700', color: colors.text, flex: 1 },
-    adminBadge: {
-      backgroundColor: colors.gold,
-      borderRadius: 6,
-      paddingHorizontal: 8,
-      paddingVertical: 3,
+    backBtn: { paddingRight: 16 },
+    backBtnText: {
+      fontFamily: font.serif,
+      fontSize: 22,
+      color: c.primary,
+      lineHeight: 26,
     },
-    adminBadgeText: {
-      fontSize: 11,
-      fontWeight: '700',
-      color: '#ffffff',
-      letterSpacing: 1,
+    headerSpacer: { flex: 1 },
+    headerLabel: {
+      ...typeP.label,
+      color: c.textMuted,
     },
-    listContent: { paddingHorizontal: 16, paddingBottom: 100 },
-    card: {
-      backgroundColor: colors.surface,
-      borderRadius: 14,
-      borderWidth: 1,
-      borderColor: colors.border,
-      padding: 16,
-      marginBottom: 12,
+
+    // ── Hero ─────────────────────────────────────────────────
+    hero: {
+      paddingHorizontal: 28,
+      paddingTop: 24,
+      paddingBottom: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: c.border,
     },
-    cardHeader: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      justifyContent: 'space-between',
+    heroKicker: {
+      ...typeP.label,
+      color: c.textMuted,
       marginBottom: 6,
+    },
+    heroTitle: {
+      fontFamily: font.serif,
+      fontSize: 28,
+      color: c.primary,
+      letterSpacing: -0.3,
+      lineHeight: 34,
+    },
+    heroTitleItalic: {
+      fontFamily: font.serifItalic,
+    },
+
+    // ── Session cards ────────────────────────────────────────
+    listContent: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 110 },
+    card: {
+      backgroundColor: c.surface,
+      borderRadius: 4,
+      borderWidth: 1,
+      borderColor: c.border,
+      marginBottom: 12,
+      flexDirection: 'row',
+      overflow: 'hidden',
+    },
+    cardGoldStripe: {
+      width: 4,
+      backgroundColor: c.accent,
+    },
+    cardBody: {
+      flex: 1,
+      padding: 16,
+    },
+    cardDayTime: {
+      ...typeP.labelSmall,
+      color: c.accent,
+      marginBottom: 8,
     },
     cardTitle: {
-      flex: 1,
-      fontSize: 15,
-      fontWeight: '700',
-      color: colors.text,
-      marginRight: 10,
-    },
-    badge: {
-      borderRadius: 8,
-      paddingHorizontal: 8,
-      paddingVertical: 3,
-    },
-    badgeTextWeekly: {
-      fontSize: 11,
-      fontWeight: '700',
-      color: '#ffffff',
-      letterSpacing: 0.5,
-    },
-    dateRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
+      fontFamily: font.serif,
+      fontSize: 17,
+      color: c.primary,
+      letterSpacing: -0.2,
+      lineHeight: 22,
       marginBottom: 6,
     },
-    dateIcon: { fontSize: 13 },
-    dateText: { fontSize: 13, color: colors.textSecondary },
-    descriptionText: {
-      fontSize: 13,
-      color: colors.textMuted,
-      lineHeight: 18,
+    cardDescription: {
+      fontFamily: font.serif,
+      fontSize: 14,
+      color: c.textMuted,
+      lineHeight: 20,
+      marginBottom: 8,
+    },
+    cardRecurrence: {
+      ...typeP.labelSmall,
+      color: c.textMuted,
     },
     cardFooter: {
       flexDirection: 'row',
       justifyContent: 'flex-end',
       marginTop: 10,
+      gap: 8,
     },
     deleteBtn: {
       flexDirection: 'row',
@@ -308,44 +335,60 @@ export default function ScheduleScreen() {
       gap: 4,
       paddingHorizontal: 12,
       paddingVertical: 6,
-      borderRadius: 8,
-      backgroundColor: '#fef2f2',
+      borderRadius: 4,
       borderWidth: 1,
       borderColor: '#fecaca',
+      backgroundColor: '#fef2f2',
     },
-    deleteBtnText: { fontSize: 13, color: '#ef4444', fontWeight: '500' },
+    deleteBtnText: {
+      fontFamily: font.sansMedium,
+      fontSize: 12,
+      letterSpacing: 0.5,
+      color: '#ef4444',
+    },
+
+    // ── FAB ──────────────────────────────────────────────────
     fab: {
       position: 'absolute',
       bottom: 32,
       left: 20,
       right: 20,
-      backgroundColor: colors.primary,
-      borderRadius: 14,
+      backgroundColor: c.accent,
+      borderRadius: 4,
       paddingVertical: 16,
       alignItems: 'center',
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.15,
+      shadowOpacity: 0.12,
       shadowRadius: 8,
       elevation: 6,
     },
-    fabText: { fontSize: 16, fontWeight: '700', color: '#ffffff' },
+    fabText: {
+      ...typeP.button,
+      color: c.primary,
+    },
+
+    // ── Empty ────────────────────────────────────────────────
     emptyContainer: {
       flex: 1,
       alignItems: 'center',
       justifyContent: 'center',
       paddingTop: 80,
     },
-    emptyEmoji: { fontSize: 44, marginBottom: 12 },
-    emptyText: { fontSize: 16, color: colors.textMuted },
-    // Modal styles
+    emptyText: {
+      fontFamily: font.serifItalic,
+      fontSize: 16,
+      color: c.textMuted,
+    },
+
+    // ── Modal ────────────────────────────────────────────────
     modalOverlay: {
       flex: 1,
       backgroundColor: 'rgba(0,0,0,0.5)',
       justifyContent: 'flex-end',
     },
     modalSheet: {
-      backgroundColor: colors.background,
+      backgroundColor: c.background,
       borderTopLeftRadius: 20,
       borderTopRightRadius: 20,
       paddingHorizontal: 20,
@@ -357,132 +400,140 @@ export default function ScheduleScreen() {
       width: 36,
       height: 4,
       borderRadius: 2,
-      backgroundColor: colors.border,
+      backgroundColor: c.border,
       alignSelf: 'center',
       marginBottom: 16,
     },
     modalTitle: {
-      fontSize: 20,
-      fontWeight: '700',
-      color: colors.text,
+      fontFamily: font.serifItalic,
+      fontSize: 22,
+      color: c.primary,
       marginBottom: 20,
     },
     fieldLabel: {
-      fontSize: 13,
-      fontWeight: '600',
-      color: colors.textSecondary,
+      ...typeP.labelSmall,
+      color: c.textMuted,
       marginBottom: 6,
-      marginTop: 14,
+      marginTop: 16,
     },
     input: {
-      backgroundColor: colors.surface,
+      backgroundColor: c.surface,
       borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: 10,
+      borderColor: c.border,
+      borderRadius: 8,
       paddingHorizontal: 14,
       paddingVertical: 11,
+      fontFamily: font.serif,
       fontSize: 15,
-      color: colors.text,
+      color: c.text,
     },
     inputMultiline: {
       height: 80,
       textAlignVertical: 'top',
       paddingTop: 11,
     },
-    inputRtl: { textAlign: 'right' },
+    inputRtl: {
+      textAlign: 'right',
+      writingDirection: 'rtl',
+      fontFamily: font.urdu,
+      fontSize: 18,
+    },
     toggleRow: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      marginTop: 14,
+      marginTop: 16,
       paddingVertical: 8,
+      borderTopWidth: 1,
+      borderTopColor: c.border,
     },
     toggleLabel: {
+      fontFamily: font.serif,
       fontSize: 15,
-      color: colors.text,
-      fontWeight: '500',
+      color: c.text,
     },
     rruleInfo: {
-      marginTop: 8,
-      backgroundColor: colors.surface2,
-      borderRadius: 10,
+      marginTop: 10,
+      backgroundColor: c.surface2,
+      borderRadius: 8,
       padding: 12,
     },
     rruleText: {
+      fontFamily: font.sansMedium,
       fontSize: 13,
-      color: colors.textSecondary,
+      color: c.textMuted,
     },
     rruleCode: {
-      fontSize: 12,
-      color: colors.textMuted,
       fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+      fontSize: 11,
+      color: c.textMuted,
       marginTop: 2,
     },
     errorText: {
+      fontFamily: font.sans,
       fontSize: 13,
       color: '#ef4444',
       marginTop: 12,
     },
     saveBtn: {
       marginTop: 20,
-      backgroundColor: colors.primary,
-      borderRadius: 12,
+      backgroundColor: c.primary,
+      borderRadius: 4,
       paddingVertical: 15,
       alignItems: 'center',
     },
     saveBtnDisabled: { opacity: 0.6 },
-    saveBtnText: { fontSize: 16, fontWeight: '700', color: '#ffffff' },
+    saveBtnText: {
+      ...typeP.button,
+      color: c.accent,
+    },
     cancelBtn: {
       marginTop: 10,
       paddingVertical: 12,
       alignItems: 'center',
     },
-    cancelBtnText: { fontSize: 15, color: colors.textMuted },
+    cancelBtnText: {
+      fontFamily: font.sansMedium,
+      fontSize: 14,
+      color: c.textMuted,
+    },
   });
 
   const renderSession = ({ item }: { item: ScheduledSession }) => {
     const isDeleting = deletingId === item.id;
-    const badgeBg = item.is_recurring ? colors.gold : '#16a34a';
-    const badgeLabel = item.is_recurring ? 'Weekly' : 'Upcoming';
+    const { dayTime, recurrenceHint } = formatSessionDate(item.scheduled_at);
 
     return (
       <View style={styles.card}>
-        <View style={styles.cardHeader}>
+        <View style={styles.cardGoldStripe} />
+        <View style={styles.cardBody}>
+          <Text style={styles.cardDayTime}>{dayTime}</Text>
           <Text style={styles.cardTitle} numberOfLines={2}>
             {item.title_en}
           </Text>
-          <View style={[styles.badge, { backgroundColor: badgeBg }]}>
-            <Text style={styles.badgeTextWeekly}>{badgeLabel}</Text>
+          {!!item.description_en && (
+            <Text style={styles.cardDescription} numberOfLines={2}>
+              {item.description_en}
+            </Text>
+          )}
+          {item.is_recurring && (
+            <Text style={styles.cardRecurrence}>{recurrenceHint} · RECURRING</Text>
+          )}
+
+          <View style={styles.cardFooter}>
+            <TouchableOpacity
+              style={styles.deleteBtn}
+              onPress={() => handleDelete(item)}
+              disabled={isDeleting}
+              activeOpacity={0.7}
+            >
+              {isDeleting ? (
+                <ActivityIndicator size="small" color="#ef4444" />
+              ) : (
+                <Text style={styles.deleteBtnText}>DELETE</Text>
+              )}
+            </TouchableOpacity>
           </View>
-        </View>
-
-        <View style={styles.dateRow}>
-          <Text style={styles.dateIcon}>📅</Text>
-          <Text style={styles.dateText}>{formatSessionDate(item.scheduled_at)}</Text>
-        </View>
-
-        {!!item.description_en && (
-          <Text style={styles.descriptionText} numberOfLines={2}>
-            {item.description_en}
-          </Text>
-        )}
-
-        <View style={styles.cardFooter}>
-          <TouchableOpacity
-            style={styles.deleteBtn}
-            onPress={() => handleDelete(item)}
-            disabled={isDeleting}
-            activeOpacity={0.7}
-          >
-            {isDeleting ? (
-              <ActivityIndicator size="small" color="#ef4444" />
-            ) : (
-              <>
-                <Text style={{ fontSize: 14 }}>🗑️</Text>
-                <Text style={styles.deleteBtnText}>Delete</Text>
-              </>
-            )}
-          </TouchableOpacity>
         </View>
       </View>
     );
@@ -492,7 +543,6 @@ export default function ScheduleScreen() {
     if (loading) return null;
     return (
       <View style={styles.emptyContainer}>
-        <Text style={styles.emptyEmoji}>📅</Text>
         <Text style={styles.emptyText}>No upcoming sessions</Text>
       </View>
     );
@@ -503,21 +553,28 @@ export default function ScheduleScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+      {/* Minimal header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
-          <Text style={styles.backBtnText}>‹</Text>
+          <Text style={styles.backBtnText}>‹ Back</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Schedule</Text>
-        <View style={styles.adminBadge}>
-          <Text style={styles.adminBadgeText}>ADMIN</Text>
-        </View>
+        <View style={styles.headerSpacer} />
+        <Text style={styles.headerLabel}>SCHEDULE</Text>
+      </View>
+
+      {/* Hero */}
+      <View style={styles.hero}>
+        <Text style={styles.heroKicker}>SCHEDULE</Text>
+        <Text style={styles.heroTitle}>
+          Upcoming{' '}
+          <Text style={styles.heroTitleItalic}>sessions</Text>
+        </Text>
       </View>
 
       {/* Session List */}
       {loading ? (
         <View style={styles.emptyContainer}>
-          <ActivityIndicator color={colors.primary} size="large" />
+          <ActivityIndicator color={c.primary} size="large" />
         </View>
       ) : (
         <FlatList
@@ -533,8 +590,8 @@ export default function ScheduleScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              tintColor={colors.primary}
-              colors={[colors.primary]}
+              tintColor={c.primary}
+              colors={[c.primary]}
             />
           }
           showsVerticalScrollIndicator={false}
@@ -543,7 +600,7 @@ export default function ScheduleScreen() {
 
       {/* FAB */}
       <TouchableOpacity style={styles.fab} onPress={openModal} activeOpacity={0.85}>
-        <Text style={styles.fabText}>+ Schedule New Session</Text>
+        <Text style={styles.fabText}>+ NEW SESSION</Text>
       </TouchableOpacity>
 
       {/* New Session Modal */}
@@ -563,33 +620,33 @@ export default function ScheduleScreen() {
 
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               {/* Title EN */}
-              <Text style={styles.fieldLabel}>Title (English) *</Text>
+              <Text style={styles.fieldLabel}>TITLE (ENGLISH) *</Text>
               <TextInput
                 style={styles.input}
                 placeholder="e.g. Weekly Zikr Mehfil"
-                placeholderTextColor={colors.textMuted}
+                placeholderTextColor={c.textMuted}
                 value={form.title_en}
                 onChangeText={(v) => setForm((f) => ({ ...f, title_en: v }))}
                 autoCapitalize="words"
               />
 
               {/* Title UR */}
-              <Text style={styles.fieldLabel}>Title (Urdu)</Text>
+              <Text style={styles.fieldLabel}>TITLE (URDU)</Text>
               <TextInput
                 style={[styles.input, styles.inputRtl]}
                 placeholder="عنوان"
-                placeholderTextColor={colors.textMuted}
+                placeholderTextColor={c.textMuted}
                 value={form.title_ur}
                 onChangeText={(v) => setForm((f) => ({ ...f, title_ur: v }))}
                 textAlign="right"
               />
 
               {/* Description EN */}
-              <Text style={styles.fieldLabel}>Description (English)</Text>
+              <Text style={styles.fieldLabel}>DESCRIPTION (ENGLISH)</Text>
               <TextInput
                 style={[styles.input, styles.inputMultiline]}
-                placeholder="Brief description…"
-                placeholderTextColor={colors.textMuted}
+                placeholder="Brief description..."
+                placeholderTextColor={c.textMuted}
                 value={form.description_en}
                 onChangeText={(v) => setForm((f) => ({ ...f, description_en: v }))}
                 multiline
@@ -597,11 +654,11 @@ export default function ScheduleScreen() {
               />
 
               {/* Description UR */}
-              <Text style={styles.fieldLabel}>Description (Urdu)</Text>
+              <Text style={styles.fieldLabel}>DESCRIPTION (URDU)</Text>
               <TextInput
                 style={[styles.input, styles.inputMultiline, styles.inputRtl]}
                 placeholder="تفصیل"
-                placeholderTextColor={colors.textMuted}
+                placeholderTextColor={c.textMuted}
                 value={form.description_ur}
                 onChangeText={(v) => setForm((f) => ({ ...f, description_ur: v }))}
                 multiline
@@ -610,11 +667,11 @@ export default function ScheduleScreen() {
               />
 
               {/* Date & Time */}
-              <Text style={styles.fieldLabel}>Date & Time *</Text>
+              <Text style={styles.fieldLabel}>DATE & TIME *</Text>
               <TextInput
                 style={styles.input}
                 placeholder="e.g. 2026-04-10 20:00"
-                placeholderTextColor={colors.textMuted}
+                placeholderTextColor={c.textMuted}
                 value={form.scheduled_at}
                 onChangeText={(v) => setForm((f) => ({ ...f, scheduled_at: v }))}
                 keyboardType="numbers-and-punctuation"
@@ -627,8 +684,8 @@ export default function ScheduleScreen() {
                 <Switch
                   value={form.is_recurring}
                   onValueChange={(v) => setForm((f) => ({ ...f, is_recurring: v }))}
-                  trackColor={{ false: colors.border, true: colors.primary }}
-                  thumbColor={form.is_recurring ? '#ffffff' : colors.textMuted}
+                  trackColor={{ false: c.border, true: c.primary }}
+                  thumbColor={form.is_recurring ? '#ffffff' : c.textMuted}
                 />
               </View>
 
@@ -657,9 +714,9 @@ export default function ScheduleScreen() {
                 activeOpacity={0.8}
               >
                 {saving ? (
-                  <ActivityIndicator color="#ffffff" />
+                  <ActivityIndicator color={c.accent} />
                 ) : (
-                  <Text style={styles.saveBtnText}>Save Session</Text>
+                  <Text style={styles.saveBtnText}>SAVE SESSION</Text>
                 )}
               </TouchableOpacity>
 

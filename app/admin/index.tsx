@@ -12,6 +12,7 @@ import { useTheme } from '../../providers/ThemeProvider';
 import { useI18n } from '../../providers/I18nProvider';
 import { useLiveSession } from '../../hooks/useLiveSession';
 import { supabase } from '../../lib/supabase';
+import { type as typeP, font } from '../../lib/typography';
 
 interface Stats {
   totalContent: number | null;
@@ -20,9 +21,11 @@ interface Stats {
 }
 
 interface NavCard {
-  emoji: string;
+  symbol: string;
   title: string;
+  subtitle: string;
   route: string;
+  isLive?: boolean;
 }
 
 export default function AdminDashboard() {
@@ -30,7 +33,7 @@ export default function AdminDashboard() {
   const { t } = useI18n();
   const router = useRouter();
   const { session: liveSession, loading: liveLoading } = useLiveSession();
-  const colors = theme.colors;
+  const c = theme.colors;
 
   const [stats, setStats] = useState<Stats>({
     totalContent: null,
@@ -64,210 +67,360 @@ export default function AdminDashboard() {
   const isLive = !liveLoading && liveSession !== null;
 
   const navCards: NavCard[] = [
-    { emoji: '🎙', title: t('admin.goLive') || 'Go Live', route: '/admin/go-live' },
-    { emoji: '⬆', title: t('admin.uploadContent') || 'Upload Content', route: '/admin/upload' },
-    { emoji: '📋', title: t('admin.manageContent') || 'Manage Content', route: '/admin/manage-content' },
-    { emoji: '📅', title: t('admin.scheduleSessions') || 'Schedule Sessions', route: '/admin/schedule' },
-    { emoji: '👥', title: t('admin.manageTeam') || 'Manage Team', route: '/admin/team' },
-    { emoji: '👤', title: t('admin.profile') || 'Profile', route: '/(tabs)/profile' },
+    {
+      symbol: '◉',
+      title: t('admin.goLive') || 'Go Live',
+      subtitle: 'BROADCAST · RECORDING ENABLED',
+      route: '/admin/go-live',
+      isLive: true,
+    },
+    {
+      symbol: '↑',
+      title: t('admin.uploadContent') || 'Upload Content',
+      subtitle: 'AUDIO · VIDEO · BOOKS',
+      route: '/admin/upload',
+    },
+    {
+      symbol: '≡',
+      title: t('admin.manageContent') || 'Manage Content',
+      subtitle: 'EDIT · DELETE · ORGANISE',
+      route: '/admin/manage-content',
+    },
+    {
+      symbol: '◷',
+      title: t('admin.scheduleSessions') || 'Schedule Sessions',
+      subtitle: 'UPCOMING · RECURRING',
+      route: '/admin/schedule',
+    },
+    {
+      symbol: '◈',
+      title: t('admin.manageTeam') || 'Manage Team',
+      subtitle: 'ADMINS · EDITORS',
+      route: '/admin/team',
+    },
+    {
+      symbol: '◯',
+      title: t('admin.profile') || 'Profile',
+      subtitle: 'ACCOUNT · SETTINGS',
+      route: '/(tabs)/profile',
+    },
   ];
 
   const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 20,
+    root: { flex: 1, backgroundColor: c.background },
+    scroll: { flex: 1 },
+
+    // Hero
+    hero: {
+      backgroundColor: c.headerBg,
       paddingTop: 60,
-      paddingBottom: 20,
-      gap: 12,
+      paddingBottom: 48,
+      paddingHorizontal: 28,
+      overflow: 'hidden',
+      position: 'relative',
     },
-    headerTitle: {
-      fontSize: 28,
-      fontWeight: '700',
-      color: colors.text,
+    circleA: {
+      position: 'absolute',
+      top: -60,
+      right: -40,
+      width: 200,
+      height: 200,
+      borderRadius: 100,
+      borderWidth: 1,
+      borderColor: 'rgba(212, 168, 83, 0.2)',
     },
-    adminBadge: {
-      backgroundColor: colors.gold,
-      borderRadius: 6,
-      paddingHorizontal: 8,
-      paddingVertical: 3,
+    circleB: {
+      position: 'absolute',
+      top: -40,
+      right: -20,
+      width: 160,
+      height: 160,
+      borderRadius: 80,
+      borderWidth: 1,
+      borderColor: 'rgba(212, 168, 83, 0.15)',
     },
-    adminBadgeText: {
-      fontSize: 11,
-      fontWeight: '700',
-      color: '#ffffff',
-      letterSpacing: 1,
+    kicker: {
+      ...typeP.label,
+      color: c.accent,
+      marginBottom: 18,
     },
-    sectionTitle: {
-      fontSize: 13,
-      fontWeight: '600',
-      color: colors.textMuted,
-      textTransform: 'uppercase',
-      letterSpacing: 0.8,
-      paddingHorizontal: 20,
-      marginBottom: 12,
-      marginTop: 4,
+    heroTitle: {
+      fontFamily: font.serif,
+      fontSize: 34,
+      lineHeight: 38,
+      letterSpacing: -0.5,
+      color: '#f7f5f0',
     },
+    heroTitleItalic: {
+      fontFamily: font.serifItalic,
+      color: c.accent,
+    },
+    heroArabic: {
+      fontFamily: font.urdu,
+      fontSize: 22,
+      textAlign: 'right',
+      writingDirection: 'rtl',
+      color: c.accent,
+      marginTop: 20,
+      lineHeight: 36,
+    },
+
+    // Stats grid
     statsGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
       paddingHorizontal: 16,
       gap: 10,
-      marginBottom: 28,
+      paddingTop: 28,
+      paddingBottom: 4,
     },
     statCard: {
       flex: 1,
       minWidth: '45%',
-      backgroundColor: colors.surface,
-      borderRadius: 14,
-      padding: 16,
+      backgroundColor: c.surface,
+      borderRadius: 4,
+      padding: 18,
       borderWidth: 1,
-      borderColor: colors.border,
-      alignItems: 'center',
+      borderColor: c.border,
+      alignItems: 'flex-start',
     },
     statNumber: {
-      fontSize: 28,
-      fontWeight: '700',
-      color: colors.text,
+      fontFamily: font.serif,
+      fontSize: 32,
+      color: c.primary,
       marginBottom: 4,
+      lineHeight: 36,
+    },
+    statNumberLive: {
+      fontFamily: font.serif,
+      fontSize: 32,
+      color: c.liveRed,
+      marginBottom: 4,
+      lineHeight: 36,
     },
     statLabel: {
-      fontSize: 12,
-      color: colors.textMuted,
-      textAlign: 'center',
+      ...typeP.labelSmall,
+      color: c.textMuted,
     },
-    liveIndicator: {
+    liveIndicatorRow: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 6,
     },
     liveDot: {
-      width: 10,
-      height: 10,
-      borderRadius: 5,
-      backgroundColor: colors.liveRed,
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: c.liveRed,
     },
-    liveText: {
-      fontSize: 20,
-      fontWeight: '700',
-      color: colors.liveRed,
+
+    // Section label
+    sectionWrap: {
+      paddingHorizontal: 28,
+      paddingTop: 32,
+      paddingBottom: 12,
     },
-    offlineText: {
-      fontSize: 20,
-      fontWeight: '700',
-      color: colors.textMuted,
+    sectionLabel: {
+      ...typeP.label,
+      color: c.textMuted,
+      marginBottom: 6,
     },
+    sectionSubtitle: {
+      fontFamily: font.serifItalic,
+      fontSize: 24,
+      letterSpacing: -0.3,
+      color: c.primary,
+    },
+    sectionSubtitleBold: {
+      fontFamily: font.serifItalic,
+      fontSize: 24,
+      color: c.primary,
+    },
+
+    // Nav cards
     cardsContainer: {
       paddingHorizontal: 16,
       gap: 10,
-      paddingBottom: 40,
+      paddingBottom: 48,
     },
     navCard: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: colors.surface,
-      borderRadius: 14,
-      padding: 16,
+      backgroundColor: c.surface,
+      borderRadius: 4,
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: c.border,
+      padding: 16,
       gap: 14,
     },
-    navCardEmoji: {
-      fontSize: 24,
-      width: 36,
-      textAlign: 'center',
+    iconBox: {
+      width: 44,
+      height: 44,
+      backgroundColor: c.primary,
+      borderRadius: 4,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
-    navCardTitle: {
+    iconBoxLive: {
+      width: 44,
+      height: 44,
+      borderRadius: 4,
+      alignItems: 'center',
+      justifyContent: 'center',
+      // gold-to-red gradient fallback — use linear overlay via layered views
+      backgroundColor: '#c23e3e',
+    },
+    iconSymbol: {
+      fontFamily: font.serif,
+      fontSize: 20,
+      color: c.accent,
+    },
+    iconSymbolLive: {
+      fontFamily: font.serif,
+      fontSize: 20,
+      color: '#f7f5f0',
+    },
+    cardTextWrap: {
       flex: 1,
-      fontSize: 16,
-      fontWeight: '500',
-      color: colors.text,
+    },
+    cardTitle: {
+      fontFamily: font.serif,
+      fontSize: 17,
+      color: c.primary,
+      letterSpacing: -0.2,
+      marginBottom: 3,
+    },
+    cardSubtitle: {
+      ...typeP.labelSmall,
+      color: c.textMuted,
+    },
+    cardSubtitleLive: {
+      ...typeP.labelSmall,
+      color: c.liveRed,
+    },
+    livePulseDot: {
+      width: 5,
+      height: 5,
+      borderRadius: 3,
+      backgroundColor: c.liveRed,
+      marginRight: 4,
+    },
+    liveSubRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
     },
     chevron: {
-      fontSize: 18,
-      color: colors.textMuted,
+      fontFamily: font.serif,
+      fontSize: 22,
+      color: c.textMuted,
+      lineHeight: 24,
     },
   });
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>{t('admin.title') || 'Admin'}</Text>
-        <View style={styles.adminBadge}>
-          <Text style={styles.adminBadgeText}>ADMIN</Text>
-        </View>
-      </View>
-
-      {/* Quick Stats */}
-      <Text style={styles.sectionTitle}>{t('admin.quickStats') || 'Quick Stats'}</Text>
-      <View style={styles.statsGrid}>
-        {/* Total Content */}
-        <View style={styles.statCard}>
-          {statsLoading ? (
-            <ActivityIndicator color={colors.primary} />
-          ) : (
-            <Text style={styles.statNumber}>{stats.totalContent ?? '—'}</Text>
-          )}
-          <Text style={styles.statLabel}>{t('admin.totalContent') || 'Total Content'}</Text>
+    <View style={styles.root}>
+      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+        {/* Dark forest hero */}
+        <View style={styles.hero}>
+          <View style={styles.circleA} />
+          <View style={styles.circleB} />
+          <Text style={styles.kicker}>ADMIN ACCESS</Text>
+          <Text style={styles.heroTitle}>
+            Manage the{' '}
+            <Text style={styles.heroTitleItalic}>khanqah</Text>
+          </Text>
+          <Text style={styles.heroArabic}>انتظامیہ</Text>
         </View>
 
-        {/* Total Users */}
-        <View style={styles.statCard}>
-          {statsLoading ? (
-            <ActivityIndicator color={colors.primary} />
-          ) : (
-            <Text style={styles.statNumber}>{stats.totalUsers ?? '—'}</Text>
-          )}
-          <Text style={styles.statLabel}>{t('admin.totalUsers') || 'Total Users'}</Text>
+        {/* Stats 2x2 grid */}
+        <View style={styles.statsGrid}>
+          {/* Total Content */}
+          <View style={styles.statCard}>
+            {statsLoading ? (
+              <ActivityIndicator color={c.primary} />
+            ) : (
+              <Text style={styles.statNumber}>{stats.totalContent ?? '—'}</Text>
+            )}
+            <Text style={styles.statLabel}>TOTAL CONTENT</Text>
+          </View>
+
+          {/* Total Users */}
+          <View style={styles.statCard}>
+            {statsLoading ? (
+              <ActivityIndicator color={c.primary} />
+            ) : (
+              <Text style={styles.statNumber}>{stats.totalUsers ?? '—'}</Text>
+            )}
+            <Text style={styles.statLabel}>TOTAL USERS</Text>
+          </View>
+
+          {/* Live Status */}
+          <View style={styles.statCard}>
+            {liveLoading ? (
+              <ActivityIndicator color={c.primary} />
+            ) : isLive ? (
+              <View style={styles.liveIndicatorRow}>
+                <View style={styles.liveDot} />
+                <Text style={styles.statNumberLive}>LIVE</Text>
+              </View>
+            ) : (
+              <Text style={styles.statNumber}>Off</Text>
+            )}
+            <Text style={styles.statLabel}>LIVE STATUS</Text>
+          </View>
+
+          {/* Scheduled Sessions */}
+          <View style={styles.statCard}>
+            {statsLoading ? (
+              <ActivityIndicator color={c.primary} />
+            ) : (
+              <Text style={styles.statNumber}>{stats.scheduledSessions ?? '—'}</Text>
+            )}
+            <Text style={styles.statLabel}>SCHEDULED</Text>
+          </View>
         </View>
 
-        {/* Live Status */}
-        <View style={styles.statCard}>
-          {liveLoading ? (
-            <ActivityIndicator color={colors.primary} />
-          ) : (
-            <View style={styles.liveIndicator}>
-              {isLive && <View style={styles.liveDot} />}
-              <Text style={isLive ? styles.liveText : styles.offlineText}>
-                {isLive ? 'LIVE' : 'Off'}
-              </Text>
-            </View>
-          )}
-          <Text style={styles.statLabel}>{t('admin.liveStatus') || 'Live Status'}</Text>
+        {/* Section label */}
+        <View style={styles.sectionWrap}>
+          <Text style={styles.sectionLabel}>05 · MANAGEMENT</Text>
+          <Text style={styles.sectionSubtitle}>
+            Tools &{' '}
+            <Text style={styles.sectionSubtitleBold}>actions</Text>
+          </Text>
         </View>
 
-        {/* Scheduled Sessions */}
-        <View style={styles.statCard}>
-          {statsLoading ? (
-            <ActivityIndicator color={colors.primary} />
-          ) : (
-            <Text style={styles.statNumber}>{stats.scheduledSessions ?? '—'}</Text>
-          )}
-          <Text style={styles.statLabel}>{t('admin.scheduledSessions') || 'Scheduled'}</Text>
-        </View>
-      </View>
+        {/* Navigation cards */}
+        <View style={styles.cardsContainer}>
+          {navCards.map((card) => (
+            <TouchableOpacity
+              key={card.route}
+              style={styles.navCard}
+              activeOpacity={0.7}
+              onPress={() => router.push(card.route as any)}
+            >
+              <View style={card.isLive ? styles.iconBoxLive : styles.iconBox}>
+                <Text style={card.isLive ? styles.iconSymbolLive : styles.iconSymbol}>
+                  {card.symbol}
+                </Text>
+              </View>
 
-      {/* Navigation Cards */}
-      <Text style={styles.sectionTitle}>{t('admin.manage') || 'Manage'}</Text>
-      <View style={styles.cardsContainer}>
-        {navCards.map((card) => (
-          <TouchableOpacity
-            key={card.route}
-            style={styles.navCard}
-            activeOpacity={0.7}
-            onPress={() => router.push(card.route as any)}
-          >
-            <Text style={styles.navCardEmoji}>{card.emoji}</Text>
-            <Text style={styles.navCardTitle}>{card.title}</Text>
-            <Text style={styles.chevron}>›</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </ScrollView>
+              <View style={styles.cardTextWrap}>
+                <Text style={styles.cardTitle}>{card.title}</Text>
+                {card.isLive ? (
+                  <View style={styles.liveSubRow}>
+                    <View style={styles.livePulseDot} />
+                    <Text style={styles.cardSubtitleLive}>{card.subtitle}</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.cardSubtitle}>{card.subtitle}</Text>
+                )}
+              </View>
+
+              <Text style={styles.chevron}>›</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </ScrollView>
+    </View>
   );
 }

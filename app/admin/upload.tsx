@@ -18,20 +18,20 @@ import { useI18n } from '../../providers/I18nProvider';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
 import { ContentType, Category } from '../../lib/types';
+import { type as typeP, font } from '../../lib/typography';
 
 interface ContentTypeOption {
   value: ContentType;
   label: string;
-  emoji: string;
 }
 
 const CONTENT_TYPES: ContentTypeOption[] = [
-  { value: 'bayan', label: 'Bayan', emoji: '🎙' },
-  { value: 'clip', label: 'Clip', emoji: '🎥' },
-  { value: 'nazam', label: 'Nazam', emoji: '🎶' },
-  { value: 'quran', label: 'Quran', emoji: '📖' },
-  { value: 'hamd_naat', label: 'Hamd & Naat', emoji: '🙌' },
-  { value: 'book', label: 'Book', emoji: '📕' },
+  { value: 'bayan', label: 'Bayan' },
+  { value: 'clip', label: 'Clip' },
+  { value: 'nazam', label: 'Nazam' },
+  { value: 'quran', label: 'Quran' },
+  { value: 'hamd_naat', label: 'Hamd & Naat' },
+  { value: 'book', label: 'Book' },
 ];
 
 function isYouTubeUrl(url: string): boolean {
@@ -43,7 +43,7 @@ export default function UploadContentScreen() {
   const { t } = useI18n();
   const { user } = useAuth();
   const router = useRouter();
-  const colors = theme.colors;
+  const c = theme.colors;
 
   // Form state
   const [selectedType, setSelectedType] = useState<ContentType>('bayan');
@@ -139,57 +139,68 @@ export default function UploadContentScreen() {
 
   const styles = StyleSheet.create({
     flex: { flex: 1 },
-    container: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
+    container: { flex: 1, backgroundColor: c.background },
+
+    // ── Header ───────────────────────────────────────────────
     header: {
       flexDirection: 'row',
       alignItems: 'center',
       paddingHorizontal: 20,
       paddingTop: 60,
       paddingBottom: 20,
-      gap: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: c.border,
     },
-    backButton: {
-      padding: 4,
-      marginRight: 4,
-    },
-    backButtonText: {
+    backBtn: { paddingRight: 16 },
+    backBtnText: {
+      fontFamily: font.serif,
       fontSize: 22,
-      color: colors.primary,
+      color: c.primary,
+      lineHeight: 26,
     },
-    headerTitle: {
-      fontSize: 28,
-      fontWeight: '700',
-      color: colors.text,
-      flex: 1,
+    headerSpacer: { flex: 1 },
+    headerLabel: {
+      ...typeP.label,
+      color: c.textMuted,
     },
-    adminBadge: {
-      backgroundColor: colors.gold,
-      borderRadius: 6,
-      paddingHorizontal: 8,
-      paddingVertical: 3,
+
+    // ── Hero ─────────────────────────────────────────────────
+    hero: {
+      paddingHorizontal: 28,
+      paddingTop: 28,
+      paddingBottom: 24,
+      borderBottomWidth: 1,
+      borderBottomColor: c.border,
     },
-    adminBadgeText: {
-      fontSize: 11,
-      fontWeight: '700',
-      color: '#ffffff',
-      letterSpacing: 1,
+    heroKicker: {
+      ...typeP.label,
+      color: c.textMuted,
+      marginBottom: 8,
     },
+    heroTitle: {
+      fontFamily: font.serif,
+      fontSize: 30,
+      color: c.primary,
+      letterSpacing: -0.3,
+      lineHeight: 36,
+    },
+    heroTitleItalic: {
+      fontFamily: font.serifItalic,
+      color: c.primary,
+    },
+
+    // ── Form ─────────────────────────────────────────────────
     form: {
       paddingHorizontal: 20,
       paddingBottom: 60,
     },
     sectionLabel: {
-      fontSize: 13,
-      fontWeight: '600',
-      color: colors.textMuted,
-      textTransform: 'uppercase',
-      letterSpacing: 0.8,
-      marginBottom: 10,
-      marginTop: 24,
+      ...typeP.labelSmall,
+      color: c.textMuted,
+      marginBottom: 12,
+      marginTop: 28,
     },
+
     // Content type pills
     pillsRow: {
       flexDirection: 'row',
@@ -197,51 +208,52 @@ export default function UploadContentScreen() {
       gap: 8,
     },
     pill: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
+      paddingHorizontal: 16,
+      paddingVertical: 9,
       borderRadius: 20,
-      backgroundColor: colors.surface,
+      backgroundColor: c.surface,
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: c.border,
     },
     pillActive: {
-      backgroundColor: colors.primary,
-      borderColor: colors.primary,
-    },
-    pillEmoji: {
-      fontSize: 14,
+      backgroundColor: c.primary,
+      borderColor: c.primary,
     },
     pillLabel: {
+      fontFamily: font.sansMedium,
       fontSize: 13,
-      fontWeight: '500',
-      color: colors.text,
+      letterSpacing: 0.3,
+      color: c.text,
     },
     pillLabelActive: {
       color: '#ffffff',
     },
+
     // Text inputs
     input: {
-      backgroundColor: colors.surface,
-      borderRadius: 12,
+      backgroundColor: c.surface2,
+      borderRadius: 8,
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: c.border,
       paddingHorizontal: 14,
       paddingVertical: 12,
-      fontSize: 15,
-      color: colors.text,
+      fontFamily: font.serif,
+      fontSize: 16,
+      color: c.text,
     },
     inputRtl: {
       textAlign: 'right',
+      writingDirection: 'rtl',
+      fontFamily: font.urdu,
+      fontSize: 18,
     },
-    // Category picker
+
+    // Category picker row
     categoryPicker: {
-      backgroundColor: colors.surface,
-      borderRadius: 12,
+      backgroundColor: c.surface2,
+      borderRadius: 8,
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: c.border,
       paddingHorizontal: 14,
       paddingVertical: 14,
       flexDirection: 'row',
@@ -249,50 +261,53 @@ export default function UploadContentScreen() {
       justifyContent: 'space-between',
     },
     categoryPickerText: {
-      fontSize: 15,
-      color: colors.textMuted,
+      fontFamily: font.serif,
+      fontSize: 16,
+      color: c.textMuted,
     },
     categoryPickerTextSelected: {
-      color: colors.text,
+      color: c.text,
     },
     categoryPickerChevron: {
-      fontSize: 18,
-      color: colors.textMuted,
+      fontFamily: font.serif,
+      fontSize: 20,
+      color: c.textMuted,
     },
-    // Thumbnail upload zone
+
+    // Thumbnail zone
     thumbnailZone: {
-      borderRadius: 12,
-      borderWidth: 1.5,
-      borderColor: colors.border,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: c.border,
       borderStyle: 'dashed',
       padding: 16,
       alignItems: 'center',
+      backgroundColor: c.surface2,
       marginBottom: 12,
     },
-    thumbnailIcon: {
-      fontSize: 28,
-      marginBottom: 6,
-    },
     thumbnailZoneText: {
+      fontFamily: font.sans,
       fontSize: 13,
-      color: colors.textMuted,
-      marginBottom: 10,
+      color: c.textMuted,
+      marginBottom: 12,
     },
     thumbnailInput: {
-      backgroundColor: colors.surface,
-      borderRadius: 10,
+      backgroundColor: c.surface,
+      borderRadius: 8,
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: c.border,
       paddingHorizontal: 12,
       paddingVertical: 10,
-      fontSize: 13,
-      color: colors.text,
+      fontFamily: font.serif,
+      fontSize: 14,
+      color: c.text,
       width: '100%',
     },
+
     // Publish button
     publishButton: {
-      backgroundColor: colors.primary,
-      borderRadius: 14,
+      backgroundColor: c.primary,
+      borderRadius: 4,
       paddingVertical: 16,
       alignItems: 'center',
       marginTop: 32,
@@ -301,10 +316,10 @@ export default function UploadContentScreen() {
       gap: 8,
     },
     publishButtonText: {
-      fontSize: 16,
-      fontWeight: '700',
-      color: '#ffffff',
+      ...typeP.button,
+      color: c.accent,
     },
+
     // Modal
     modalOverlay: {
       flex: 1,
@@ -312,7 +327,7 @@ export default function UploadContentScreen() {
       justifyContent: 'flex-end',
     },
     modalSheet: {
-      backgroundColor: colors.background,
+      backgroundColor: c.background,
       borderTopLeftRadius: 20,
       borderTopRightRadius: 20,
       paddingTop: 12,
@@ -322,15 +337,15 @@ export default function UploadContentScreen() {
     modalHandle: {
       width: 36,
       height: 4,
-      backgroundColor: colors.border,
+      backgroundColor: c.border,
       borderRadius: 2,
       alignSelf: 'center',
       marginBottom: 16,
     },
     modalTitle: {
-      fontSize: 16,
-      fontWeight: '700',
-      color: colors.text,
+      fontFamily: font.serifItalic,
+      fontSize: 20,
+      color: c.primary,
       paddingHorizontal: 20,
       marginBottom: 12,
     },
@@ -338,39 +353,42 @@ export default function UploadContentScreen() {
       paddingHorizontal: 20,
       paddingVertical: 14,
       borderBottomWidth: 1,
-      borderBottomColor: colors.border,
+      borderBottomColor: c.border,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
     },
     categoryItemText: {
+      fontFamily: font.serif,
       fontSize: 15,
-      color: colors.text,
+      color: c.text,
     },
     categoryItemSelected: {
-      color: colors.primary,
-      fontWeight: '600',
+      color: c.primary,
+      fontFamily: font.serifSemiBold,
     },
     checkmark: {
+      fontFamily: font.sansMedium,
       fontSize: 16,
-      color: colors.primary,
+      color: c.primary,
     },
     modalCancelBtn: {
       marginHorizontal: 20,
       marginTop: 12,
       paddingVertical: 14,
       alignItems: 'center',
-      backgroundColor: colors.surface,
-      borderRadius: 12,
+      backgroundColor: c.surface,
+      borderRadius: 8,
     },
     modalCancelText: {
+      fontFamily: font.sansMedium,
       fontSize: 15,
-      fontWeight: '600',
-      color: colors.textSecondary,
+      color: c.textMuted,
     },
     emptyCategoryText: {
       textAlign: 'center',
-      color: colors.textMuted,
+      fontFamily: font.serif,
+      color: c.textMuted,
       fontSize: 14,
       paddingVertical: 24,
     },
@@ -386,20 +404,27 @@ export default function UploadContentScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Header */}
+        {/* Minimal header */}
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Text style={styles.backButtonText}>‹</Text>
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+            <Text style={styles.backBtnText}>‹ Back</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>{t('admin.upload') || 'Upload'}</Text>
-          <View style={styles.adminBadge}>
-            <Text style={styles.adminBadgeText}>ADMIN</Text>
-          </View>
+          <View style={styles.headerSpacer} />
+          <Text style={styles.headerLabel}>UPLOAD</Text>
+        </View>
+
+        {/* Hero */}
+        <View style={styles.hero}>
+          <Text style={styles.heroKicker}>NEW CONTENT</Text>
+          <Text style={styles.heroTitle}>
+            Add a{' '}
+            <Text style={styles.heroTitleItalic}>bayan</Text>
+          </Text>
         </View>
 
         <View style={styles.form}>
           {/* Content Type */}
-          <Text style={styles.sectionLabel}>{t('admin.contentType') || 'Content Type'}</Text>
+          <Text style={styles.sectionLabel}>CONTENT TYPE</Text>
           <View style={styles.pillsRow}>
             {CONTENT_TYPES.map((ct) => {
               const isActive = selectedType === ct.value;
@@ -410,7 +435,6 @@ export default function UploadContentScreen() {
                   onPress={() => setSelectedType(ct.value)}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.pillEmoji}>{ct.emoji}</Text>
                   <Text style={[styles.pillLabel, isActive && styles.pillLabelActive]}>
                     {ct.label}
                   </Text>
@@ -420,30 +444,31 @@ export default function UploadContentScreen() {
           </View>
 
           {/* Title (English) */}
-          <Text style={styles.sectionLabel}>{t('admin.titleEn') || 'Title (English)'}</Text>
+          <Text style={styles.sectionLabel}>TITLE</Text>
           <TextInput
             style={styles.input}
-            placeholder="Enter title..."
-            placeholderTextColor={colors.textMuted}
+            placeholder="Enter English title..."
+            placeholderTextColor={c.textMuted}
             value={titleEn}
             onChangeText={setTitleEn}
             returnKeyType="next"
           />
 
           {/* Title (Urdu) */}
-          <Text style={styles.sectionLabel}>{t('admin.titleUr') || 'Title (Urdu)'}</Text>
-          <TextInput
-            style={[styles.input, styles.inputRtl]}
-            placeholder="عنوان درج کریں..."
-            placeholderTextColor={colors.textMuted}
-            value={titleUr}
-            onChangeText={setTitleUr}
-            textAlign="right"
-            returnKeyType="next"
-          />
+          <View style={{ marginTop: 10 }}>
+            <TextInput
+              style={[styles.input, styles.inputRtl]}
+              placeholder="اردو عنوان درج کریں..."
+              placeholderTextColor={c.textMuted}
+              value={titleUr}
+              onChangeText={setTitleUr}
+              textAlign="right"
+              returnKeyType="next"
+            />
+          </View>
 
           {/* Category */}
-          <Text style={styles.sectionLabel}>{t('admin.category') || 'Category'}</Text>
+          <Text style={styles.sectionLabel}>CATEGORY</Text>
           <TouchableOpacity
             style={styles.categoryPicker}
             onPress={() => setCategoryModalVisible(true)}
@@ -461,11 +486,11 @@ export default function UploadContentScreen() {
           </TouchableOpacity>
 
           {/* Media URL */}
-          <Text style={styles.sectionLabel}>{t('admin.mediaUrl') || 'Media URL'}</Text>
+          <Text style={styles.sectionLabel}>MEDIA URL</Text>
           <TextInput
             style={styles.input}
             placeholder="https://archive.org/download/... or YouTube URL"
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={c.textMuted}
             value={mediaUrl}
             onChangeText={setMediaUrl}
             autoCapitalize="none"
@@ -474,14 +499,13 @@ export default function UploadContentScreen() {
           />
 
           {/* Thumbnail */}
-          <Text style={styles.sectionLabel}>{t('admin.thumbnail') || 'Thumbnail (optional)'}</Text>
+          <Text style={styles.sectionLabel}>THUMBNAIL (OPTIONAL)</Text>
           <View style={styles.thumbnailZone}>
-            <Text style={styles.thumbnailIcon}>📷</Text>
-            <Text style={styles.thumbnailZoneText}>Tap to upload (or enter URL below)</Text>
+            <Text style={styles.thumbnailZoneText}>Tap to upload or enter URL below</Text>
             <TextInput
               style={styles.thumbnailInput}
               placeholder="https://example.com/thumbnail.jpg"
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={c.textMuted}
               value={thumbnailUrl}
               onChangeText={setThumbnailUrl}
               autoCapitalize="none"
@@ -497,11 +521,9 @@ export default function UploadContentScreen() {
             disabled={submitting}
           >
             {submitting ? (
-              <ActivityIndicator color="#ffffff" />
+              <ActivityIndicator color={c.accent} />
             ) : (
-              <Text style={styles.publishButtonText}>
-                {t('admin.publishContent') || 'Publish Content'}
-              </Text>
+              <Text style={styles.publishButtonText}>PUBLISH CONTENT</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -525,7 +547,7 @@ export default function UploadContentScreen() {
 
             <ScrollView>
               {categoriesLoading ? (
-                <ActivityIndicator color={colors.primary} style={{ paddingVertical: 24 }} />
+                <ActivityIndicator color={c.primary} style={{ paddingVertical: 24 }} />
               ) : categories.length === 0 ? (
                 <Text style={styles.emptyCategoryText}>No categories found for this type.</Text>
               ) : (
