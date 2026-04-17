@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Content } from '../../lib/types';
 import { useLiveSession } from '../../hooks/useLiveSession';
 import { usePlayer } from '../../hooks/usePlayer';
+import { useSafeBack } from '../../hooks/useSafeBack';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useI18n } from '../../providers/I18nProvider';
 
@@ -41,6 +42,7 @@ export default function LivePlayerScreen() {
   const { theme } = useTheme();
   const { language } = useI18n();
   const c = theme.colors;
+  const safeBack = useSafeBack();
 
   const { session: liveSession, loading } = useLiveSession();
   const { isPlaying, playContent, pause, resume } = usePlayer();
@@ -120,7 +122,7 @@ export default function LivePlayerScreen() {
 
   const handleBack = async () => {
     await pause();
-    router.back();
+    safeBack();
   };
 
   const handlePlayPause = async () => {
@@ -167,7 +169,7 @@ export default function LivePlayerScreen() {
     return (
       <View style={[styles.screen, { backgroundColor: c.background }]}>
         <View style={[styles.emptyContainer, { paddingTop: insets.top + 16 }]}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.emptyBack}>
+          <TouchableOpacity onPress={safeBack} style={styles.emptyBack}>
             <Text style={[styles.backBtnText, { color: c.primary }]}>‹ Back</Text>
           </TouchableOpacity>
           <View style={styles.emptyBody}>

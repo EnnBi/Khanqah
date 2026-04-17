@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
 import { Content, ContentType } from '../../lib/types';
 import { usePlayer } from '../../hooks/usePlayer';
+import { useSafeBack } from '../../hooks/useSafeBack';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useI18n } from '../../providers/I18nProvider';
 import { TopicsList } from '../../components/TopicsList';
@@ -52,6 +53,7 @@ export default function PlayerScreen() {
   const { theme } = useTheme();
   const { language, t } = useI18n();
   const c = theme.colors;
+  const goBack = useSafeBack();
 
   const {
     currentContent,
@@ -177,7 +179,7 @@ export default function PlayerScreen() {
         {/* ── Header ── */}
         <View style={styles.header}>
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={goBack}
             style={styles.headerBtn}
             accessibilityLabel="Back"
           >
