@@ -77,13 +77,9 @@ export const lightTheme: Theme = {
 export const darkTheme: Theme = {
   dark: true,
   colors: {
-    // Medium forest — light enough to read as text on the deep-ink
-    // background AND dark enough for gold text on primary-bg buttons to
-    // still contrast. Previously this was gold, which collided with
-    // gold text and icons everywhere.
-    primary: '#3d7e6a',
-    primaryLight: '#5ea190',
-    primaryDark: '#2d5f4c',
+    primary: '#d4a853',        // Gold leads in dark mode
+    primaryLight: '#e8c672',
+    primaryDark: '#a8852e',
     accent: '#d4a853',
     accentLight: '#e8c672',
     liveRed: '#d65050',
@@ -95,7 +91,7 @@ export const darkTheme: Theme = {
 
     text: '#f7f5f0',
     textSecondary: '#c9c0ac',
-    textMuted: '#a89d84',      // Lighter brass for readability on dark bg
+    textMuted: '#8a7d66',
     border: 'rgba(247, 245, 240, 0.1)',
 
     miniPlayerBg: '#1a4638',

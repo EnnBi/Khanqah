@@ -286,7 +286,9 @@ export default function PlayerScreen() {
               style={[
                 styles.playBtn,
                 {
-                  backgroundColor: c.primary,
+                  // In dark mode primary is gold, so force the deep forest
+                  // background so the gold icon stays visible.
+                  backgroundColor: theme.dark ? '#0f2e24' : c.primary,
                   borderColor: c.gold,
                   shadowColor: c.gold,
                 },
