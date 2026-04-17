@@ -2,6 +2,13 @@
 // yt-dlp execution, archive.org upload. Mockable dependencies are passed
 // in so the worker tests can swap them out.
 
+const { execFile } = require('node:child_process');
+const { promisify } = require('node:util');
+const fs = require('node:fs/promises');
+const { buildYtDlpArgs } = require('./mirror-lib');
+
+const defaultExec = promisify(execFile);
+
 async function claimPendingJob(db) {
   // 1. Find the oldest pending row with attempts remaining
   const { data: row, error: selectError } = await db
@@ -85,10 +92,29 @@ async function resetForRetry(db, id) {
   if (error) throw error;
 }
 
+async function downloadFromYouTube({
+  format, id, url, tempDir,
+  exec = defaultExec,
+  stat = fs.stat,
+}) {
+  const outPathTemplate = `${tempDir}/${id}.%(ext)s`;
+  const args = buildYtDlpArgs(format, outPathTemplate, url);
+
+  // 256 MB stdout buffer is well above what yt-dlp prints even for chatty
+  // progress output — prevents "stdout maxBuffer exceeded" on long downloads.
+  await exec('yt-dlp', args, { maxBuffer: 256 * 1024 * 1024 });
+
+  const ext = format === 'audio' ? 'mp3' : 'mp4';
+  const filePath = `${tempDir}/${id}.${ext}`;
+  await stat(filePath); // confirms the file actually exists post-download
+  return { filePath, ext };
+}
+
 module.exports = {
   claimPendingJob,
   markStatus,
   markReady,
   markFailed,
   resetForRetry,
+  downloadFromYouTube,
 };

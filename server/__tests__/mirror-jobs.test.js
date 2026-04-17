@@ -168,3 +168,90 @@ test('markStatus: throws when Supabase returns an error', async () => {
     (err) => err === dbErr,
   );
 });
+
+// ── downloadFromYouTube ────────────────────────────────────────
+const { downloadFromYouTube } = require('../mirror-jobs');
+
+function fakeExec(script) {
+  // script receives (cmd, args, opts) and returns whatever the caller specifies
+  return async (cmd, args, opts) => {
+    const result = await script({ cmd, args, opts });
+    return result;
+  };
+}
+
+test('downloadFromYouTube: audio → yt-dlp -x mp3 args and expected path', async () => {
+  const calls = [];
+  const exec = fakeExec(async ({ cmd, args }) => {
+    calls.push({ cmd, args });
+    return { stdout: '', stderr: '' };
+  });
+  const fakeStat = async () => ({ size: 1234 });
+
+  const result = await downloadFromYouTube({
+    format: 'audio',
+    id: 'abc',
+    url: 'https://youtu.be/xyz',
+    tempDir: '/tmp/mirror',
+    exec,
+    stat: fakeStat,
+  });
+
+  assert.equal(calls[0].cmd, 'yt-dlp');
+  assert.ok(calls[0].args.includes('-x'));
+  assert.ok(calls[0].args.includes('--audio-format'));
+  assert.ok(calls[0].args.includes('mp3'));
+  assert.ok(calls[0].args.includes('/tmp/mirror/abc.%(ext)s'));
+  assert.equal(result.ext, 'mp3');
+  assert.equal(result.filePath, '/tmp/mirror/abc.mp3');
+});
+
+test('downloadFromYouTube: video → yt-dlp mp4 args and expected path', async () => {
+  const exec = fakeExec(async () => ({ stdout: '', stderr: '' }));
+  const fakeStat = async () => ({ size: 5000 });
+
+  const result = await downloadFromYouTube({
+    format: 'video',
+    id: 'vid',
+    url: 'https://youtu.be/xyz',
+    tempDir: '/tmp/mirror',
+    exec,
+    stat: fakeStat,
+  });
+
+  assert.equal(result.ext, 'mp4');
+  assert.equal(result.filePath, '/tmp/mirror/vid.mp4');
+});
+
+test('downloadFromYouTube: yt-dlp error propagates with stderr preserved', async () => {
+  const exec = fakeExec(async () => {
+    const err = new Error('Command failed');
+    err.stderr = 'ERROR: Video unavailable';
+    throw err;
+  });
+  const fakeStat = async () => { throw new Error('should not be called'); };
+
+  await assert.rejects(
+    downloadFromYouTube({
+      format: 'audio', id: 'dead', url: 'https://youtu.be/gone',
+      tempDir: '/tmp/mirror', exec, stat: fakeStat,
+    }),
+    (err) => {
+      assert.match(err.stderr, /Video unavailable/);
+      return true;
+    },
+  );
+});
+
+test('downloadFromYouTube: missing output file throws', async () => {
+  const exec = fakeExec(async () => ({ stdout: '', stderr: '' }));
+  const fakeStat = async () => { const e = new Error('ENOENT'); e.code = 'ENOENT'; throw e; };
+
+  await assert.rejects(
+    downloadFromYouTube({
+      format: 'audio', id: 'abc', url: 'url',
+      tempDir: '/tmp/mirror', exec, stat: fakeStat,
+    }),
+    /ENOENT/,
+  );
+});
