@@ -5,6 +5,7 @@
 const { execFile } = require('node:child_process');
 const { promisify } = require('node:util');
 const fs = require('node:fs/promises');
+const { createReadStream } = require('node:fs');
 const { buildYtDlpArgs } = require('./mirror-lib');
 
 const defaultExec = promisify(execFile);
@@ -110,6 +111,28 @@ async function downloadFromYouTube({
   return { filePath, ext };
 }
 
+async function uploadToArchive({
+  filePath, uploadUrl, headers,
+  fetch: fetchImpl = fetch,
+  stat = fs.stat,
+  openStream = (p) => createReadStream(p),
+}) {
+  const size = (await stat(filePath)).size;
+  const res = await fetchImpl(uploadUrl, {
+    method: 'PUT',
+    headers: { ...headers, 'Content-Length': String(size) },
+    body: openStream(filePath),
+    // Node's undici requires this flag whenever the request body is a
+    // streaming source and we want to start sending before the full body
+    // is known — IA uploads happily consume a partial-send stream.
+    duplex: 'half',
+  });
+  if (!res.ok) {
+    const text = (await res.text().catch(() => '')).slice(0, 500);
+    throw new Error(`archive upload ${res.status}: ${text}`);
+  }
+}
+
 module.exports = {
   claimPendingJob,
   markStatus,
@@ -117,4 +140,5 @@ module.exports = {
   markFailed,
   resetForRetry,
   downloadFromYouTube,
+  uploadToArchive,
 };

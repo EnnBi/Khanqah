@@ -255,3 +255,54 @@ test('downloadFromYouTube: missing output file throws', async () => {
     /ENOENT/,
   );
 });
+
+// ── uploadToArchive ────────────────────────────────────────────
+const { uploadToArchive } = require('../mirror-jobs');
+
+test('uploadToArchive: PUTs to the upload URL with the supplied headers and file body', async () => {
+  const seen = {};
+  const fakeFetch = async (url, init) => {
+    seen.url = url;
+    seen.method = init.method;
+    seen.headers = init.headers;
+    seen.hasBody = !!init.body;
+    return { ok: true, status: 200, text: async () => '' };
+  };
+  const fakeStat = async () => ({ size: 42 });
+  const fakeOpenStream = () => 'stream-sentinel';
+
+  await uploadToArchive({
+    filePath: '/tmp/mirror/abc.mp3',
+    uploadUrl: 'http://s3.us.archive.org/khanqah-yt-abc/abc.mp3',
+    headers: { authorization: 'LOW AK:SK', 'x-archive-meta-title': 'T' },
+    fetch: fakeFetch,
+    stat: fakeStat,
+    openStream: fakeOpenStream,
+  });
+
+  assert.equal(seen.url, 'http://s3.us.archive.org/khanqah-yt-abc/abc.mp3');
+  assert.equal(seen.method, 'PUT');
+  assert.equal(seen.headers.authorization, 'LOW AK:SK');
+  assert.equal(seen.headers['Content-Length'], '42');
+  assert.equal(seen.headers['x-archive-meta-title'], 'T');
+  assert.equal(seen.hasBody, true);
+});
+
+test('uploadToArchive: non-2xx response throws with status + body tail', async () => {
+  const fakeFetch = async () => ({
+    ok: false, status: 503, text: async () => 'rate limited, slow down',
+  });
+  const fakeStat = async () => ({ size: 1 });
+
+  await assert.rejects(
+    uploadToArchive({
+      filePath: '/tmp/mirror/abc.mp3',
+      uploadUrl: 'http://s3.us.archive.org/khanqah-yt-abc/abc.mp3',
+      headers: {},
+      fetch: fakeFetch,
+      stat: fakeStat,
+      openStream: () => 'stream',
+    }),
+    /archive upload 503.*rate limited/,
+  );
+});
