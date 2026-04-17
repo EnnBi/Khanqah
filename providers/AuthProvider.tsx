@@ -53,29 +53,61 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session: s } }) => {
-      setSession(s);
-      if (s?.user) {
-        const profile = await fetchUserProfile(s.user.id);
-        setUser(profile);
+    let cancelled = false;
+
+    // Safety: never leave the app stuck on the auth loader for more than 5s
+    const safetyTimer = setTimeout(() => {
+      if (!cancelled) {
+        console.warn('[auth] getSession still pending after 5s — proceeding as guest');
+        setLoading(false);
       }
-      setLoading(false);
-    });
+    }, 5000);
+
+    supabase.auth
+      .getSession()
+      .then(async ({ data: { session: s } }) => {
+        if (cancelled) return;
+        setSession(s);
+        if (s?.user) {
+          try {
+            const profile = await fetchUserProfile(s.user.id);
+            if (!cancelled) setUser(profile);
+          } catch (err) {
+            console.warn('[auth] profile fetch failed:', err);
+          }
+        }
+      })
+      .catch((err) => {
+        console.warn('[auth] getSession failed:', err);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+        clearTimeout(safetyTimer);
+      });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, s) => {
+        if (cancelled) return;
         setSession(s);
-        if (s?.user) {
-          const profile = await fetchUserProfile(s.user.id);
-          setUser(profile);
-        } else {
-          setUser(null);
+        try {
+          if (s?.user) {
+            const profile = await fetchUserProfile(s.user.id);
+            if (!cancelled) setUser(profile);
+          } else {
+            if (!cancelled) setUser(null);
+          }
+        } catch (err) {
+          console.warn('[auth] onAuthStateChange failed:', err);
         }
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      cancelled = true;
+      clearTimeout(safetyTimer);
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Email/password sign in
