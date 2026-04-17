@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { useTheme } from '../providers/ThemeProvider';
 import { useAuth } from '../providers/AuthProvider';
 
@@ -22,9 +23,11 @@ const ADMIN_CONFIG = { icon: 'sliders' as IconName, label: 'Admin' };
 export function CustomTabBar(props: BottomTabBarProps) {
   const { state, descriptors, navigation } = props;
   const { theme } = useTheme();
-  const { user } = useAuth();
+  const { user, isAdmin, isEditor } = useAuth();
+  const router = useRouter();
   const c = theme.colors;
   const insets = useSafeAreaInsets();
+  const isPrivileged = isAdmin || isEditor;
 
   return (
     <View
@@ -53,9 +56,8 @@ export function CustomTabBar(props: BottomTabBarProps) {
 
           const config = TAB_CONFIG[route.name] ?? { icon: 'circle' as IconName, label: route.name };
 
-          // Profile tab becomes Admin for privileged users (detect by title override)
-          const title = (options.title as string) || config.label;
-          const isAdminTab = route.name === 'profile' && title.toLowerCase().includes('admin');
+          // Profile tab becomes Admin for privileged users
+          const isAdminTab = route.name === 'profile' && isPrivileged;
           const iconName = isAdminTab ? ADMIN_CONFIG.icon : config.icon;
           const displayLabel = isAdminTab ? ADMIN_CONFIG.label : config.label;
 
@@ -65,7 +67,15 @@ export function CustomTabBar(props: BottomTabBarProps) {
               target: route.key,
               canPreventDefault: true,
             });
-            if (!isFocused && !event.defaultPrevented) {
+            if (event.defaultPrevented) return;
+
+            // Admin users: the "profile" tab should route to the admin dashboard
+            if (isAdminTab) {
+              router.push('/admin' as any);
+              return;
+            }
+
+            if (!isFocused) {
               navigation.navigate(route.name as never);
             }
           };
