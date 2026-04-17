@@ -55,18 +55,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let cancelled = false;
 
-    // Safety: never leave the app stuck on the auth loader for more than 5s
-    const safetyTimer = setTimeout(() => {
-      if (!cancelled) {
-        console.warn('[auth] getSession still pending after 5s — proceeding as guest');
-        setLoading(false);
-      }
-    }, 5000);
+    // Race getSession against a 3s timeout. If it hangs (bad token, internal
+    // deadlock), fall through to signOut so the stored token is cleared and
+    // the user can re-authenticate cleanly.
+    async function bootstrapSession() {
+      try {
+        const result = await Promise.race([
+          supabase.auth.getSession(),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('getSession timeout')), 3000),
+          ),
+        ]);
 
-    supabase.auth
-      .getSession()
-      .then(async ({ data: { session: s } }) => {
         if (cancelled) return;
+        const s = result?.data?.session ?? null;
         setSession(s);
         if (s?.user) {
           try {
@@ -76,14 +78,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             console.warn('[auth] profile fetch failed:', err);
           }
         }
-      })
-      .catch((err) => {
-        console.warn('[auth] getSession failed:', err);
-      })
-      .finally(() => {
+      } catch (err: any) {
+        console.warn('[auth] getSession failed, clearing session:', err?.message ?? err);
+        // Clear the bad token so future calls don't keep hanging
+        try {
+          await supabase.auth.signOut();
+        } catch {
+          /* best effort */
+        }
+        if (!cancelled) setSession(null);
+      } finally {
         if (!cancelled) setLoading(false);
-        clearTimeout(safetyTimer);
-      });
+      }
+    }
+
+    bootstrapSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, s) => {
@@ -105,7 +114,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       cancelled = true;
-      clearTimeout(safetyTimer);
       subscription.unsubscribe();
     };
   }, []);

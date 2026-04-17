@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, View, Text } from 'react-native';
+import { ActivityIndicator, View, Text, TouchableOpacity, Platform } from 'react-native';
 import { Slot, useRouter, useSegments, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
@@ -38,6 +38,71 @@ function BugReporterPathnameTracker() {
     currentPathname = pathname ?? '';
   }, [pathname]);
   return null;
+}
+
+/**
+ * Clear local caches that can get into a bad state (stale auth token,
+ * stale remote config) and reload the page/app.
+ */
+async function clearCachedDataAndReload() {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.clear();
+      window.sessionStorage?.clear();
+    }
+    if (typeof indexedDB !== 'undefined' && indexedDB.deleteDatabase) {
+      try { indexedDB.deleteDatabase('khanqah-bug-reports'); } catch {}
+    }
+  } catch (err) {
+    console.warn('Could not clear storage:', err);
+  }
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    window.location.reload();
+  }
+}
+
+/** Loader with a recovery button if we stay loading too long. */
+function BootLoader() {
+  const [stuck, setStuck] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setStuck(true), 8000);
+    return () => clearTimeout(t);
+  }, []);
+
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#09090b', padding: 24 }}>
+      <ActivityIndicator size="large" color="#047857" />
+      {stuck && (
+        <>
+          <Text style={{ color: '#a1a1aa', fontSize: 13, marginTop: 20, textAlign: 'center' }}>
+            Taking longer than usual…
+          </Text>
+          <TouchableOpacity
+            onPress={clearCachedDataAndReload}
+            style={{
+              marginTop: 14,
+              backgroundColor: '#d4a853',
+              paddingHorizontal: 20,
+              paddingVertical: 10,
+              borderRadius: 8,
+            }}
+          >
+            <Text
+              style={{
+                color: '#0f2e24',
+                fontWeight: '600',
+                letterSpacing: 1,
+                textTransform: 'uppercase',
+                fontSize: 11,
+              }}
+            >
+              Clear Data & Reload
+            </Text>
+          </TouchableOpacity>
+        </>
+      )}
+    </View>
+  );
 }
 
 function AuthGate() {
@@ -120,17 +185,9 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    console.log('[bootstrap] loadConfig starting…');
     loadConfig()
-      .then((cfg) => {
-        console.log('[bootstrap] loadConfig resolved:', cfg.supabaseUrl ? 'OK' : 'EMPTY');
-        try {
-          initSupabase();
-          console.log('[bootstrap] initSupabase OK');
-        } catch (e) {
-          console.error('[bootstrap] initSupabase threw:', e);
-          throw e;
-        }
+      .then(() => {
+        initSupabase();
         if (__DEV__) {
           try {
             setAppVersion(getConfig().appVersion || '0.0.0');
@@ -139,10 +196,9 @@ export default function RootLayout() {
           }
         }
         setConfigLoaded(true);
-        console.log('[bootstrap] configLoaded = true');
       })
       .catch((err) => {
-        console.error('[bootstrap] bootstrap failed:', err);
+        console.error('[bootstrap] failed:', err);
         setConfigError(err?.message || String(err) || 'Failed to load configuration');
       });
   }, []);
@@ -192,19 +248,29 @@ export default function RootLayout() {
         <Text style={{ color: '#ef4444', fontSize: 16, fontWeight: '600', textAlign: 'center' }}>
           {configError}
         </Text>
-        <Text style={{ color: '#71717a', fontSize: 13, marginTop: 8, textAlign: 'center' }}>
-          Please check your internet connection and restart the app.
+        <Text style={{ color: '#71717a', fontSize: 13, marginTop: 8, marginBottom: 20, textAlign: 'center' }}>
+          If this keeps happening, try clearing cached data.
         </Text>
+        <TouchableOpacity
+          onPress={clearCachedDataAndReload}
+          style={{
+            backgroundColor: '#d4a853',
+            paddingHorizontal: 20,
+            paddingVertical: 12,
+            borderRadius: 8,
+            marginBottom: 10,
+          }}
+        >
+          <Text style={{ color: '#0f2e24', fontWeight: '600', letterSpacing: 1, textTransform: 'uppercase', fontSize: 12 }}>
+            Clear Data & Reload
+          </Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
   if (!configLoaded) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#09090b' }}>
-        <ActivityIndicator size="large" color="#047857" />
-      </View>
-    );
+    return <BootLoader />;
   }
 
   return (
