@@ -4,7 +4,7 @@
 
 async function claimPendingJob(db) {
   // 1. Find the oldest pending row with attempts remaining
-  const { data: row } = await db
+  const { data: row, error: selectError } = await db
     .from('content')
     .select('id, title_en, mirror_source_url, mirror_format, mirror_attempts')
     .eq('mirror_status', 'pending')
@@ -13,12 +13,13 @@ async function claimPendingJob(db) {
     .limit(1)
     .maybeSingle();
 
+  if (selectError) throw selectError;
   if (!row) return null;
 
   // 2. Flip it to 'downloading' with a conditional update so two workers
   //    never double-claim a row. If the conditional update misses (row has
   //    already moved on) we just skip this poll cycle.
-  const { data: claimed } = await db
+  const { data: claimed, error: updateError } = await db
     .from('content')
     .update({
       mirror_status: 'downloading',
@@ -30,19 +31,21 @@ async function claimPendingJob(db) {
     .select('id')
     .maybeSingle();
 
+  if (updateError) throw updateError;
   return claimed ? row : null;
 }
 
 async function markStatus(db, id, status) {
-  await db
+  const { error } = await db
     .from('content')
     .update({ mirror_status: status, mirror_updated_at: new Date().toISOString() })
     .eq('id', id)
     .maybeSingle();
+  if (error) throw error;
 }
 
 async function markReady(db, id, mediaUrl, isVideo) {
-  await db
+  const { error } = await db
     .from('content')
     .update({
       mirror_status: 'ready',
@@ -52,10 +55,11 @@ async function markReady(db, id, mediaUrl, isVideo) {
     })
     .eq('id', id)
     .maybeSingle();
+  if (error) throw error;
 }
 
 async function markFailed(db, id, errorMessage) {
-  await db
+  const { error } = await db
     .from('content')
     .update({
       mirror_status: 'failed',
@@ -64,10 +68,11 @@ async function markFailed(db, id, errorMessage) {
     })
     .eq('id', id)
     .maybeSingle();
+  if (error) throw error;
 }
 
 async function resetForRetry(db, id) {
-  await db
+  const { error } = await db
     .from('content')
     .update({
       mirror_status: 'pending',
@@ -77,6 +82,7 @@ async function resetForRetry(db, id) {
     })
     .eq('id', id)
     .maybeSingle();
+  if (error) throw error;
 }
 
 module.exports = {

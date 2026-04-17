@@ -149,3 +149,22 @@ test('resetForRetry: flips failed back to pending and clears counters', async ()
   assert.equal(rows[0].mirror_attempts, 0);
   assert.equal(rows[0].mirror_error, null);
 });
+
+// ── Error-path ────────────────────────────────────────────────
+test('markStatus: throws when Supabase returns an error', async () => {
+  const dbErr = new Error('rls violation');
+  const client = {
+    from() {
+      return {
+        update() { return this; },
+        eq() { return this; },
+        async maybeSingle() { return { data: null, error: dbErr }; },
+      };
+    },
+  };
+
+  await assert.rejects(
+    () => markStatus(client, 'x', 'uploading'),
+    (err) => err === dbErr,
+  );
+});
