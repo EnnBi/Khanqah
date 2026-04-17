@@ -29,6 +29,7 @@ const ur = {
   collection: {
     title: 'میرا مجموعہ',
     continueListen: 'سننا جاری رکھیں',
+    continueListening: 'سننا جاری رکھیں',
     playlists: 'پلے لسٹ',
     downloads: 'ڈاؤن لوڈز',
     history: 'تاریخ',
@@ -36,9 +37,14 @@ const ur = {
     newPlaylist: 'نئی پلے لسٹ',
     remaining: 'باقی',
     itemsOffline: 'آئٹمز آف لائن',
+    nothingPlaying: 'ابھی کچھ نہیں چل رہا',
+    noPlaylists: 'ابھی کوئی پلے لسٹ نہیں',
+    noDownloads: 'ابھی کوئی ڈاؤن لوڈ نہیں',
+    noHistory: 'سننے کی کوئی تاریخ نہیں',
   },
   profile: {
     title: 'پروفائل',
+    guest: 'مہمان',
     language: 'زبان',
     theme: 'تھیم',
     playbackSpeed: 'پلے بیک کی رفتار',
@@ -47,6 +53,9 @@ const ur = {
     aboutKhanqah: 'خانقاہ کے بارے میں',
     muftiBio: 'حضرت مفتی عبدالرشید مفتاحی صاحب کا تعارف',
     signOut: 'سائن آوٹ',
+    signOutTitle: 'سائن آوٹ',
+    signOutMessage: 'کیا آپ واقعی سائن آوٹ کرنا چاہتے ہیں؟',
+    on: 'آن',
   },
   player: {
     nowPlaying: 'ابھی چل رہا ہے',
