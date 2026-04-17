@@ -51,13 +51,20 @@ export function initSupabase(): SupabaseClient {
 
 /**
  * Lazy proxy so existing `import { supabase }` sites keep working.
- * Reads through to the initialized client at call time via Reflect.get
- * so `this` is bound correctly for chained calls.
+ *
+ * Before `initSupabase()` has run, returning undefined from the Proxy is
+ * preferable to throwing, because render phases that touch `supabase` (rare,
+ * but possible during SSR or early lifecycle) shouldn't crash the tree.
+ * Any real network call during that pre-init window will fail harmlessly.
  */
 const handler: ProxyHandler<SupabaseClient> = {
   get(_target, prop) {
-    const client = getSupabase();
-    return Reflect.get(client, prop, client);
+    if (!_supabase) {
+      // Silent undefined before init — avoids throwing inside render.
+      // Real usage after configLoaded=true always has _supabase set.
+      return undefined;
+    }
+    return Reflect.get(_supabase, prop, _supabase);
   },
 };
 
