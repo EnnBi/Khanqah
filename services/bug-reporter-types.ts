@@ -27,6 +27,8 @@ export interface BugReportErrorInfo {
   source?: string;
 }
 
+export type BugStatus = 'open' | 'fixed' | 'ignored';
+
 export interface BugReport {
   id: string;
   timestamp: string;
@@ -38,6 +40,10 @@ export interface BugReport {
   logs: LogEntry[];
   network: NetworkEntry[];
   error?: BugReportErrorInfo;
+  status?: BugStatus;        // Defaults to 'open' if missing (old local reports)
+  fixedAt?: string | null;
+  fixedBy?: string | null;
+  fixedNote?: string | null;
 }
 
 /** Max reports to keep before dropping oldest. */

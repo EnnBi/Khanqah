@@ -22,6 +22,8 @@ export interface Storage {
   clear(): Promise<void>;
   deleteOldest(count: number): Promise<void>;
   get(id: string): Promise<BugReport | null>;
+  /** Optional: backends that support triage. Filesystem/IDB ignore. */
+  updateStatus?(id: string, status: 'open' | 'fixed' | 'ignored', fixedNote?: string | null): Promise<void>;
 }
 
 let storage: Storage | null = null;
@@ -119,4 +121,14 @@ export async function clearReports(): Promise<void> {
 export async function exportReportsJson(): Promise<string> {
   const reports = await getAllReports();
   return JSON.stringify(reports, null, 2);
+}
+
+/** Mark a report as fixed (or open/ignored). No-op if the storage backend doesn't support updates. */
+export async function updateBugStatus(
+  id: string,
+  status: 'open' | 'fixed' | 'ignored',
+  fixedNote?: string | null,
+): Promise<void> {
+  if (!storage || !storage.updateStatus) return;
+  await storage.updateStatus(id, status, fixedNote);
 }

@@ -15,8 +15,17 @@ import {
   getAllReports,
   clearReports,
   exportReportsJson,
+  updateBugStatus,
 } from '../../services/bug-reporter';
-import type { BugReport, BugType } from '../../services/bug-reporter-types';
+import type { BugReport, BugStatus, BugType } from '../../services/bug-reporter-types';
+
+type StatusFilter = 'all' | BugStatus;
+
+const STATUS_COLOR: Record<BugStatus, string> = {
+  open: '#c23e3e',
+  fixed: '#16a34a',
+  ignored: '#8a7d66',
+};
 
 const TYPE_COLOR: Record<BugType, string> = {
   ui: '#0f2e24',
@@ -47,6 +56,7 @@ export default function BugReportsScreen() {
   const [selected, setSelected] = useState<BugReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<BugType | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('open');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -97,7 +107,38 @@ export default function BugReportsScreen() {
     ]);
   }
 
-  const filtered = filter === 'all' ? reports : reports.filter((r) => r.type === filter);
+  const filtered = reports.filter((r) => {
+    const byType = filter === 'all' || r.type === filter;
+    const status = r.status ?? 'open';
+    const byStatus = statusFilter === 'all' || status === statusFilter;
+    return byType && byStatus;
+  });
+
+  async function handleMarkFixed(report: BugReport) {
+    try {
+      await updateBugStatus(report.id, 'fixed', null);
+      await load();
+      setSelected((prev) =>
+        prev && prev.id === report.id
+          ? { ...prev, status: 'fixed', fixedAt: new Date().toISOString() }
+          : prev,
+      );
+    } catch (err: any) {
+      Alert.alert('Could not mark fixed', err?.message ?? String(err));
+    }
+  }
+
+  async function handleMarkOpen(report: BugReport) {
+    try {
+      await updateBugStatus(report.id, 'open', null);
+      await load();
+      setSelected((prev) =>
+        prev && prev.id === report.id ? { ...prev, status: 'open', fixedAt: null } : prev,
+      );
+    } catch (err: any) {
+      Alert.alert('Could not reopen', err?.message ?? String(err));
+    }
+  }
 
   if (selected) {
     return (
@@ -115,10 +156,37 @@ export default function BugReportsScreen() {
           <View style={[styles.typeBadge, { backgroundColor: TYPE_COLOR[selected.type] }]}>
             <Text style={styles.typeBadgeText}>{selected.type.toUpperCase()}</Text>
           </View>
+          <View
+            style={[
+              styles.typeBadge,
+              { backgroundColor: STATUS_COLOR[selected.status ?? 'open'] },
+            ]}
+          >
+            <Text style={styles.typeBadgeText}>{(selected.status ?? 'open').toUpperCase()}</Text>
+          </View>
           <Text style={[styles.detailTime, { color: c.textMuted }]}>
             {new Date(selected.timestamp).toLocaleString()}
           </Text>
         </View>
+
+        {/* Mark fixed / reopen */}
+        {(selected.status ?? 'open') === 'fixed' ? (
+          <TouchableOpacity
+            style={[styles.actionBtn, { borderColor: c.border }]}
+            onPress={() => handleMarkOpen(selected)}
+            activeOpacity={0.75}
+          >
+            <Text style={[styles.actionBtnText, { color: c.textMuted }]}>REOPEN</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={[styles.actionBtn, { backgroundColor: '#16a34a', borderColor: '#16a34a' }]}
+            onPress={() => handleMarkFixed(selected)}
+            activeOpacity={0.85}
+          >
+            <Text style={[styles.actionBtnText, { color: '#fff' }]}>MARK AS FIXED ✓</Text>
+          </TouchableOpacity>
+        )}
 
         <DetailRow label="ROUTE" value={selected.route} colors={c} />
         <DetailRow label="PLATFORM" value={selected.platform} colors={c} />
@@ -217,9 +285,35 @@ export default function BugReportsScreen() {
         <Text style={[styles.kicker, { color: c.textMuted }]}>
           {String(reports.length).padStart(2, '0')} · BUG REPORTS
         </Text>
-        <Text style={[styles.title, { color: c.primary }]}>Local captures</Text>
+        <Text style={[styles.title, { color: c.primary }]}>Triage</Text>
       </View>
 
+      {/* Status filter row */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
+        {(['open', 'fixed', 'ignored', 'all'] as const).map((f) => {
+          const active = f === statusFilter;
+          const color = f === 'all' ? c.primary : STATUS_COLOR[f];
+          return (
+            <TouchableOpacity
+              key={f}
+              onPress={() => setStatusFilter(f)}
+              style={[
+                styles.filterChip,
+                {
+                  backgroundColor: active ? color : c.surface,
+                  borderColor: active ? color : c.border,
+                },
+              ]}
+            >
+              <Text style={[styles.filterText, { color: active ? '#fff' : c.textMuted }]}>
+                {f.toUpperCase()}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+
+      {/* Type filter row */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
         {(['all', 'ui', 'backend', 'auto-error', 'auto-warn', 'auto-network', 'other'] as const).map((f) => {
           const active = f === filter;
@@ -268,13 +362,29 @@ export default function BugReportsScreen() {
                   <Text style={styles.rowBadgeText}>{r.type.toUpperCase()}</Text>
                 </View>
                 <View style={styles.rowBody}>
-                  <Text style={[styles.rowPreview, { color: c.primary }]} numberOfLines={1}>
+                  <Text
+                    style={[
+                      styles.rowPreview,
+                      {
+                        color: c.primary,
+                        textDecorationLine: (r.status ?? 'open') === 'fixed' ? 'line-through' : 'none',
+                        opacity: (r.status ?? 'open') === 'fixed' ? 0.55 : 1,
+                      },
+                    ]}
+                    numberOfLines={1}
+                  >
                     {preview}
                   </Text>
                   <Text style={[styles.rowMeta, { color: c.textMuted }]}>
                     {r.route} · {relativeTime(r.timestamp)}
                   </Text>
                 </View>
+                <View
+                  style={[
+                    styles.statusDot,
+                    { backgroundColor: STATUS_COLOR[r.status ?? 'open'] },
+                  ]}
+                />
               </TouchableOpacity>
             );
           })}
@@ -339,6 +449,25 @@ const styles = StyleSheet.create({
   },
   rowBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4 },
   rowBadgeText: { fontFamily: 'DMSans-SemiBold', fontSize: 9, letterSpacing: 1.5, color: '#fff' },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginLeft: 8,
+  },
+  actionBtn: {
+    borderWidth: 1,
+    borderRadius: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  actionBtnText: {
+    fontFamily: 'DMSans-SemiBold',
+    fontSize: 11,
+    letterSpacing: 1.5,
+  },
   rowBody: { flex: 1, minWidth: 0 },
   rowPreview: { fontFamily: 'CrimsonPro', fontSize: 16, letterSpacing: -0.2 },
   rowMeta: { fontFamily: 'DMSans', fontSize: 11, marginTop: 2 },

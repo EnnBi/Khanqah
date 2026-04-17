@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, View, Text, Platform } from 'react-native';
+import { ActivityIndicator, View, Text } from 'react-native';
 import { Slot, useRouter, useSegments, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
@@ -136,13 +136,9 @@ export default function RootLayout() {
     let cancelled = false;
     (async () => {
       try {
-        if (Platform.OS === 'web') {
-          const { createWebStorage } = require('../services/bug-reporter.web');
-          setStorage(createWebStorage());
-        } else {
-          const { createFileSystemStorage } = require('../services/bug-reporter');
-          setStorage(createFileSystemStorage());
-        }
+        // Primary storage: Supabase (central DB, triage via admin UI).
+        const { createSupabaseStorage } = require('../services/bug-reporter-supabase');
+        setStorage(createSupabaseStorage());
         if (cancelled) return;
 
         setRouteProvider(() => currentPathname || '/');
