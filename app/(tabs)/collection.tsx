@@ -12,49 +12,69 @@ import { useDownloads } from '../../hooks/useDownloads';
 import { ContentCard } from '../../components/ContentCard';
 import { useContinueListening, useHistory } from '../../hooks/useListeningProgress';
 
-// ── Inline sub-components ──────────────────────────────────────────────────
+// ── Section header (Calm Architecture style) ──────────────────────────────
 
 interface SectionHeaderProps {
-  title: string;
+  counter: string;  // e.g. "01"
+  tag: string;      // e.g. "CONTINUE"
+  subtitle: string; // e.g. "Recent bayans"
   actionLabel?: string;
   onAction?: () => void;
 }
 
-function SectionHeader({ title, actionLabel, onAction }: SectionHeaderProps) {
+function SectionHeader({ counter, tag, subtitle, actionLabel, onAction }: SectionHeaderProps) {
   const { theme } = useTheme();
+  const c = theme.colors;
   return (
-    <View style={sectionHeaderStyles.row}>
-      <Text style={[sectionHeaderStyles.title, { color: theme.colors.text }]}>{title}</Text>
-      {actionLabel ? (
-        <TouchableOpacity onPress={onAction} activeOpacity={0.7}>
-          <Text style={[sectionHeaderStyles.action, { color: theme.colors.primaryLight }]}>
-            {actionLabel}
-          </Text>
-        </TouchableOpacity>
-      ) : null}
+    <View style={sectionHeaderStyles.wrap}>
+      <View style={sectionHeaderStyles.labelRow}>
+        <Text style={[sectionHeaderStyles.label, { color: c.textMuted }]}>
+          {counter} · {tag}
+        </Text>
+        {actionLabel ? (
+          <TouchableOpacity onPress={onAction} activeOpacity={0.7}>
+            <Text style={[sectionHeaderStyles.action, { color: c.accent }]}>{actionLabel}</Text>
+          </TouchableOpacity>
+        ) : null}
+      </View>
+      <Text style={[sectionHeaderStyles.subtitle, { color: c.primary }]}>{subtitle}</Text>
     </View>
   );
 }
 
 const sectionHeaderStyles = StyleSheet.create({
-  row: {
+  wrap: {
+    paddingHorizontal: 28,
+    paddingTop: 32,
+    paddingBottom: 16,
+  },
+  labelRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginHorizontal: 16,
-    marginBottom: 8,
+    marginBottom: 6,
   },
-  title: {
-    fontSize: 17,
-    fontWeight: '700',
+  label: {
+    fontFamily: 'DMSans-Medium',
+    fontSize: 11,
+    letterSpacing: 3,
+    textTransform: 'uppercase',
   },
   action: {
-    fontSize: 14,
-    fontWeight: '500',
+    fontFamily: 'DMSans-Medium',
+    fontSize: 11,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+  },
+  subtitle: {
+    fontFamily: 'CrimsonPro-Italic',
+    fontSize: 24,
+    lineHeight: 28,
+    letterSpacing: -0.3,
   },
 });
 
-// ── Empty state card ───────────────────────────────────────────────────────
+// ── Empty state ────────────────────────────────────────────────────────────
 
 interface EmptyStateProps {
   message: string;
@@ -62,21 +82,22 @@ interface EmptyStateProps {
 
 function EmptyState({ message }: EmptyStateProps) {
   const { theme } = useTheme();
+  const c = theme.colors;
   return (
     <View
       style={[
         emptyStyles.card,
-        { borderColor: theme.colors.border, backgroundColor: theme.colors.surface },
+        { borderColor: c.border, backgroundColor: c.surface },
       ]}
     >
-      <Text style={[emptyStyles.text, { color: theme.colors.textMuted }]}>{message}</Text>
+      <Text style={[emptyStyles.text, { color: c.textMuted }]}>{message}</Text>
     </View>
   );
 }
 
 const emptyStyles = StyleSheet.create({
   card: {
-    marginHorizontal: 16,
+    marginHorizontal: 28,
     borderWidth: 1,
     borderRadius: 10,
     paddingVertical: 24,
@@ -84,7 +105,8 @@ const emptyStyles = StyleSheet.create({
     alignItems: 'center',
   },
   text: {
-    fontSize: 14,
+    fontFamily: 'CrimsonPro-Italic',
+    fontSize: 15,
     textAlign: 'center',
   },
 });
@@ -98,39 +120,109 @@ interface PlaylistCardProps {
 
 function PlaylistCard({ name, itemCount }: PlaylistCardProps) {
   const { theme } = useTheme();
+  const c = theme.colors;
   return (
     <View
       style={[
         playlistCardStyles.card,
-        { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+        { backgroundColor: c.surface, borderColor: c.border },
       ]}
     >
-      <Text style={[playlistCardStyles.name, { color: theme.colors.text }]} numberOfLines={1}>
-        {name}
-      </Text>
-      <Text style={[playlistCardStyles.count, { color: theme.colors.textMuted }]}>
-        {itemCount} {itemCount === 1 ? 'item' : 'items'}
-      </Text>
+      <View style={[playlistCardStyles.icon, { backgroundColor: c.primary }]}>
+        <Text style={playlistCardStyles.iconGlyph}>♪</Text>
+      </View>
+      <View style={playlistCardStyles.info}>
+        <Text style={[playlistCardStyles.name, { color: c.text }]} numberOfLines={1}>
+          {name}
+        </Text>
+        <Text style={[playlistCardStyles.count, { color: c.textMuted }]}>
+          {itemCount} {itemCount === 1 ? 'ITEM' : 'ITEMS'}
+        </Text>
+      </View>
+      <Text style={[playlistCardStyles.chevron, { color: c.textMuted }]}>›</Text>
     </View>
   );
 }
 
 const playlistCardStyles = StyleSheet.create({
   card: {
-    marginHorizontal: 16,
+    marginHorizontal: 28,
     marginBottom: 8,
     borderWidth: 1,
     borderRadius: 10,
     paddingVertical: 14,
     paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  icon: {
+    width: 36,
+    height: 36,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconGlyph: {
+    color: '#d4a853',
+    fontSize: 16,
+  },
+  info: {
+    flex: 1,
   },
   name: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontFamily: 'CrimsonPro',
+    fontSize: 17,
+    lineHeight: 22,
+    letterSpacing: -0.2,
     marginBottom: 2,
   },
   count: {
-    fontSize: 13,
+    fontFamily: 'DMSans',
+    fontSize: 10,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  chevron: {
+    fontSize: 20,
+    lineHeight: 22,
+  },
+});
+
+// ── New Playlist button ────────────────────────────────────────────────────
+
+interface NewPlaylistButtonProps {
+  onPress: () => void;
+}
+
+function NewPlaylistButton({ onPress }: NewPlaylistButtonProps) {
+  const { theme } = useTheme();
+  const c = theme.colors;
+  return (
+    <TouchableOpacity
+      style={[newBtnStyles.btn, { borderColor: c.accent }]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <Text style={[newBtnStyles.label, { color: c.accent }]}>+ NEW PLAYLIST</Text>
+    </TouchableOpacity>
+  );
+}
+
+const newBtnStyles = StyleSheet.create({
+  btn: {
+    marginHorizontal: 28,
+    marginTop: 12,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  label: {
+    fontFamily: 'DMSans-Medium',
+    fontSize: 11,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
   },
 });
 
@@ -144,6 +236,7 @@ interface NewPlaylistModalProps {
 
 function NewPlaylistModal({ visible, onClose, onCreate }: NewPlaylistModalProps) {
   const { theme } = useTheme();
+  const c = theme.colors;
   const [name, setName] = useState('');
 
   function handleCreate() {
@@ -156,25 +249,25 @@ function NewPlaylistModal({ visible, onClose, onCreate }: NewPlaylistModalProps)
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={modalStyles.overlay}>
-        <View style={[modalStyles.box, { backgroundColor: theme.colors.surface }]}>
-          <Text style={[modalStyles.title, { color: theme.colors.text }]}>New Playlist</Text>
+        <View style={[modalStyles.box, { backgroundColor: c.surface }]}>
+          <Text style={[modalStyles.title, { color: c.text }]}>New Playlist</Text>
           <TextInput
             style={[
               modalStyles.input,
-              { color: theme.colors.text, borderColor: theme.colors.border },
+              { color: c.text, borderColor: c.border },
             ]}
             placeholder="Playlist name"
-            placeholderTextColor={theme.colors.textMuted}
+            placeholderTextColor={c.textMuted}
             value={name}
             onChangeText={setName}
             autoFocus
           />
           <View style={modalStyles.buttons}>
             <TouchableOpacity onPress={onClose} style={modalStyles.btn} activeOpacity={0.7}>
-              <Text style={{ color: theme.colors.textMuted }}>Cancel</Text>
+              <Text style={[modalStyles.btnText, { color: c.textMuted }]}>CANCEL</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={handleCreate} style={modalStyles.btn} activeOpacity={0.7}>
-              <Text style={{ color: theme.colors.primaryLight, fontWeight: '600' }}>Create</Text>
+              <Text style={[modalStyles.btnText, { color: c.accent }]}>CREATE</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -194,28 +287,36 @@ const modalStyles = StyleSheet.create({
   box: {
     width: '100%',
     borderRadius: 12,
-    padding: 20,
+    padding: 24,
   },
   title: {
-    fontSize: 17,
-    fontWeight: '700',
-    marginBottom: 12,
+    fontFamily: 'CrimsonPro',
+    fontSize: 22,
+    letterSpacing: -0.3,
+    marginBottom: 16,
   },
   input: {
+    fontFamily: 'DMSans',
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 10,
     fontSize: 15,
-    marginBottom: 16,
+    marginBottom: 20,
   },
   buttons: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    gap: 16,
+    gap: 20,
   },
   btn: {
     paddingVertical: 4,
+  },
+  btnText: {
+    fontFamily: 'DMSans-Medium',
+    fontSize: 11,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
   },
 });
 
@@ -230,33 +331,34 @@ interface ContinueListeningCardProps {
 
 function ContinueListeningCard({ title, position, duration, onPlay }: ContinueListeningCardProps) {
   const { theme } = useTheme();
+  const c = theme.colors;
   const remaining = Math.max(0, duration - position);
   const minutes = Math.floor(remaining / 60);
   const seconds = Math.floor(remaining % 60);
-  const remainingText = `${minutes}:${seconds.toString().padStart(2, '0')} remaining`;
+  const remainingText = `${minutes}:${seconds.toString().padStart(2, '0')} REMAINING`;
   const progress = duration > 0 ? Math.min(position / duration, 1) : 0;
 
   return (
     <View
       style={[
         clStyles.card,
-        { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+        { backgroundColor: c.surface, borderColor: c.border },
       ]}
     >
       <View style={clStyles.row}>
         <View style={clStyles.info}>
-          <Text style={[clStyles.title, { color: theme.colors.text }]} numberOfLines={2}>
+          <Text style={[clStyles.title, { color: c.text }]} numberOfLines={2}>
             {title}
           </Text>
-          <Text style={[clStyles.remaining, { color: theme.colors.textMuted }]}>
+          <Text style={[clStyles.remaining, { color: c.textMuted }]}>
             {remainingText}
           </Text>
           {/* Progress bar */}
-          <View style={[clStyles.barBg, { backgroundColor: theme.colors.border }]}>
-            <View style={[clStyles.barFill, { width: `${progress * 100}%` }]} />
+          <View style={[clStyles.barBg, { backgroundColor: c.border }]}>
+            <View style={[clStyles.barFill, { width: `${progress * 100}%`, backgroundColor: c.accent }]} />
           </View>
         </View>
-        <TouchableOpacity onPress={onPlay} activeOpacity={0.7} style={clStyles.playBtn}>
+        <TouchableOpacity onPress={onPlay} activeOpacity={0.7} style={[clStyles.playBtn, { backgroundColor: c.accent }]}>
           <Text style={clStyles.playIcon}>{'▶'}</Text>
         </TouchableOpacity>
       </View>
@@ -266,10 +368,10 @@ function ContinueListeningCard({ title, position, duration, onPlay }: ContinueLi
 
 const clStyles = StyleSheet.create({
   card: {
-    marginHorizontal: 16,
+    marginHorizontal: 28,
     borderWidth: 1,
     borderRadius: 10,
-    padding: 14,
+    padding: 16,
   },
   row: {
     flexDirection: 'row',
@@ -277,43 +379,46 @@ const clStyles = StyleSheet.create({
   },
   info: {
     flex: 1,
-    marginRight: 12,
+    marginRight: 14,
   },
   title: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginBottom: 4,
+    fontFamily: 'CrimsonPro',
+    fontSize: 17,
+    lineHeight: 22,
+    letterSpacing: -0.2,
+    marginBottom: 6,
   },
   remaining: {
-    fontSize: 12,
-    marginBottom: 8,
+    fontFamily: 'DMSans',
+    fontSize: 10,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: 10,
   },
   barBg: {
-    height: 4,
+    height: 3,
     borderRadius: 2,
     overflow: 'hidden',
   },
   barFill: {
-    height: 4,
+    height: 3,
     borderRadius: 2,
-    backgroundColor: '#C9A84C', // gold
   },
   playBtn: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: '#C9A84C',
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
   },
   playIcon: {
-    color: '#fff',
+    color: '#0f2e24',
     fontSize: 14,
     marginLeft: 2,
   },
 });
 
-// ── Helpers ────────────────────────────────────────────────────────────────
+// ── Download item ──────────────────────────────────────────────────────────
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 B';
@@ -329,6 +434,7 @@ export default function CollectionScreen() {
   const { t } = useI18n();
   const { user } = useAuth();
   const router = useRouter();
+  const c = theme.colors;
   const { playlists, loading: playlistsLoading, refetch: refetchPlaylists } = usePlaylists();
   const { downloads, loading: downloadsLoading, totalSize } = useDownloads();
   const continueListening = useContinueListening();
@@ -360,102 +466,109 @@ export default function CollectionScreen() {
   }
 
   return (
-    <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: theme.colors.headerBg }]}>
-        <Text style={styles.headerTitle}>{t('collection.title') || 'My Collection'}</Text>
-      </View>
-
+    <View style={[styles.root, { backgroundColor: c.background }]}>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Continue Listening */}
-        <View style={styles.section}>
-          <SectionHeader title={t('collection.continueListening') || 'Continue Listening'} />
-          {continueListening ? (
-            <ContinueListeningCard
-              title={
-                user?.language_pref === 'ur'
-                  ? continueListening.content.title_ur
-                  : continueListening.content.title_en
-              }
-              position={continueListening.position}
-              duration={continueListening.duration}
-              onPlay={() => router.push(`/player/${continueListening.content.id}`)}
-            />
-          ) : (
-            <EmptyState message={t('collection.nothingPlaying') || 'Nothing playing yet'} />
-          )}
+        {/* Hero */}
+        <View style={[styles.hero, { backgroundColor: c.headerBg }]}>
+          <View style={[styles.circleA, { borderColor: 'rgba(212, 168, 83, 0.2)' }]} />
+          <View style={[styles.circleB, { borderColor: 'rgba(212, 168, 83, 0.15)' }]} />
+          <View style={[styles.circleC, { borderColor: 'rgba(212, 168, 83, 0.08)' }]} />
+
+          <Text style={[styles.kicker, { color: c.accent }]}>MY LIBRARY</Text>
+
+          <Text style={styles.heroTitle}>
+            Your curated{' '}
+            <Text style={[styles.heroTitleItalic, { color: c.accent }]}>journey</Text>
+          </Text>
         </View>
+
+        {/* Continue Listening */}
+        <SectionHeader
+          counter="01"
+          tag="CONTINUE"
+          subtitle={t('collection.continueListening') || 'Resume listening'}
+        />
+        {continueListening ? (
+          <ContinueListeningCard
+            title={
+              user?.language_pref === 'ur'
+                ? continueListening.content.title_ur
+                : continueListening.content.title_en
+            }
+            position={continueListening.position}
+            duration={continueListening.duration}
+            onPlay={() => router.push(`/player/${continueListening.content.id}`)}
+          />
+        ) : (
+          <EmptyState message={t('collection.nothingPlaying') || 'Nothing playing yet'} />
+        )}
 
         {/* Playlists */}
-        <View style={styles.section}>
-          <SectionHeader
-            title={t('collection.playlists') || 'Playlists'}
-            actionLabel={t('collection.newPlaylist') || '+ New'}
-            onAction={onPressNew}
-          />
-          {playlistsLoading ? (
-            <ActivityIndicator style={{ marginTop: 16 }} color={theme.colors.primaryLight} />
-          ) : playlists.length === 0 ? (
-            <EmptyState message={t('collection.noPlaylists') || 'No playlists yet'} />
-          ) : (
-            playlists.map((pl) => (
-              <PlaylistCard key={pl.id} name={pl.name} itemCount={0} />
-            ))
-          )}
-        </View>
+        <SectionHeader
+          counter="02"
+          tag="PLAYLISTS"
+          subtitle={t('collection.playlists') || 'Your playlists'}
+        />
+        {playlistsLoading ? (
+          <ActivityIndicator style={styles.loader} color={c.accent} />
+        ) : playlists.length === 0 ? (
+          <EmptyState message={t('collection.noPlaylists') || 'No playlists yet'} />
+        ) : (
+          playlists.map((pl) => (
+            <PlaylistCard key={pl.id} name={pl.name} itemCount={0} />
+          ))
+        )}
+        <NewPlaylistButton onPress={onPressNew} />
 
         {/* Downloads */}
-        <View style={styles.section}>
-          <SectionHeader
-            title={t('collection.downloads') || 'Downloads'}
-            actionLabel={
-              downloads.length > 0
-                ? `${downloads.length} ${downloads.length === 1 ? 'item' : 'items'} \u2022 ${formatBytes(totalSize)}`
-                : undefined
-            }
-          />
-          {downloadsLoading ? (
-            <ActivityIndicator style={{ marginTop: 16 }} color={theme.colors.primaryLight} />
-          ) : downloads.length === 0 ? (
-            <EmptyState message={t('collection.noDownloads') || 'No downloads yet'} />
-          ) : (
-            downloads.map(({ content }) => (
-              <ContentCard
-                key={content.id}
-                content={content}
-                onPress={() => {}}
-                language={user?.language_pref ?? 'en'}
-              />
-            ))
-          )}
-        </View>
+        <SectionHeader
+          counter="03"
+          tag="DOWNLOADS"
+          subtitle={
+            downloads.length > 0
+              ? `${downloads.length} saved · ${formatBytes(totalSize)}`
+              : (t('collection.downloads') || 'Offline content')
+          }
+        />
+        {downloadsLoading ? (
+          <ActivityIndicator style={styles.loader} color={c.accent} />
+        ) : downloads.length === 0 ? (
+          <EmptyState message={t('collection.noDownloads') || 'No downloads yet'} />
+        ) : (
+          downloads.map(({ content }) => (
+            <ContentCard
+              key={content.id}
+              content={content}
+              onPress={() => {}}
+              language={user?.language_pref ?? 'en'}
+            />
+          ))
+        )}
 
         {/* History */}
-        <View style={styles.section}>
-          <SectionHeader
-            title={t('collection.history') || 'History'}
-            actionLabel={t('collection.seeAll') || 'See all'}
-            onAction={() => {}}
-          />
-          {historyLoading ? (
-            <ActivityIndicator style={{ marginTop: 16 }} color={theme.colors.primaryLight} />
-          ) : historyItems.length === 0 ? (
-            <EmptyState message={t('collection.noHistory') || 'No listening history'} />
-          ) : (
-            historyItems.map(({ content }) => (
-              <ContentCard
-                key={content.id}
-                content={content}
-                onPress={() => router.push(`/player/${content.id}`)}
-                language={user?.language_pref ?? 'en'}
-              />
-            ))
-          )}
-        </View>
+        <SectionHeader
+          counter="04"
+          tag="HISTORY"
+          subtitle={t('collection.history') || 'Recently heard'}
+        />
+        {historyLoading ? (
+          <ActivityIndicator style={styles.loader} color={c.accent} />
+        ) : historyItems.length === 0 ? (
+          <EmptyState message={t('collection.noHistory') || 'No listening history'} />
+        ) : (
+          historyItems.map(({ content }) => (
+            <ContentCard
+              key={content.id}
+              content={content}
+              onPress={() => router.push(`/player/${content.id}`)}
+              language={user?.language_pref ?? 'en'}
+            />
+          ))
+        )}
 
         <View style={styles.bottomPad} />
       </ScrollView>
@@ -474,29 +587,73 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
   },
-  header: {
-    paddingTop: 56,
-    paddingBottom: 18,
-    paddingHorizontal: 20,
-    alignItems: 'center',
+
+  // Hero
+  hero: {
+    paddingTop: 60,
+    paddingBottom: 48,
+    paddingHorizontal: 28,
+    overflow: 'hidden',
+    position: 'relative',
   },
-  headerTitle: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: '700',
-    textAlign: 'center',
-    letterSpacing: 0.3,
+  circleA: {
+    position: 'absolute',
+    top: -60,
+    right: -40,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    borderWidth: 1,
   },
+  circleB: {
+    position: 'absolute',
+    top: -30,
+    right: -10,
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    borderWidth: 1,
+  },
+  circleC: {
+    position: 'absolute',
+    top: 10,
+    right: 30,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 1,
+  },
+  kicker: {
+    fontFamily: 'DMSans-Medium',
+    fontSize: 11,
+    letterSpacing: 3,
+    textTransform: 'uppercase',
+    marginBottom: 18,
+  },
+  heroTitle: {
+    fontFamily: 'CrimsonPro',
+    fontSize: 34,
+    lineHeight: 38,
+    letterSpacing: -0.5,
+    color: '#f7f5f0',
+  },
+  heroTitleItalic: {
+    fontFamily: 'CrimsonPro-Italic',
+  },
+
+  // Scroll
   scroll: {
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 8,
+    paddingBottom: 0,
   },
-  section: {
-    marginTop: 20,
+
+  loader: {
+    marginVertical: 16,
+    marginHorizontal: 28,
   },
   bottomPad: {
-    height: 32,
+    height: 80,
   },
 });
