@@ -117,8 +117,12 @@ export default function PlayerScreen() {
     ]).start();
     if (isPlaying) {
       pause();
-    } else {
+    } else if (currentContent?.id === content?.id) {
       resume();
+    } else if (content) {
+      // Either no track is loaded yet (browser blocked autoplay) or a
+      // different track is loaded — kick playback under the user gesture.
+      playContent(content);
     }
   };
 
