@@ -104,6 +104,16 @@ export default function AdminDashboard() {
       subtitle: 'ACCOUNT · SETTINGS',
       route: '/(tabs)/profile',
     },
+    ...(__DEV__
+      ? [
+          {
+            symbol: '🐛',
+            title: 'Bug Reports',
+            subtitle: 'LOCAL CAPTURES · DEV ONLY',
+            route: '/admin/bug-reports',
+          },
+        ]
+      : []),
   ];
 
   const styles = StyleSheet.create({
