@@ -20,10 +20,8 @@ import {
   setErrorCallback,
   setWarnCallback,
 } from '../services/log-buffer';
-import {
-  installFetchPatch,
-  setNetworkErrorCallback,
-} from '../services/network-buffer';
+// Network patch intentionally not used — it interferes with Supabase token refresh on web.
+// import { installFetchPatch, setNetworkErrorCallback } from '../services/network-buffer';
 import {
   setStorage,
   setRouteProvider,
@@ -141,21 +139,23 @@ export default function RootLayout() {
       });
   }, []);
 
-  // Install the bug reporter in dev only, once.
+  // Install the bug reporter in dev only, once — AFTER config loads so we
+  // don't patch fetch before Supabase's initial calls.
   useEffect(() => {
     if (!__DEV__) return;
+    if (!configLoaded) return;
     let cancelled = false;
     (async () => {
       try {
-        // Primary storage: Supabase (central DB, triage via admin UI).
         const { createSupabaseStorage } = require('../services/bug-reporter-supabase');
         setStorage(createSupabaseStorage());
         if (cancelled) return;
 
         setRouteProvider(() => currentPathname || '/');
 
+        // Patch console only — the fetch patch interferes with Supabase's
+        // internal retry/refresh paths on web. Network capture is omitted for now.
         installConsolePatch();
-        installFetchPatch();
 
         setErrorCallback((message) => {
           reportBug({
@@ -169,25 +169,14 @@ export default function RootLayout() {
             error: { message, source: 'console.warn' },
           }).catch(() => {});
         });
-        setNetworkErrorCallback((entry) => {
-          reportBug({
-            type: 'auto-network',
-            error: {
-              message: entry.error ?? `HTTP ${entry.status} ${entry.method} ${entry.url}`,
-              source: 'fetch',
-            },
-          }).catch(() => {});
-        });
       } catch (err) {
-        // Bug reporter must never break the app
-        // eslint-disable-next-line no-console
         console.warn('bug-reporter: install failed', err);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [configLoaded]);
 
   if (configError) {
     return (
