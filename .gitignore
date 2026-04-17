@@ -49,3 +49,6 @@ baitulmaarif_extracted/
 ghurfa_extracted/
 *.apk
 *.xapk
+
+# server sub-package
+server/package-lock.json
