@@ -27,6 +27,22 @@ export function initSupabase(): SupabaseClient {
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: false,
+      // Force immediate session check so subsequent calls don't block
+      flowType: 'pkce',
+    },
+    // Disable realtime on web to avoid websocket init hangs.
+    // Re-enable later when Go Live broadcasting is integrated.
+    realtime: { params: { eventsPerSecond: 2 } },
+    global: {
+      // Wrap fetch with a 15s timeout — prevents Supabase calls from
+      // hanging forever if the network stalls.
+      fetch: (input, init) => {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 15000);
+        return fetch(input as any, { ...init, signal: ctrl.signal }).finally(
+          () => clearTimeout(timer),
+        );
+      },
     },
   });
 
@@ -34,17 +50,12 @@ export function initSupabase(): SupabaseClient {
 }
 
 /**
- * Lazy-getter proxy so existing `import { supabase }` call sites keep working.
- * Every method/property access reads through to the real client at call time.
- *
- * Notes:
- *   - `from('table').select(...)` returns a real PostgrestFilterBuilder,
- *     so chained calls go directly to the real client (no more Proxy hops).
- *   - Plain property access (e.g. `supabase.auth.getUser()`) returns the
- *     real sub-object, so it's bound to the correct `this`.
+ * Lazy proxy so existing `import { supabase }` sites keep working.
+ * Reads through to the initialized client at call time via Reflect.get
+ * so `this` is bound correctly for chained calls.
  */
 const handler: ProxyHandler<SupabaseClient> = {
-  get(_target, prop, receiver) {
+  get(_target, prop) {
     const client = getSupabase();
     return Reflect.get(client, prop, client);
   },
