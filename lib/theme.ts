@@ -3,6 +3,7 @@ export interface ThemeColors {
   primary: string;        // Deep forest green
   primaryLight: string;
   primaryDark: string;
+  onPrimary: string;      // Readable text/icon color on primary bg
   accent: string;         // Warm gold
   accentLight: string;
   liveRed: string;        // Muted sacred red
@@ -48,6 +49,7 @@ export const lightTheme: Theme = {
     primary: '#0f2e24',
     primaryLight: '#1a4638',
     primaryDark: '#081a15',
+    onPrimary: '#d4a853',     // Gold reads on deep-forest primary
     accent: '#d4a853',
     accentLight: '#e8c672',
     liveRed: '#c23e3e',
@@ -80,6 +82,10 @@ export const darkTheme: Theme = {
     primary: '#d4a853',        // Gold leads in dark mode
     primaryLight: '#e8c672',
     primaryDark: '#a8852e',
+    // Primary is gold in dark mode, so button text has to be dark to
+    // stay readable. Light mode uses gold text on forest, dark mode
+    // uses deep forest text on gold.
+    onPrimary: '#0f2e24',
     accent: '#d4a853',
     accentLight: '#e8c672',
     liveRed: '#d65050',

@@ -49,7 +49,7 @@ export function ContentCard({ content, onPress, language }: ContentCardProps) {
       activeOpacity={0.85}
     >
       <View style={[styles.thumb, { backgroundColor: c.primary }]}>
-        <Text style={[styles.symbol, { color: c.accent }]}>{symbol}</Text>
+        <Text style={[styles.symbol, { color: c.onPrimary }]}>{symbol}</Text>
       </View>
 
       <View style={styles.body}>

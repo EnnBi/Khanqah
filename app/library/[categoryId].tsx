@@ -182,12 +182,12 @@ export default function CategoryListingScreen() {
 
       {/* Back button */}
       <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
-        <Text style={[styles.backText, { color: c.gold }]}>{'‹ BACK'}</Text>
+        <Text style={[styles.backText, { color: c.onPrimary }]}>{'‹ BACK'}</Text>
       </TouchableOpacity>
 
       {/* Kicker */}
       {kicker ? (
-        <Text style={[styles.kicker, { color: c.gold }]}>{kicker}</Text>
+        <Text style={[styles.kicker, { color: c.onPrimary }]}>{kicker}</Text>
       ) : null}
 
       {/* Category title */}
@@ -204,7 +204,7 @@ export default function CategoryListingScreen() {
 
       {/* Arabic / Urdu name */}
       {categoryNameArabic ? (
-        <Text style={[styles.heroArabic, { color: c.gold }]}>
+        <Text style={[styles.heroArabic, { color: c.onPrimary }]}>
           {categoryNameArabic}
         </Text>
       ) : null}

@@ -191,7 +191,7 @@ export default function ProfileScreen() {
         {user ? (
           <View style={[styles.userCard, { backgroundColor: c.surface, borderColor: c.border }]}>
             <View style={[styles.avatar, { backgroundColor: c.primary }]}>
-              <Text style={[styles.avatarInitial, { color: c.accent }]}>{initial}</Text>
+              <Text style={[styles.avatarInitial, { color: c.onPrimary }]}>{initial}</Text>
             </View>
             <View style={styles.userInfo}>
               <Text style={[styles.displayName, { color: c.text }]}>
@@ -203,7 +203,7 @@ export default function ProfileScreen() {
         ) : (
           <View style={[styles.userCard, { backgroundColor: c.surface, borderColor: c.border }]}>
             <View style={[styles.avatar, { backgroundColor: c.primary }]}>
-              <Text style={[styles.avatarInitial, { color: c.accent }]}>G</Text>
+              <Text style={[styles.avatarInitial, { color: c.onPrimary }]}>G</Text>
             </View>
             <View style={styles.userInfo}>
               <Text style={[styles.displayName, { color: c.text }]}>
@@ -220,7 +220,7 @@ export default function ProfileScreen() {
                 }}
                 activeOpacity={0.8}
               >
-                <Text style={[styles.signInText, { color: c.primary }]}>
+                <Text style={[styles.signInText, { color: '#0f2e24' }]}>
                   {t('auth.signIn') || 'SIGN IN'}
                 </Text>
               </TouchableOpacity>

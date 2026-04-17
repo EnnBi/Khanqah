@@ -44,19 +44,19 @@ export function MiniPlayer() {
         onPress={() => router.push(`/player/${currentContent.id}`)}
         activeOpacity={0.85}
       >
-        <View style={[styles.thumb, { borderColor: c.accent }]}>
-          <Text style={[styles.thumbSymbol, { color: c.accent }]}>♪</Text>
+        <View style={[styles.thumb, { borderColor: c.onPrimary }]}>
+          <Text style={[styles.thumbSymbol, { color: c.onPrimary }]}>♪</Text>
         </View>
 
         <View style={styles.info}>
           <Text
-            style={[styles.title, { color: '#f7f5f0' }]}
+            style={[styles.title, { color: c.onPrimary }]}
             numberOfLines={1}
           >
             {currentContent.title_en || currentContent.title_ur || 'Untitled'}
           </Text>
           <Text
-            style={[styles.artist, { color: 'rgba(247, 245, 240, 0.55)' }]}
+            style={[styles.artist, { color: c.onPrimary, opacity: 0.7 }]}
             numberOfLines={1}
           >
             MUFTI ABDUR RASHEED MIFTAHI SAHAB
@@ -68,7 +68,7 @@ export function MiniPlayer() {
           onPress={handlePlayPause}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Text style={[styles.playIcon, { color: c.accent }]}>
+          <Text style={[styles.playIcon, { color: c.onPrimary }]}>
             {isPlaying ? '▌▌' : '▶'}
           </Text>
         </TouchableOpacity>

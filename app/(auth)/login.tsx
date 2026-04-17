@@ -210,9 +210,9 @@ export default function LoginScreen() {
                   activeOpacity={0.85}
                 >
                   {loading ? (
-                    <ActivityIndicator color={c.gold} />
+                    <ActivityIndicator color={c.onPrimary} />
                   ) : (
-                    <Text style={[styles.primaryBtnText, { color: c.gold }]}>SEND CODE</Text>
+                    <Text style={[styles.primaryBtnText, { color: c.onPrimary }]}>SEND CODE</Text>
                   )}
                 </TouchableOpacity>
               </>
@@ -240,9 +240,9 @@ export default function LoginScreen() {
                   activeOpacity={0.85}
                 >
                   {loading ? (
-                    <ActivityIndicator color={c.gold} />
+                    <ActivityIndicator color={c.onPrimary} />
                   ) : (
-                    <Text style={[styles.primaryBtnText, { color: c.gold }]}>VERIFY</Text>
+                    <Text style={[styles.primaryBtnText, { color: c.onPrimary }]}>VERIFY</Text>
                   )}
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -308,9 +308,9 @@ export default function LoginScreen() {
               activeOpacity={0.85}
             >
               {loading ? (
-                <ActivityIndicator color={c.gold} />
+                <ActivityIndicator color={c.onPrimary} />
               ) : (
-                <Text style={[styles.primaryBtnText, { color: c.gold }]}>
+                <Text style={[styles.primaryBtnText, { color: c.onPrimary }]}>
                   {mode === 'signup'
                     ? (t('auth.signUp') || 'CREATE ACCOUNT')
                     : (t('auth.signIn') || 'SIGN IN')}

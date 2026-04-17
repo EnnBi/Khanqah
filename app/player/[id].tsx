@@ -209,7 +209,7 @@ export default function PlayerScreen() {
               <Text style={styles.geometricPattern}>✦ ✧ ✦ ✧ ✦</Text>
               <Text style={styles.geometricPatternB}>✧ ✦ ✧ ✦ ✧</Text>
               {/* Content-type symbol */}
-              <Text style={[styles.artworkSymbol, { color: c.gold }]}>{contentSymbol}</Text>
+              <Text style={[styles.artworkSymbol, { color: c.onPrimary }]}>{contentSymbol}</Text>
             </View>
           </View>
         </View>
@@ -286,16 +286,14 @@ export default function PlayerScreen() {
               style={[
                 styles.playBtn,
                 {
-                  // In dark mode primary is gold, so force the deep forest
-                  // background so the gold icon stays visible.
-                  backgroundColor: theme.dark ? '#0f2e24' : c.primary,
+                  backgroundColor: c.primary,
                   borderColor: c.gold,
                   shadowColor: c.gold,
                 },
               ]}
               accessibilityLabel={isPlaying ? 'Pause' : 'Play'}
             >
-              <Text style={[styles.playBtnIcon, { color: c.gold }]}>
+              <Text style={[styles.playBtnIcon, { color: c.onPrimary }]}>
                 {isPlaying ? '▌▌' : '▶'}
               </Text>
             </TouchableOpacity>

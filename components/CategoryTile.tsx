@@ -40,7 +40,7 @@ export function CategoryTile({ icon, name, nameEn, nameUr, count, type, onPress 
       activeOpacity={0.85}
     >
       <View style={[styles.symbolBox, { backgroundColor: c.primary }]}>
-        <Text style={[styles.symbol, { color: c.accent }]}>{icon}</Text>
+        <Text style={[styles.symbol, { color: c.onPrimary }]}>{icon}</Text>
       </View>
       <Text
         style={[styles.name, { color: c.primary }, useUrduFont && urduTextStyle]}

@@ -151,7 +151,7 @@ export default function BookViewerScreen() {
             style={[styles.retryBtn, { backgroundColor: c.primary }]}
             onPress={() => router.back()}
           >
-            <Text style={[styles.retryBtnText, { color: c.gold }]}>GO BACK</Text>
+            <Text style={[styles.retryBtnText, { color: c.onPrimary }]}>GO BACK</Text>
           </TouchableOpacity>
         </View>
       </View>
