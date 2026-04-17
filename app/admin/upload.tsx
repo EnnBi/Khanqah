@@ -205,31 +205,16 @@ export default function UploadContentScreen() {
       return;
     }
 
+    // Navigate directly on success — Alert.alert buttons don't fire their
+    // onPress reliably on React Native Web, so an alert-gated callback is
+    // an invisible-cliff UX. For YouTube mirrors, jump to manage-content
+    // so the admin can watch the QUEUED → MIRRORING → READY chip live.
     if (editId) {
-      Alert.alert('Success', 'Content updated successfully!', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      router.back();
+    } else if (isYouTubeSubmit) {
+      router.replace('/admin/manage-content');
     } else {
-      Alert.alert(
-        'Success',
-        isYouTubeSubmit
-          ? 'Queued — mirroring usually takes 5–15 min.'
-          : 'Content published successfully!',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              // Reset form
-              setSelectedType('bayan');
-              setTitleEn('');
-              setTitleUr('');
-              setSelectedCategory(null);
-              setMediaUrl('');
-              setThumbnailUrl('');
-            },
-          },
-        ],
-      );
+      router.replace('/admin/manage-content');
     }
   }
 
@@ -413,7 +398,7 @@ export default function UploadContentScreen() {
     },
     publishButtonText: {
       ...typeP.button,
-      color: c.accent,
+      color: c.onPrimary,
     },
 
     // Modal

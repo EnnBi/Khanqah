@@ -8,7 +8,12 @@ interface YouTubeEmbedProps {
 
 export function isYouTubeUrl(url: string | null | undefined): boolean {
   if (!url) return false;
-  return url.includes('youtube.com/watch') || url.includes('youtu.be/');
+  return (
+    url.includes('youtube.com/watch') ||
+    url.includes('youtube.com/shorts/') ||
+    url.includes('youtube.com/embed/') ||
+    url.includes('youtu.be/')
+  );
 }
 
 function extractVideoId(url: string): string | null {
@@ -16,6 +21,10 @@ function extractVideoId(url: string): string | null {
   if (short) return short[1];
   const long = url.match(/[?&]v=([^?&#]+)/);
   if (long) return long[1];
+  const shorts = url.match(/youtube\.com\/shorts\/([^?&#/]+)/);
+  if (shorts) return shorts[1];
+  const embed = url.match(/youtube\.com\/embed\/([^?&#/]+)/);
+  if (embed) return embed[1];
   return null;
 }
 
