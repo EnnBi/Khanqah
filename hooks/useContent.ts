@@ -10,28 +10,39 @@ export function useLatestContent(type?: ContentType, limit = 5) {
   useEffect(() => {
     let cancelled = false;
 
-    async function fetch() {
+    async function fetchContent() {
+      console.log('[useLatestContent] fetching', { type, limit });
       setLoading(true);
       setError(null);
-      let query = supabase
-        .from('content')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(limit);
+      try {
+        let query = supabase
+          .from('content')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(limit);
 
-      if (type) {
-        query = query.eq('type', type);
-      }
+        if (type) {
+          query = query.eq('type', type);
+        }
 
-      const { data, error: err } = await query;
-      if (!cancelled) {
-        if (err) setError(err.message);
-        else setContent(data ?? []);
-        setLoading(false);
+        const { data, error: err } = await query;
+        console.log('[useLatestContent] response', { type, rows: data?.length, err: err?.message });
+
+        if (!cancelled) {
+          if (err) setError(err.message);
+          else setContent(data ?? []);
+          setLoading(false);
+        }
+      } catch (e: any) {
+        console.error('[useLatestContent] threw', { type, error: e?.message ?? e });
+        if (!cancelled) {
+          setError(e?.message ?? String(e));
+          setLoading(false);
+        }
       }
     }
 
-    fetch();
+    fetchContent();
     return () => { cancelled = true; };
   }, [type, limit]);
 

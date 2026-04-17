@@ -5,9 +5,6 @@ import { getConfig } from './remote-config';
 
 let _supabase: SupabaseClient | null = null;
 
-/**
- * Get the Supabase client. Must call initSupabase() first (after loadConfig).
- */
 export function getSupabase(): SupabaseClient {
   if (!_supabase) {
     throw new Error('Supabase not initialized. Call initSupabase() after loadConfig().');
@@ -16,8 +13,8 @@ export function getSupabase(): SupabaseClient {
 }
 
 /**
- * Initialize Supabase client using values from remote config.
- * Call this once after loadConfig() completes.
+ * Initialize the Supabase client using values from remote config.
+ * Call once after loadConfig() resolves.
  */
 export function initSupabase(): SupabaseClient {
   if (_supabase) return _supabase;
@@ -36,15 +33,21 @@ export function initSupabase(): SupabaseClient {
   return _supabase;
 }
 
-// Backward-compatible export — lazily gets the initialized client
-// This allows existing imports of `supabase` to keep working
-export const supabase = new Proxy({} as SupabaseClient, {
-  get(_target, prop) {
+/**
+ * Lazy-getter proxy so existing `import { supabase }` call sites keep working.
+ * Every method/property access reads through to the real client at call time.
+ *
+ * Notes:
+ *   - `from('table').select(...)` returns a real PostgrestFilterBuilder,
+ *     so chained calls go directly to the real client (no more Proxy hops).
+ *   - Plain property access (e.g. `supabase.auth.getUser()`) returns the
+ *     real sub-object, so it's bound to the correct `this`.
+ */
+const handler: ProxyHandler<SupabaseClient> = {
+  get(_target, prop, receiver) {
     const client = getSupabase();
-    const value = (client as any)[prop];
-    if (typeof value === 'function') {
-      return value.bind(client);
-    }
-    return value;
+    return Reflect.get(client, prop, client);
   },
-});
+};
+
+export const supabase = new Proxy({} as SupabaseClient, handler);
