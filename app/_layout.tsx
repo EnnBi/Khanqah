@@ -1,16 +1,44 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, View, Text } from 'react-native';
-import { Slot, useRouter, useSegments } from 'expo-router';
+import { ActivityIndicator, View, Text, Platform } from 'react-native';
+import { Slot, useRouter, useSegments, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 
-import { loadConfig } from '../lib/remote-config';
+import { loadConfig, getConfig } from '../lib/remote-config';
 import { initSupabase } from '../lib/supabase';
 import { ThemeProvider, useTheme } from '../providers/ThemeProvider';
 import { I18nProvider } from '../providers/I18nProvider';
 import { AuthProvider, useAuth } from '../providers/AuthProvider';
 import { PlayerProvider } from '../providers/PlayerProvider';
 import { initNotifications, registerDevice } from '../services/notifications';
+
+// Bug reporter (dev-only)
+import {
+  installConsolePatch,
+  setErrorCallback,
+  setWarnCallback,
+} from '../services/log-buffer';
+import {
+  installFetchPatch,
+  setNetworkErrorCallback,
+} from '../services/network-buffer';
+import {
+  setStorage,
+  setRouteProvider,
+  setAppVersion,
+  reportBug,
+} from '../services/bug-reporter';
+
+// Tracks current pathname for bug reports. Updated by BugReporterPathnameTracker below.
+let currentPathname = '';
+
+function BugReporterPathnameTracker() {
+  const pathname = usePathname();
+  useEffect(() => {
+    currentPathname = pathname ?? '';
+  }, [pathname]);
+  return null;
+}
 
 function AuthGate() {
   const { session, user, loading } = useAuth();
@@ -59,6 +87,7 @@ function RootLayoutInner() {
     <>
       <StatusBar style={theme.dark ? 'light' : 'dark'} />
       <AuthGate />
+      <BugReporterPathnameTracker />
     </>
   );
 }
@@ -83,11 +112,71 @@ export default function RootLayout() {
     loadConfig()
       .then(() => {
         initSupabase();
+        // Best-effort: propagate version to bug reporter
+        if (__DEV__) {
+          try {
+            setAppVersion(getConfig().appVersion || '0.0.0');
+          } catch {
+            /* config not ready — keeps default */
+          }
+        }
         setConfigLoaded(true);
       })
       .catch((err) => {
         setConfigError(err.message || 'Failed to load configuration');
       });
+  }, []);
+
+  // Install the bug reporter in dev only, once.
+  useEffect(() => {
+    if (!__DEV__) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        if (Platform.OS === 'web') {
+          const { createWebStorage } = require('../services/bug-reporter.web');
+          setStorage(createWebStorage());
+        } else {
+          const { createFileSystemStorage } = require('../services/bug-reporter');
+          setStorage(createFileSystemStorage());
+        }
+        if (cancelled) return;
+
+        setRouteProvider(() => currentPathname || '/');
+
+        installConsolePatch();
+        installFetchPatch();
+
+        setErrorCallback((message) => {
+          reportBug({
+            type: 'auto-error',
+            error: { message, source: 'console.error' },
+          }).catch(() => {});
+        });
+        setWarnCallback((message) => {
+          reportBug({
+            type: 'auto-warn',
+            error: { message, source: 'console.warn' },
+          }).catch(() => {});
+        });
+        setNetworkErrorCallback((entry) => {
+          reportBug({
+            type: 'auto-network',
+            error: {
+              message: entry.error ?? `HTTP ${entry.status} ${entry.method} ${entry.url}`,
+              source: 'fetch',
+            },
+          }).catch(() => {});
+        });
+      } catch (err) {
+        // Bug reporter must never break the app
+        // eslint-disable-next-line no-console
+        console.warn('bug-reporter: install failed', err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (configError) {
