@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -31,6 +30,11 @@ export default function LoginScreen() {
   const [mode, setMode] = useState<AuthMode>('phone');
   const [loading, setLoading] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  function showError(msg: string) {
+    setErrorMsg(msg);
+  }
 
   // Phone OTP state
   const [phone, setPhone] = useState('');
@@ -45,8 +49,9 @@ export default function LoginScreen() {
   const c = theme.colors;
 
   async function handleSendOtp() {
+    setErrorMsg(null);
     if (!phone.trim()) {
-      Alert.alert('Error', 'Please enter your phone number.');
+      showError('Please enter your phone number.');
       return;
     }
     setLoading(true);
@@ -54,34 +59,36 @@ export default function LoginScreen() {
       await signInWithPhone(phone.trim());
       setOtpSent(true);
     } catch (err: any) {
-      Alert.alert('Error', err?.message ?? 'Failed to send OTP.');
+      showError(err?.message ?? 'Failed to send OTP.');
     } finally {
       setLoading(false);
     }
   }
 
   async function handleVerifyOtp() {
+    setErrorMsg(null);
     if (!otp.trim() || otp.length < 6) {
-      Alert.alert('Error', 'Please enter the 6-digit code.');
+      showError('Please enter the 6-digit code.');
       return;
     }
     setLoading(true);
     try {
       await verifyOtp(phone.trim(), otp.trim());
     } catch (err: any) {
-      Alert.alert('Error', err?.message ?? 'Invalid code. Please try again.');
+      showError(err?.message ?? 'Invalid code. Please try again.');
     } finally {
       setLoading(false);
     }
   }
 
   async function handleEmailSubmit() {
+    setErrorMsg(null);
     if (!email.trim() || !password.trim()) {
-      Alert.alert('Error', 'Please enter email and password.');
+      showError('Please enter email and password.');
       return;
     }
     if (mode === 'signup' && !name.trim()) {
-      Alert.alert('Error', 'Please enter your name.');
+      showError('Please enter your name.');
       return;
     }
     setLoading(true);
@@ -92,18 +99,19 @@ export default function LoginScreen() {
         await signInWithEmail(email.trim(), password);
       }
     } catch (err: any) {
-      Alert.alert('Error', err?.message ?? 'Something went wrong.');
+      showError(err?.message ?? 'Something went wrong.');
     } finally {
       setLoading(false);
     }
   }
 
   async function handleGoogleSignIn() {
+    setErrorMsg(null);
     setLoading(true);
     try {
       await signInWithGoogle();
     } catch (err: any) {
-      Alert.alert('Error', err?.message ?? 'Google sign-in failed.');
+      showError(err?.message ?? 'Google sign-in failed.');
     } finally {
       setLoading(false);
     }
@@ -164,6 +172,19 @@ export default function LoginScreen() {
             );
           })}
         </View>
+
+        {errorMsg && (
+          <View style={[styles.errorBanner, { borderColor: c.liveRed, backgroundColor: theme.dark ? 'rgba(214,80,80,0.12)' : 'rgba(194,62,62,0.08)' }]}>
+            <Text style={[styles.errorText, { color: c.liveRed }]}>{errorMsg}</Text>
+            <TouchableOpacity
+              onPress={() => setErrorMsg(null)}
+              accessibilityLabel="Dismiss error"
+              style={styles.errorDismiss}
+            >
+              <Text style={[styles.errorDismissText, { color: c.liveRed }]}>×</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Phone OTP Form */}
         {mode === 'phone' && (
@@ -526,6 +547,35 @@ const styles = StyleSheet.create({
   googleBtnText: {
     fontFamily: 'CrimsonPro',
     fontSize: 17,
+  },
+
+  // Error banner
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 12,
+    gap: 8,
+  },
+  errorText: {
+    flex: 1,
+    fontFamily: 'DMSans',
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  errorDismiss: {
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  errorDismissText: {
+    fontSize: 20,
+    lineHeight: 22,
+    fontWeight: '600',
   },
 
   // Guest link
