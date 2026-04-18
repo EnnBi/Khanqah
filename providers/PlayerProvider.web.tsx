@@ -128,8 +128,14 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const resume = useCallback(async () => {
+    const audio = audioRef.current;
+    // Guard against resuming when no playable source is loaded. Common
+    // cases: the current track is a YouTube URL (we skip loading those
+    // into <audio> — they render via iframe), or no track has been
+    // selected yet. Either way there's nothing to resume.
+    if (!audio || !audio.src || isYouTubeUrl(audio.src)) return;
     try {
-      await audioRef.current?.play();
+      await audio.play();
     } catch (err) {
       console.warn('[player] resume failed:', err);
     }
