@@ -6,7 +6,6 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   ActivityIndicator,
   Modal,
   ScrollView,
@@ -21,6 +20,7 @@ import { supabase } from '../../lib/supabase';
 import { ScheduledSession } from '../../lib/types';
 import { type as typeP, font } from '../../lib/typography';
 import { useSafeBack } from '../../hooks/useSafeBack';
+import { showMessage, confirmDestructive } from '../../lib/alert';
 
 const DAYS_SHORT = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -157,31 +157,23 @@ export default function ScheduleScreen() {
     setRefreshing(false);
   };
 
-  const handleDelete = (session: ScheduledSession) => {
-    Alert.alert(
+  const handleDelete = async (session: ScheduledSession) => {
+    const ok = await confirmDestructive(
       'Delete Session',
       `Delete "${session.title_en}"? This cannot be undone.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            setDeletingId(session.id);
-            const { error } = await supabase
-              .from('scheduled_sessions')
-              .delete()
-              .eq('id', session.id);
-            setDeletingId(null);
-            if (error) {
-              Alert.alert('Error', 'Failed to delete session. Please try again.');
-            } else {
-              setSessions((prev) => prev.filter((s) => s.id !== session.id));
-            }
-          },
-        },
-      ]
     );
+    if (!ok) return;
+    setDeletingId(session.id);
+    const { error } = await supabase
+      .from('scheduled_sessions')
+      .delete()
+      .eq('id', session.id);
+    setDeletingId(null);
+    if (error) {
+      showMessage('Error', 'Failed to delete session. Please try again.');
+    } else {
+      setSessions((prev) => prev.filter((s) => s.id !== session.id));
+    }
   };
 
   const openModal = () => {

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
-  Alert, Modal, TextInput, Platform, ActivityIndicator,
+  Modal, TextInput, Platform, ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../providers/ThemeProvider';
@@ -11,6 +11,7 @@ import { usePlaylists, createPlaylist } from '../../hooks/usePlaylists';
 import { useDownloads } from '../../hooks/useDownloads';
 import { ContentCard } from '../../components/ContentCard';
 import { useContinueListening, useHistory } from '../../hooks/useListeningProgress';
+import { showMessage } from '../../lib/alert';
 
 // ── Section header (Calm Architecture style) ──────────────────────────────
 
@@ -448,21 +449,14 @@ export default function CollectionScreen() {
       await createPlaylist(user.id, name);
       refetchPlaylists();
     } catch (e) {
-      Alert.alert('Error', 'Could not create playlist.');
+      showMessage('Error', 'Could not create playlist.');
     }
   }
 
   function onPressNew() {
-    if (Platform.OS === 'ios') {
-      Alert.prompt(
-        'New Playlist',
-        'Enter a name for your playlist',
-        (name) => { if (name?.trim()) handleNewPlaylist(name.trim()); },
-        'plain-text',
-      );
-    } else {
-      setShowModal(true);
-    }
+    // Always use the inline modal — Alert.prompt is iOS-only and the
+    // modal already exists, so we keep the code path consistent.
+    setShowModal(true);
   }
 
   return (

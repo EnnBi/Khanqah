@@ -6,7 +6,6 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   ActivityIndicator,
   ScrollView,
   RefreshControl,
@@ -17,6 +16,7 @@ import { useTheme } from '../../providers/ThemeProvider';
 import { useI18n } from '../../providers/I18nProvider';
 import { useAuth } from '../../providers/AuthProvider';
 import { supabase } from '../../lib/supabase';
+import { showMessage, confirmDestructive } from '../../lib/alert';
 import { Content, ContentType } from '../../lib/types';
 import { type as typeP, font } from '../../lib/typography';
 import { MirrorStatusChip } from '../../components/MirrorStatusChip';
@@ -204,30 +204,21 @@ export default function ManageContentScreen() {
     router.push({ pathname: '/admin/upload', params: { editId: content.id } } as any);
   };
 
-  const handleDelete = (content: Content) => {
-    Alert.alert(
+  const handleDelete = async (content: Content) => {
+    const ok = await confirmDestructive(
       'Delete Content',
       `Are you sure you want to delete "${content.title_en}"? This action cannot be undone.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            setDeletingId(content.id);
-            const { error } = await supabase.from('content').delete().eq('id', content.id);
-            setDeletingId(null);
-
-            if (error) {
-              Alert.alert('Error', 'Failed to delete content. Please try again.');
-              console.error('Delete error:', error);
-            } else {
-              setItems((prev) => prev.filter((item) => item.id !== content.id));
-            }
-          },
-        },
-      ]
     );
+    if (!ok) return;
+    setDeletingId(content.id);
+    const { error } = await supabase.from('content').delete().eq('id', content.id);
+    setDeletingId(null);
+    if (error) {
+      showMessage('Error', 'Failed to delete content. Please try again.');
+      console.error('Delete error:', error);
+    } else {
+      setItems((prev) => prev.filter((item) => item.id !== content.id));
+    }
   };
 
   const styles = StyleSheet.create({

@@ -8,7 +8,6 @@ import {
   ActivityIndicator,
   Modal,
   TextInput,
-  Alert,
   RefreshControl,
   KeyboardAvoidingView,
   Platform,
@@ -20,6 +19,7 @@ import { useTheme } from '../../providers/ThemeProvider';
 import { useI18n } from '../../providers/I18nProvider';
 import { useAuth } from '../../providers/AuthProvider';
 import { supabase } from '../../lib/supabase';
+import { showMessage } from '../../lib/alert';
 import { User, UserRole } from '../../lib/types';
 import { type as typeP, font } from '../../lib/typography';
 
@@ -83,7 +83,7 @@ export default function TeamScreen() {
   const handleSendInvite = async () => {
     const email = inviteEmail.trim().toLowerCase();
     if (!email) {
-      Alert.alert('Error', 'Please enter an email address.');
+      showMessage('Error', 'Please enter an email address.');
       return;
     }
 
@@ -98,7 +98,7 @@ export default function TeamScreen() {
 
     if (error || !data) {
       setInviting(false);
-      Alert.alert('User Not Found', 'User must create an account first.');
+      showMessage('User Not Found', 'User must create an account first.');
       return;
     }
 
@@ -113,13 +113,13 @@ export default function TeamScreen() {
     setInviting(false);
 
     if (updateError) {
-      Alert.alert('Error', 'Failed to update role. Please try again.');
+      showMessage('Error', 'Failed to update role. Please try again.');
       console.error('Role update error:', updateError);
       return;
     }
 
     setModalVisible(false);
-    Alert.alert(
+    showMessage(
       'Role Updated',
       `${foundUser.display_name || email} has been assigned the ${inviteRole} role.`
     );

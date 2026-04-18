@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { showMessage } from '../../lib/alert';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView, WebViewNavigation } from 'react-native-webview';
@@ -94,17 +94,17 @@ export default function BookViewerScreen() {
       // Check if already downloaded
       const info = await FileSystem.getInfoAsync(destPath);
       if (info.exists) {
-        Alert.alert('Already downloaded', `Book is saved at:\n${destPath}`);
+        showMessage('Already downloaded', `Book is saved at:\n${destPath}`);
         return;
       }
 
       setDownloading(true);
       const { uri } = await FileSystem.downloadAsync(content.media_url, destPath);
       setDownloading(false);
-      Alert.alert('Download complete', `Saved to:\n${uri}`);
+      showMessage('Download complete', `Saved to:\n${uri}`);
     } catch {
       setDownloading(false);
-      Alert.alert('Download failed', 'Could not download the book. Please try again.');
+      showMessage('Download failed', 'Could not download the book. Please try again.');
     }
   }, [content]);
 

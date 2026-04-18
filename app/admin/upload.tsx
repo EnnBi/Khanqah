@@ -6,7 +6,6 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Modal,
@@ -21,6 +20,7 @@ import { ContentType, Category } from '../../lib/types';
 import type { MirrorFormat } from '../../lib/types';
 import { type as typeP, font } from '../../lib/typography';
 import { isYouTubeUrl, isDirectVideoUrl } from '../../components/YouTubeEmbed';
+import { showMessage } from '../../lib/alert';
 
 interface ContentTypeOption {
   value: ContentType;
@@ -85,7 +85,7 @@ export default function UploadContentScreen() {
         .eq('id', editId)
         .single();
       if (error || !data) {
-        Alert.alert('Error', 'Could not load content for editing.');
+        showMessage('Error', 'Could not load content for editing.');
         setLoadingEdit(false);
         return;
       }
@@ -136,19 +136,19 @@ export default function UploadContentScreen() {
 
   async function handlePublish() {
     if (!titleEn.trim()) {
-      Alert.alert('Validation', 'Please enter the English title.');
+      showMessage('Validation', 'Please enter the English title.');
       return;
     }
     if (!titleUr.trim()) {
-      Alert.alert('Validation', 'Please enter the Urdu title.');
+      showMessage('Validation', 'Please enter the Urdu title.');
       return;
     }
     if (!selectedCategory) {
-      Alert.alert('Validation', 'Please select a category.');
+      showMessage('Validation', 'Please select a category.');
       return;
     }
     if (!mediaUrl.trim()) {
-      Alert.alert('Validation', 'Please enter the media URL.');
+      showMessage('Validation', 'Please enter the media URL.');
       return;
     }
 
@@ -208,7 +208,7 @@ export default function UploadContentScreen() {
     setSubmitting(false);
 
     if (error) {
-      Alert.alert('Error', error.message);
+      showMessage('Error', error.message);
       return;
     }
 

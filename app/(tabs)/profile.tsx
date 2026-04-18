@@ -5,12 +5,12 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
-  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useI18n } from '../../providers/I18nProvider';
 import { useAuth } from '../../providers/AuthProvider';
+import { confirmDestructive } from '../../lib/alert';
 
 // ── ProfileItem ────────────────────────────────────────────────────────────
 
@@ -140,19 +140,13 @@ export default function ProfileScreen() {
     setLanguage(language === 'en' ? 'ur' : 'en');
   }
 
-  function handleSignOut() {
-    Alert.alert(
+  async function handleSignOut() {
+    const ok = await confirmDestructive(
       t('profile.signOutTitle') || 'Sign Out',
       t('profile.signOutMessage') || 'Are you sure you want to sign out?',
-      [
-        { text: t('common.cancel') || 'Cancel', style: 'cancel' },
-        {
-          text: t('profile.signOut') || 'Sign Out',
-          style: 'destructive',
-          onPress: () => signOut(),
-        },
-      ],
+      t('profile.signOut') || 'Sign Out',
     );
+    if (ok) signOut();
   }
 
   const themeLabel =

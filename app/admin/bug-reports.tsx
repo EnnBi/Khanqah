@@ -5,12 +5,12 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-  Alert,
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { useTheme } from '../../providers/ThemeProvider';
+import { showMessage, confirmDestructive } from '../../lib/alert';
 import {
   getAllReports,
   clearReports,
@@ -89,22 +89,15 @@ export default function BugReportsScreen() {
   async function handleExport() {
     const json = await exportReportsJson();
     await Clipboard.setStringAsync(json);
-    Alert.alert('Exported', `Copied ${reports.length} report(s) to clipboard.`);
+    showMessage('Exported', `Copied ${reports.length} report(s) to clipboard.`);
   }
 
-  function handleClear() {
-    Alert.alert('Clear all reports?', 'This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Clear',
-        style: 'destructive',
-        onPress: async () => {
-          await clearReports();
-          await load();
-          setSelected(null);
-        },
-      },
-    ]);
+  async function handleClear() {
+    const ok = await confirmDestructive('Clear all reports?', 'This cannot be undone.', 'Clear');
+    if (!ok) return;
+    await clearReports();
+    await load();
+    setSelected(null);
   }
 
   const filtered = reports.filter((r) => {
@@ -124,7 +117,7 @@ export default function BugReportsScreen() {
           : prev,
       );
     } catch (err: any) {
-      Alert.alert('Could not mark fixed', err?.message ?? String(err));
+      showMessage('Could not mark fixed', err?.message ?? String(err));
     }
   }
 
@@ -136,7 +129,7 @@ export default function BugReportsScreen() {
         prev && prev.id === report.id ? { ...prev, status: 'open', fixedAt: null } : prev,
       );
     } catch (err: any) {
-      Alert.alert('Could not reopen', err?.message ?? String(err));
+      showMessage('Could not reopen', err?.message ?? String(err));
     }
   }
 

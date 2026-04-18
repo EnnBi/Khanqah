@@ -5,7 +5,6 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
@@ -17,6 +16,7 @@ import { useTheme } from '../../providers/ThemeProvider';
 import { useAuth } from '../../providers/AuthProvider';
 import { supabase } from '../../lib/supabase';
 import { getConfig } from '../../lib/remote-config';
+import { showMessage, confirmDestructive } from '../../lib/alert';
 import { Audio } from 'expo-av';
 import { type as typeP, font } from '../../lib/typography';
 
@@ -452,8 +452,7 @@ export default function GoLiveScreen() {
       };
     } catch (err: any) {
       setIsStarting(false);
-      Alert.alert(
-        'Streaming Error',
+      setStreamError(
         err?.message || 'Could not start audio capture. Check microphone permissions and that the relay server is running.',
       );
       return;
@@ -477,7 +476,7 @@ export default function GoLiveScreen() {
       // Stop the audio stream since we can't create the session
       streamRef.current?.stop();
       streamRef.current = null;
-      Alert.alert('Error', `Failed to start broadcast: ${error.message}`);
+      setStreamError(`Failed to start broadcast: ${error.message}`);
       return;
     }
 
@@ -488,23 +487,11 @@ export default function GoLiveScreen() {
   }
 
   async function handleStopBroadcast() {
-    // Alert.alert's onPress callbacks don't fire reliably on React Native
-    // Web, which was silently eating the "Stop" confirmation. Use the
-    // browser's native confirm() on web; Alert.alert still works on native.
-    const confirmed =
-      Platform.OS === 'web'
-        ? window.confirm('End this broadcast? Listeners will disconnect.')
-        : await new Promise<boolean>((resolve) => {
-            Alert.alert(
-              'Stop Broadcasting',
-              'Are you sure you want to end this broadcast?',
-              [
-                { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
-                { text: 'Stop', style: 'destructive', onPress: () => resolve(true) },
-              ],
-            );
-          });
-
+    const confirmed = await confirmDestructive(
+      'Stop Broadcasting',
+      'End this broadcast? Listeners will disconnect.',
+      'Stop',
+    );
     if (!confirmed) return;
     if (!sessionId) return;
 
@@ -517,24 +504,45 @@ export default function GoLiveScreen() {
     streamRef.current = null;
     setStreamError(null);
 
-    // Race the Supabase update against a 5 s safety timer so a stuck
-    // PATCH (network hiccup, realtime channel deadlock, etc.) doesn't
-    // leave the UI on STOPPING... forever.
+    // Go straight to the PostgREST endpoint. The supabase-js client was
+    // hanging on this PATCH (likely because the Realtime channel held a
+    // socket pipe we couldn't see); a bare fetch with the admin session
+    // token sidesteps that entirely and gives us a real error if RLS or
+    // the network rejects the call.
     let updateError: Error | null = null;
     try {
-      const result = await Promise.race([
-        supabase
-          .from('live_sessions')
-          .update({ status: 'processing', ended_at: new Date().toISOString() })
-          .eq('id', sessionId),
-        new Promise<{ error: Error }>((resolve) =>
-          setTimeout(
-            () => resolve({ error: new Error('Supabase update timed out after 5s') }),
-            5000,
-          ),
-        ),
-      ]);
-      updateError = (result as any).error ?? null;
+      const { data: { session: authSession } } = await supabase.auth.getSession();
+      const accessToken = authSession?.access_token;
+      const anonKey = getConfig().supabaseAnonKey;
+      const baseUrl = getConfig().supabaseUrl;
+
+      if (!accessToken) throw new Error('No auth session — please sign in again.');
+
+      const ctrl = new AbortController();
+      const timeout = setTimeout(() => ctrl.abort(), 10_000);
+      const res = await fetch(
+        `${baseUrl}/rest/v1/live_sessions?id=eq.${encodeURIComponent(sessionId)}`,
+        {
+          method: 'PATCH',
+          headers: {
+            apikey: anonKey,
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+            Prefer: 'return=minimal',
+          },
+          body: JSON.stringify({
+            status: 'processing',
+            ended_at: new Date().toISOString(),
+          }),
+          signal: ctrl.signal,
+        },
+      );
+      clearTimeout(timeout);
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(`PATCH ${res.status}: ${text.slice(0, 300)}`);
+      }
     } catch (err: any) {
       updateError = err instanceof Error ? err : new Error(String(err));
     }
@@ -551,9 +559,10 @@ export default function GoLiveScreen() {
 
     if (updateError) {
       console.warn('[go-live] stop DB update failed:', updateError.message);
-      const msg = `Broadcast stopped, but we couldn't update the session record: ${updateError.message}`;
-      if (Platform.OS === 'web') window.alert(msg);
-      else Alert.alert('Warning', msg);
+      showMessage(
+        'Warning',
+        `Broadcast stopped, but we couldn't update the session record: ${updateError.message}`,
+      );
     }
   }
 
