@@ -2,6 +2,10 @@ import React, { createContext, useCallback, useContext, useEffect, useRef, useSt
 import type { Content } from '../lib/types';
 import { isYouTubeUrl, isDirectVideoUrl } from '../components/YouTubeEmbed';
 
+function isHlsUrl(url: string | null | undefined): boolean {
+  return !!url && url.toLowerCase().split(/[?#]/)[0].endsWith('.m3u8');
+}
+
 // Web PlayerProvider — uses HTML5 <audio> since react-native-track-player
 // is native-only. Supports play/pause/seek/speed and queueing.
 
@@ -47,6 +51,11 @@ const PlayerContext = createContext<PlayerContextValue>({
 
 export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  // HLS manifests (.m3u8) can't be played via <audio src=...> outside
+  // Safari — they need shaka-player (or hls.js) to pull segments over
+  // MSE and feed the element. We instantiate shaka lazily and only
+  // when we actually hit a live stream URL.
+  const shakaRef = useRef<any>(null);
   const queueRef = useRef<Content[]>([]);
   const queueIndexRef = useRef<number>(-1);
 
@@ -112,12 +121,37 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       }
       try {
         const audio = getAudio();
-        // If same src, just play; otherwise load new source
-        if (audio.src !== content.media_url) {
-          audio.src = content.media_url;
+
+        if (isHlsUrl(content.media_url)) {
+          // Tear down any previous shaka instance, attach to the <audio>
+          // element, and load the new manifest. Safari can handle HLS
+          // natively but we still go through shaka for consistency with
+          // Chromium/Firefox — it auto-detects native support and gets
+          // out of the way.
+          const shaka = (await import('shaka-player')).default;
+          if (!shakaRef.current || shakaRef.current.getMediaElement() !== audio) {
+            if (shakaRef.current) {
+              try { await shakaRef.current.destroy(); } catch { /* ignore */ }
+            }
+            shakaRef.current = new shaka.Player();
+            await shakaRef.current.attach(audio);
+          }
           setPosition(0);
           setDuration(0);
+          await shakaRef.current.load(content.media_url);
+        } else {
+          // Non-HLS — leave shaka detached, go back to a plain src.
+          if (shakaRef.current) {
+            try { await shakaRef.current.destroy(); } catch { /* ignore */ }
+            shakaRef.current = null;
+          }
+          if (audio.src !== content.media_url) {
+            audio.src = content.media_url;
+            setPosition(0);
+            setDuration(0);
+          }
         }
+
         audio.playbackRate = playbackSpeed;
         setCurrentContent(content);
         await audio.play();
@@ -147,8 +181,11 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     // Guard against resuming when no playable source is loaded. Common
     // cases: the current track is a YouTube URL (we skip loading those
     // into <audio> — they render via iframe), or no track has been
-    // selected yet. Either way there's nothing to resume.
-    if (!audio || !audio.src || isYouTubeUrl(audio.src) || isDirectVideoUrl(audio.src)) return;
+    // selected yet. For HLS streams the audio element has no `src`
+    // (shaka feeds it via MSE) but it IS playable — allow it through.
+    if (!audio) return;
+    const hasShakaSource = !!shakaRef.current;
+    if (!hasShakaSource && (!audio.src || isYouTubeUrl(audio.src) || isDirectVideoUrl(audio.src))) return;
     try {
       await audio.play();
     } catch (err) {
@@ -195,6 +232,10 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const stop = useCallback(async () => {
+    if (shakaRef.current) {
+      try { await shakaRef.current.destroy(); } catch { /* ignore */ }
+      shakaRef.current = null;
+    }
     const audio = audioRef.current;
     if (audio) {
       audio.pause();
