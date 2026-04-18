@@ -136,6 +136,19 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
             shakaRef.current = new shaka.Player();
             await shakaRef.current.attach(audio);
           }
+          // Low-latency tuning — start faster and stay closer to the
+          // live edge. For basic (non-LL) HLS these are about the best
+          // knobs we have; pairs with hls_fragment=2 on the server.
+          shakaRef.current.configure({
+            streaming: {
+              bufferingGoal: 4,     // seconds kept ahead while playing
+              rebufferingGoal: 1,   // seconds before we consider paused
+              bufferBehind: 10,
+            },
+            manifest: {
+              defaultPresentationDelay: 3,
+            },
+          });
           setPosition(0);
           setDuration(0);
           await shakaRef.current.load(content.media_url);

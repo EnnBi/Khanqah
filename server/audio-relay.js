@@ -38,8 +38,15 @@ wss.on('connection', (ws, req) => {
   let configured = false;
 
   function startFfmpeg(format) {
+    // Low-latency flags applied to both formats: don't buffer incoming
+    // demuxed packets, don't reorder on output, and flush every packet
+    // to the RTMP sink as soon as ffmpeg has it.
+    const lowLatencyInput = ['-fflags', 'nobuffer', '-flags', 'low_delay'];
+    const lowLatencyOutput = ['-flush_packets', '1'];
+
     const args = format === 'pcm'
       ? [
+          ...lowLatencyInput,
           // expo-av on native sends raw PCM (16-bit LE, 44100 Hz, mono)
           '-f', 's16le',
           '-ar', '44100',
@@ -47,15 +54,18 @@ wss.on('connection', (ws, req) => {
           '-i', 'pipe:0',
           '-c:a', 'aac',
           '-b:a', '128k',
+          ...lowLatencyOutput,
           '-f', 'flv',
           RTMP_URL,
         ]
       : [
+          ...lowLatencyInput,
           // Web MediaRecorder sends WebM/Opus
           '-f', 'webm',
           '-i', 'pipe:0',
           '-c:a', 'aac',
           '-b:a', '128k',
+          ...lowLatencyOutput,
           '-f', 'flv',
           RTMP_URL,
         ];
