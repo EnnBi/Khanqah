@@ -18,7 +18,7 @@ test('buildYtDlpArgs: audio', () => {
   assert.ok(args.includes('https://youtu.be/xyz'));
   // Bot-bypass hack: prefer resilient player clients first.
   assert.ok(args.includes('--extractor-args'));
-  assert.ok(args.some((a) => typeof a === 'string' && a.includes('tv_embedded')));
+  assert.ok(args.some((a) => typeof a === 'string' && a.includes('tv_simply')));
 });
 
 test('buildYtDlpArgs: video is capped at 720p for disk + bandwidth sanity', () => {

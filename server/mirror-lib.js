@@ -7,14 +7,15 @@ function buildYtDlpArgs(format, outPathTemplate, url, cookiesPath) {
   // bot" gate.
   const cookieArgs = cookiesPath ? ['--cookies', cookiesPath] : [];
 
-  // Force yt-dlp to prefer clients that historically slip past the bot
-  // challenge even without cookies: tv_embedded + tv_simply are the
-  // embedded-TV JS surfaces (very light on auth), mweb is the mobile
-  // web client (fewer anti-bot signals). `default` falls back to the
-  // normal rotation if the preferred clients get rate-limited.
+  // Prefer clients that historically slip past YouTube's "are you a
+  // bot?" gate: tv_simply is the embedded-TV surface, tv is the set-top
+  // client, mweb is mobile web, then android/ios mobile apps. `default`
+  // falls back to the normal rotation if the preferred ones fail. Note:
+  // videos flagged for aggressive bot detection will still require
+  // cookies — no client-only trick reliably gets those through.
   const extractorArgs = [
     '--extractor-args',
-    'youtube:player_client=tv_embedded,tv_simply,mweb,default',
+    'youtube:player_client=tv_simply,tv,mweb,android,ios,default',
   ];
 
   if (format === 'audio') {
