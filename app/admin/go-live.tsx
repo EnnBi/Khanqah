@@ -46,7 +46,30 @@ async function startWebStream(): Promise<{
   const relayUrl = getRelayUrl();
   const ws = new WebSocket(relayUrl);
 
-  const stream = await (navigator as any).mediaDevices.getUserMedia({ audio: true });
+  // 15 s timeout around the mic permission + relay handshake. If the user
+  // ignores the permission prompt, or the browser stalls, we surface an
+  // error instead of leaving the UI on "STARTING..." forever.
+  const timeoutMs = 15_000;
+  const timeoutHandle = setTimeout(() => {
+    try { ws.close(); } catch (_) {}
+  }, timeoutMs);
+
+  let stream: MediaStream;
+  try {
+    stream = await Promise.race<MediaStream>([
+      (navigator as any).mediaDevices.getUserMedia({ audio: true }),
+      new Promise<MediaStream>((_, reject) =>
+        setTimeout(
+          () => reject(new Error('Microphone permission timed out. Allow the mic prompt and try again.')),
+          timeoutMs,
+        ),
+      ),
+    ]);
+  } catch (err) {
+    clearTimeout(timeoutHandle);
+    try { ws.close(); } catch (_) {}
+    throw err;
+  }
 
   // Prefer opus in webm; fall back to whatever the browser supports
   const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
@@ -56,8 +79,14 @@ async function startWebStream(): Promise<{
   const mediaRecorder = new MediaRecorder(stream, { mimeType });
 
   return new Promise((resolve, reject) => {
+    const bail = (msg: string) => {
+      clearTimeout(timeoutHandle);
+      stream.getTracks().forEach((t: MediaStreamTrack) => t.stop());
+      reject(new Error(msg));
+    };
+
     ws.onopen = () => {
-      // Send config packet so the relay knows the format
+      clearTimeout(timeoutHandle);
       ws.send(JSON.stringify({ format: 'webm' }));
 
       mediaRecorder.ondataavailable = (e: BlobEvent) => {
@@ -78,9 +107,14 @@ async function startWebStream(): Promise<{
       });
     };
 
-    ws.onerror = (err) => {
-      stream.getTracks().forEach((t: MediaStreamTrack) => t.stop());
-      reject(new Error('WebSocket connection to audio relay failed'));
+    ws.onerror = () => {
+      bail('WebSocket connection to audio relay failed — check that the relay server is running and reachable.');
+    };
+
+    ws.onclose = (e) => {
+      if (ws.readyState !== WebSocket.OPEN) {
+        bail(`WebSocket closed before handshake (code ${e.code}). Relay may be unreachable.`);
+      }
     };
   });
 }
