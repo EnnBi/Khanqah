@@ -8,6 +8,7 @@ import { isYouTubeUrl, isDirectVideoUrl } from '../components/YouTubeEmbed';
 interface PlayerContextValue {
   currentContent: Content | null;
   isPlaying: boolean;
+  isBuffering: boolean;
   position: number;
   duration: number;
   playbackSpeed: number;
@@ -28,6 +29,7 @@ const noop = async () => {};
 const PlayerContext = createContext<PlayerContextValue>({
   currentContent: null,
   isPlaying: false,
+  isBuffering: false,
   position: 0,
   duration: 0,
   playbackSpeed: 1,
@@ -50,6 +52,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
   const [currentContent, setCurrentContent] = useState<Content | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
   const [playbackSpeed, setPlaybackSpeedState] = useState(1);
@@ -76,8 +79,16 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       el.addEventListener('loadedmetadata', () => {
         setDuration(isFinite(el.duration) ? el.duration : 0);
       });
+      // Buffering lifecycle — drives a spinner on the player UI so the
+      // user knows why nothing's happening between "tap play" and
+      // "audio actually plays".
+      el.addEventListener('loadstart', () => setIsBuffering(true));
+      el.addEventListener('waiting',    () => setIsBuffering(true));
+      el.addEventListener('canplay',    () => setIsBuffering(false));
+      el.addEventListener('playing',    () => setIsBuffering(false));
       el.addEventListener('error', (e) => {
         console.warn('[player] audio error:', el.error);
+        setIsBuffering(false);
       });
       audioRef.current = el;
     }
@@ -194,6 +205,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     queueIndexRef.current = -1;
     setCurrentContent(null);
     setIsPlaying(false);
+    setIsBuffering(false);
     setPosition(0);
     setDuration(0);
   }, []);
@@ -209,6 +221,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const value: PlayerContextValue = {
     currentContent,
     isPlaying,
+    isBuffering,
     position,
     duration,
     playbackSpeed,

@@ -60,6 +60,7 @@ export default function PlayerScreen() {
   const {
     currentContent,
     isPlaying,
+    isBuffering,
     position,
     duration,
     playbackSpeed,
@@ -90,6 +91,7 @@ export default function PlayerScreen() {
   const [vidPosition, setVidPosition] = useState(0);
   const [vidDuration, setVidDuration] = useState(0);
   const [vidSpeed, setVidSpeed] = useState(1);
+  const [vidBuffering, setVidBuffering] = useState(false);
 
   // Derive once per render. `content` is declared above; isDirectVideo
   // gates whether we use the local <video> state or the shared audio
@@ -100,6 +102,7 @@ export default function PlayerScreen() {
   const activeDuration = isDirectVideo ? vidDuration : duration;
   const activeIsPlaying = isDirectVideo ? vidPlaying : isPlaying;
   const activeSpeed = isDirectVideo ? vidSpeed : playbackSpeed;
+  const activeBuffering = isDirectVideo ? vidBuffering : isBuffering;
 
   // Fetch content from supabase
   useEffect(() => {
@@ -233,17 +236,27 @@ export default function PlayerScreen() {
     const onEnded = () => setVidPlaying(false);
     const onTime = () => setVidPosition(el.currentTime || 0);
     const onMeta = () => setVidDuration(isFinite(el.duration) ? el.duration : 0);
+    const onBufferingStart = () => setVidBuffering(true);
+    const onBufferingEnd = () => setVidBuffering(false);
     el.addEventListener('play', onPlay);
     el.addEventListener('pause', onPause);
     el.addEventListener('ended', onEnded);
     el.addEventListener('timeupdate', onTime);
     el.addEventListener('loadedmetadata', onMeta);
+    el.addEventListener('loadstart', onBufferingStart);
+    el.addEventListener('waiting', onBufferingStart);
+    el.addEventListener('canplay', onBufferingEnd);
+    el.addEventListener('playing', onBufferingEnd);
     return () => {
       el.removeEventListener('play', onPlay);
       el.removeEventListener('pause', onPause);
       el.removeEventListener('ended', onEnded);
       el.removeEventListener('timeupdate', onTime);
       el.removeEventListener('loadedmetadata', onMeta);
+      el.removeEventListener('loadstart', onBufferingStart);
+      el.removeEventListener('waiting', onBufferingStart);
+      el.removeEventListener('canplay', onBufferingEnd);
+      el.removeEventListener('playing', onBufferingEnd);
     };
   }, [isDirectVideo, content?.id]);
 
@@ -307,6 +320,11 @@ export default function PlayerScreen() {
                   },
                 })
               : null}
+            {activeBuffering && (
+              <View style={styles.mediaBufferingOverlay} pointerEvents="none">
+                <ActivityIndicator size="large" color={c.gold} />
+              </View>
+            )}
           </View>
         ) : (
           <View style={styles.artworkContainer}>
@@ -321,8 +339,13 @@ export default function PlayerScreen() {
                 {/* Low-opacity geometric pattern */}
                 <Text style={styles.geometricPattern}>✦ ✧ ✦ ✧ ✦</Text>
                 <Text style={styles.geometricPatternB}>✧ ✦ ✧ ✦ ✧</Text>
-                {/* Content-type symbol */}
-                <Text style={[styles.artworkSymbol, { color: c.onPrimary }]}>{contentSymbol}</Text>
+                {/* Content-type symbol (hidden while buffering) */}
+                {!activeBuffering && (
+                  <Text style={[styles.artworkSymbol, { color: c.onPrimary }]}>{contentSymbol}</Text>
+                )}
+                {activeBuffering && (
+                  <ActivityIndicator size="large" color={c.onPrimary} />
+                )}
               </View>
             </View>
           </View>
@@ -557,6 +580,15 @@ const styles = StyleSheet.create({
   youtubeContainer: {
     width: '100%',
     marginBottom: 24,
+    position: 'relative',
+  },
+  mediaBufferingOverlay: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    borderRadius: 8,
   },
 
   // ── Artwork ──

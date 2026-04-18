@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePlayer } from '../hooks/usePlayer';
@@ -9,7 +9,7 @@ import { useTheme } from '../providers/ThemeProvider';
 const TAB_BAR_HEIGHT = 64;
 
 export function MiniPlayer() {
-  const { currentContent, isPlaying, position, duration, resume, pause, stop } = usePlayer();
+  const { currentContent, isPlaying, isBuffering, position, duration, resume, pause, stop } = usePlayer();
   const { theme } = useTheme();
   const c = theme.colors;
   const router = useRouter();
@@ -72,9 +72,13 @@ export function MiniPlayer() {
           onPress={handlePlayPause}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Text style={[styles.playIcon, { color: c.onPrimary }]}>
-            {isPlaying ? '▌▌' : '▶'}
-          </Text>
+          {isBuffering ? (
+            <ActivityIndicator size="small" color={c.onPrimary} />
+          ) : (
+            <Text style={[styles.playIcon, { color: c.onPrimary }]}>
+              {isPlaying ? '▌▌' : '▶'}
+            </Text>
+          )}
         </TouchableOpacity>
 
         <TouchableOpacity

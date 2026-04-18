@@ -14,6 +14,7 @@ import { useAuth } from '../hooks/useAuth';
 interface PlayerContextValue {
   currentContent: Content | null;
   isPlaying: boolean;
+  isBuffering: boolean;
   position: number;
   duration: number;
   playbackSpeed: number;
@@ -32,6 +33,7 @@ interface PlayerContextValue {
 const PlayerContext = createContext<PlayerContextValue>({
   currentContent: null,
   isPlaying: false,
+  isBuffering: false,
   position: 0,
   duration: 0,
   playbackSpeed: 1.0,
@@ -67,6 +69,10 @@ function PlayerProviderInner({ children }: { children: React.ReactNode }) {
   useActiveTrack(); // keep active track subscription alive
 
   const isPlaying = playbackState.state === State.Playing;
+  const isBuffering =
+    playbackState.state === State.Buffering ||
+    playbackState.state === State.Loading ||
+    playbackState.state === State.Connecting;
 
   const { user } = useAuth();
 
@@ -141,6 +147,7 @@ function PlayerProviderInner({ children }: { children: React.ReactNode }) {
       value={{
         currentContent,
         isPlaying,
+        isBuffering,
         position: progress.position,
         duration: progress.duration,
         playbackSpeed,
