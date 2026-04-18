@@ -9,7 +9,7 @@ import { useTheme } from '../providers/ThemeProvider';
 const TAB_BAR_HEIGHT = 64;
 
 export function MiniPlayer() {
-  const { currentContent, isPlaying, position, duration, resume, pause } = usePlayer();
+  const { currentContent, isPlaying, position, duration, resume, pause, stop } = usePlayer();
   const { theme } = useTheme();
   const c = theme.colors;
   const router = useRouter();
@@ -22,6 +22,10 @@ export function MiniPlayer() {
   const handlePlayPause = async () => {
     if (isPlaying) await pause();
     else await resume();
+  };
+
+  const handleClose = async () => {
+    await stop();
   };
 
   return (
@@ -71,6 +75,15 @@ export function MiniPlayer() {
           <Text style={[styles.playIcon, { color: c.onPrimary }]}>
             {isPlaying ? '▌▌' : '▶'}
           </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.closeButton}
+          onPress={handleClose}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityLabel="Close mini player"
+        >
+          <Text style={[styles.closeIcon, { color: c.onPrimary }]}>×</Text>
         </TouchableOpacity>
       </TouchableOpacity>
     </View>
@@ -143,5 +156,18 @@ const styles = StyleSheet.create({
   playIcon: {
     fontFamily: 'DMSans-SemiBold',
     fontSize: 14,
+  },
+  closeButton: {
+    width: 32,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+    marginLeft: 4,
+  },
+  closeIcon: {
+    fontSize: 22,
+    lineHeight: 22,
+    opacity: 0.8,
   },
 });

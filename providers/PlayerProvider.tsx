@@ -26,6 +26,7 @@ interface PlayerContextValue {
   skipToNext: () => Promise<void>;
   skipToPrevious: () => Promise<void>;
   addToQueue: (contents: Content[]) => Promise<void>;
+  stop: () => Promise<void>;
 }
 
 const PlayerContext = createContext<PlayerContextValue>({
@@ -43,6 +44,7 @@ const PlayerContext = createContext<PlayerContextValue>({
   skipToNext: async () => {},
   skipToPrevious: async () => {},
   addToQueue: async () => {},
+  stop: async () => {},
 });
 
 function contentToTrack(content: Content, language: string = 'en') {
@@ -126,6 +128,14 @@ function PlayerProviderInner({ children }: { children: React.ReactNode }) {
     await TrackPlayer.add(tracks);
   }, []);
 
+  const stop = useCallback(async () => {
+    try {
+      await TrackPlayer.stop();
+      await TrackPlayer.reset();
+    } catch { /* no-op if TrackPlayer isn't set up yet */ }
+    setCurrentContent(null);
+  }, []);
+
   return (
     <PlayerContext.Provider
       value={{
@@ -143,6 +153,7 @@ function PlayerProviderInner({ children }: { children: React.ReactNode }) {
         skipToNext,
         skipToPrevious,
         addToQueue,
+        stop,
       }}
     >
       {children}

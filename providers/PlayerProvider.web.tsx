@@ -20,6 +20,7 @@ interface PlayerContextValue {
   skipToNext: () => Promise<void>;
   skipToPrevious: () => Promise<void>;
   addToQueue: (content: Content[]) => Promise<void>;
+  stop: () => Promise<void>;
 }
 
 const noop = async () => {};
@@ -39,6 +40,7 @@ const PlayerContext = createContext<PlayerContextValue>({
   skipToNext: noop,
   skipToPrevious: noop,
   addToQueue: noop,
+  stop: noop,
 });
 
 export function PlayerProvider({ children }: { children: React.ReactNode }) {
@@ -181,6 +183,21 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     queueRef.current = queueRef.current.concat(contents);
   }, []);
 
+  const stop = useCallback(async () => {
+    const audio = audioRef.current;
+    if (audio) {
+      audio.pause();
+      audio.removeAttribute('src');
+      audio.load();
+    }
+    queueRef.current = [];
+    queueIndexRef.current = -1;
+    setCurrentContent(null);
+    setIsPlaying(false);
+    setPosition(0);
+    setDuration(0);
+  }, []);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -204,6 +221,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     skipToNext,
     skipToPrevious,
     addToQueue,
+    stop,
   };
 
   return <PlayerContext.Provider value={value}>{children}</PlayerContext.Provider>;
