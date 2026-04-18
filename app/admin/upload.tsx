@@ -672,7 +672,7 @@ export default function UploadContentScreen() {
             disabled={submitting}
           >
             {submitting ? (
-              <ActivityIndicator color={c.accent} />
+              <ActivityIndicator color={c.onPrimary} />
             ) : (
               <Text style={styles.publishButtonText}>{editId ? 'UPDATE CONTENT' : 'PUBLISH CONTENT'}</Text>
             )}
