@@ -97,9 +97,24 @@ async function downloadFromYouTube({
   format, id, url, tempDir,
   exec = defaultExec,
   stat = fs.stat,
+  // Optional path to a Netscape-format cookies.txt. Only applied when the
+  // file is actually readable — avoids yt-dlp's hard "file does not exist"
+  // error when cookies haven't been uploaded yet.
+  cookiesPath,
+  access = fs.access,
 }) {
+  let effectiveCookies;
+  if (cookiesPath) {
+    try {
+      await access(cookiesPath);
+      effectiveCookies = cookiesPath;
+    } catch {
+      // File not present — proceed without cookies.
+    }
+  }
+
   const outPathTemplate = `${tempDir}/${id}.%(ext)s`;
-  const args = buildYtDlpArgs(format, outPathTemplate, url);
+  const args = buildYtDlpArgs(format, outPathTemplate, url, effectiveCookies);
 
   // 256 MB stdout buffer is well above what yt-dlp prints even for chatty
   // progress output — prevents "stdout maxBuffer exceeded" on long downloads.

@@ -20,7 +20,7 @@ const {
 
 async function processOne({
   db, tempDir, iaAccessKey, iaSecretKey,
-  exec, stat, openStream, fetch, rm,
+  exec, stat, openStream, fetch, rm, cookiesPath,
 }) {
   const job = await claimPendingJob(db);
   if (!job) return 'idle';
@@ -34,6 +34,7 @@ async function processOne({
       tempDir,
       exec,
       stat,
+      cookiesPath,
     });
     filePath = dl.filePath;
 
@@ -106,6 +107,10 @@ if (require.main === module) {
     openStream: (p) => createReadStream(p),
     fetch: (...a) => fetch(...a),
     rm: (p) => fs.rm(p, { force: true }),
+    // Only used if the file actually exists (downloadFromYouTube checks).
+    // Upload a Netscape-format cookies.txt to this path when YouTube
+    // starts demanding "sign in to confirm you're not a bot".
+    cookiesPath: '/opt/khanqah/yt-cookies.txt',
   };
 
   (async () => {

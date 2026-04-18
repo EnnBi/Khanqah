@@ -1,14 +1,21 @@
 // Pure helpers for the mirror worker. No IO. Unit-tested in isolation.
 
-function buildYtDlpArgs(format, outPathTemplate, url) {
+function buildYtDlpArgs(format, outPathTemplate, url, cookiesPath) {
+  // YouTube's bot check increasingly demands a logged-in session. If the
+  // caller tells us a cookies file exists, include it so yt-dlp can send
+  // YouTube cookies and slip past the "Sign in to confirm you're not a
+  // bot" gate.
+  const cookieArgs = cookiesPath ? ['--cookies', cookiesPath] : [];
   if (format === 'audio') {
     return [
+      ...cookieArgs,
       '-x', '--audio-format', 'mp3', '--audio-quality', '128K',
       '-o', outPathTemplate, url,
     ];
   }
   if (format === 'video') {
     return [
+      ...cookieArgs,
       '-f', 'bv*[height<=720]+ba/b[height<=720]',
       '--merge-output-format', 'mp4',
       '-o', outPathTemplate, url,
