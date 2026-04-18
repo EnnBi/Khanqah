@@ -21,6 +21,7 @@ import type { MirrorFormat } from '../../lib/types';
 import { type as typeP, font } from '../../lib/typography';
 import { isYouTubeUrl, isDirectVideoUrl } from '../../components/YouTubeEmbed';
 import { showMessage } from '../../lib/alert';
+import { useSafeBack } from '../../hooks/useSafeBack';
 
 interface ContentTypeOption {
   value: ContentType;
@@ -41,6 +42,7 @@ export default function UploadContentScreen() {
   const { t } = useI18n();
   const { user } = useAuth();
   const router = useRouter();
+  const goBack = useSafeBack("/admin");
   const { editId } = useLocalSearchParams<{ editId?: string }>();
   const c = theme.colors;
 
@@ -217,9 +219,7 @@ export default function UploadContentScreen() {
     // an invisible-cliff UX. For YouTube mirrors, jump to manage-content
     // so the admin can watch the QUEUED → MIRRORING → READY chip live.
     if (editId) {
-      router.back();
-    } else if (isYouTubeSubmit) {
-      router.replace('/admin/manage-content');
+      goBack();
     } else {
       router.replace('/admin/manage-content');
     }
@@ -521,7 +521,7 @@ export default function UploadContentScreen() {
       >
         {/* Minimal header */}
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+          <TouchableOpacity style={styles.backBtn} onPress={goBack}>
             <Text style={styles.backBtnText}>‹ Back</Text>
           </TouchableOpacity>
           <View style={styles.headerSpacer} />

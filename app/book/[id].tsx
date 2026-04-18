@@ -7,6 +7,7 @@ import {
   View,
 } from 'react-native';
 import { showMessage } from '../../lib/alert';
+import { useSafeBack } from '../../hooks/useSafeBack';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView, WebViewNavigation } from 'react-native-webview';
@@ -26,6 +27,7 @@ function buildViewerUrl(pdfUrl: string): string {
 export default function BookViewerScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const goBack = useSafeBack();
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const c = theme.colors;
@@ -133,7 +135,7 @@ export default function BookViewerScreen() {
         >
           <TouchableOpacity
             style={styles.topBarBtn}
-            onPress={() => router.back()}
+            onPress={goBack}
             accessibilityLabel="Go back"
           >
             <Text style={[styles.backArrow, { color: c.primary }]}>{'‹'}</Text>
@@ -149,7 +151,7 @@ export default function BookViewerScreen() {
           </Text>
           <TouchableOpacity
             style={[styles.retryBtn, { backgroundColor: c.primary }]}
-            onPress={() => router.back()}
+            onPress={goBack}
           >
             <Text style={[styles.retryBtnText, { color: c.onPrimary }]}>GO BACK</Text>
           </TouchableOpacity>
@@ -172,7 +174,7 @@ export default function BookViewerScreen() {
         {/* Back */}
         <TouchableOpacity
           style={styles.topBarBtn}
-          onPress={() => router.back()}
+          onPress={goBack}
           accessibilityLabel="Go back"
         >
           <Text style={[styles.backArrow, { color: c.primary }]}>{'‹'}</Text>

@@ -11,6 +11,7 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeBack } from '../../hooks/useSafeBack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSearchContent } from '../../hooks/useContent';
 import { Content } from '../../lib/types';
@@ -20,6 +21,7 @@ import { useI18n } from '../../providers/I18nProvider';
 
 export default function SearchScreen() {
   const router = useRouter();
+  const goBack = useSafeBack("/(tabs)/library");
   const { theme } = useTheme();
   const { language } = useI18n();
   const insets = useSafeAreaInsets();
@@ -112,7 +114,7 @@ export default function SearchScreen() {
     >
       {/* Top bar */}
       <View style={[styles.topBar, { paddingTop: insets.top + 12, backgroundColor: c.background }]}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.backBtn} onPress={goBack} activeOpacity={0.7}>
           <Text style={[styles.backText, { color: c.gold }]}>{'‹ BACK'}</Text>
         </TouchableOpacity>
         <Text style={[styles.screenLabel, { color: c.gold }]}>SEARCH</Text>

@@ -11,6 +11,7 @@ import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { useTheme } from '../../providers/ThemeProvider';
 import { showMessage, confirmDestructive } from '../../lib/alert';
+import { useSafeBack } from '../../hooks/useSafeBack';
 import {
   getAllReports,
   clearReports,
@@ -49,6 +50,7 @@ function relativeTime(iso: string): string {
 
 export default function BugReportsScreen() {
   const router = useRouter();
+  const goBack = useSafeBack('/admin');
   const { theme } = useTheme();
   const c = theme.colors;
 
@@ -73,7 +75,7 @@ export default function BugReportsScreen() {
     return (
       <View style={[styles.root, { backgroundColor: c.background }]}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}>
+          <TouchableOpacity onPress={goBack}>
             <Text style={[styles.back, { color: c.primary }]}>‹ Back</Text>
           </TouchableOpacity>
         </View>
@@ -261,7 +263,7 @@ export default function BugReportsScreen() {
   return (
     <View style={[styles.root, { backgroundColor: c.background }]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={goBack}>
           <Text style={[styles.back, { color: c.primary }]}>‹ Back</Text>
         </TouchableOpacity>
         <View style={styles.headerActions}>

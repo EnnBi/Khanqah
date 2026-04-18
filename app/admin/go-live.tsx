@@ -17,6 +17,7 @@ import { useAuth } from '../../providers/AuthProvider';
 import { supabase } from '../../lib/supabase';
 import { getConfig } from '../../lib/remote-config';
 import { showMessage, confirmDestructive } from '../../lib/alert';
+import { useSafeBack } from '../../hooks/useSafeBack';
 import { Audio } from 'expo-av';
 import { type as typeP, font } from '../../lib/typography';
 
@@ -308,6 +309,7 @@ export default function GoLiveScreen() {
   const { theme } = useTheme();
   const { user } = useAuth();
   const router = useRouter();
+  const goBack = useSafeBack("/admin");
   const c = theme.colors;
 
   // Form state (idle)
@@ -959,7 +961,7 @@ export default function GoLiveScreen() {
       >
         {/* Minimal header */}
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+          <TouchableOpacity style={styles.backBtn} onPress={goBack}>
             <Text style={styles.backBtnText}>‹ Back</Text>
           </TouchableOpacity>
           <View style={styles.headerSpacer} />

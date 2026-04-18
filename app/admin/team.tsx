@@ -20,6 +20,7 @@ import { useI18n } from '../../providers/I18nProvider';
 import { useAuth } from '../../providers/AuthProvider';
 import { supabase } from '../../lib/supabase';
 import { showMessage } from '../../lib/alert';
+import { useSafeBack } from '../../hooks/useSafeBack';
 import { User, UserRole } from '../../lib/types';
 import { type as typeP, font } from '../../lib/typography';
 
@@ -30,6 +31,7 @@ export default function TeamScreen() {
   const { t } = useI18n();
   const { user: currentUser } = useAuth();
   const router = useRouter();
+  const goBack = useSafeBack("/admin");
   const c = theme.colors;
 
   const [members, setMembers] = useState<User[]>([]);
@@ -509,7 +511,7 @@ export default function TeamScreen() {
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backBtn}
-          onPress={() => router.back()}
+          onPress={goBack}
           activeOpacity={0.7}
           accessibilityLabel="Back"
         >

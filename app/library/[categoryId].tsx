@@ -9,6 +9,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeBack } from '../../hooks/useSafeBack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
 import { Content, Category } from '../../lib/types';
@@ -31,6 +32,7 @@ const TYPE_KICKER: Record<string, string> = {
 export default function CategoryListingScreen() {
   const { categoryId } = useLocalSearchParams<{ categoryId: string }>();
   const router = useRouter();
+  const goBack = useSafeBack("/(tabs)/library");
   const { theme } = useTheme();
   const { language } = useI18n();
   const insets = useSafeAreaInsets();
@@ -181,7 +183,7 @@ export default function CategoryListingScreen() {
       </View>
 
       {/* Back button */}
-      <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
+      <TouchableOpacity style={styles.backBtn} onPress={goBack} activeOpacity={0.7}>
         <Text style={[styles.backText, { color: c.onPrimary }]}>{'‹ BACK'}</Text>
       </TouchableOpacity>
 

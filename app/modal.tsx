@@ -2,11 +2,13 @@ import { useEffect } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { View, ActivityIndicator } from 'react-native';
 import { useTheme } from '../providers/ThemeProvider';
+import { useSafeBack } from '../hooks/useSafeBack';
 
 export default function Modal() {
   const params = useLocalSearchParams<{ type?: string; id?: string }>();
   const router = useRouter();
   const { theme } = useTheme();
+  const goBack = useSafeBack();
 
   useEffect(() => {
     if (params.type === 'live') {
@@ -14,7 +16,7 @@ export default function Modal() {
     } else if (params.type === 'content' && params.id) {
       router.replace(`/player/${params.id}`);
     } else {
-      router.back();
+      goBack();
     }
   }, [params.type, params.id]);
 
