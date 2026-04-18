@@ -677,6 +677,16 @@ export default function ScheduleScreen() {
                     value: form.scheduled_at,
                     onChange: (e: any) =>
                       setForm((f) => ({ ...f, scheduled_at: e.target.value })),
+                    // Open the native picker anywhere on the field, not
+                    // just on the tiny calendar icon. showPicker() is
+                    // Chrome 99+/Firefox 101+/Safari 16+; older browsers
+                    // silently fall back to icon-click behaviour.
+                    onClick: (e: any) => {
+                      try { e.currentTarget.showPicker?.(); } catch { /* noop */ }
+                    },
+                    onFocus: (e: any) => {
+                      try { e.currentTarget.showPicker?.(); } catch { /* noop */ }
+                    },
                     style: {
                       width: '100%',
                       border: 'none',
@@ -685,6 +695,7 @@ export default function ScheduleScreen() {
                       color: c.text,
                       fontFamily: font.serif,
                       fontSize: 15,
+                      cursor: 'pointer',
                       // Keep the browser's native picker icon but re-tint it
                       // for dark mode so it's visible against the surface.
                       colorScheme: theme.dark ? 'dark' : 'light',
