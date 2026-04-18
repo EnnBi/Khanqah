@@ -989,6 +989,11 @@ export default function GoLiveScreen() {
           <Text style={styles.bigButtonLabel}>
             {isStarting ? 'STARTING...' : 'START BROADCAST'}
           </Text>
+          {streamError && (
+            <View style={[styles.errorBanner, { marginTop: 14 }]}>
+              <Text style={styles.errorBannerText}>{streamError}</Text>
+            </View>
+          )}
         </View>
 
         {/* Form fields */}
