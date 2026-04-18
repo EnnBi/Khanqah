@@ -21,6 +21,7 @@ import { useAuth } from '../../providers/AuthProvider';
 import { supabase } from '../../lib/supabase';
 import { ScheduledSession } from '../../lib/types';
 import { type as typeP, font } from '../../lib/typography';
+import { useSafeBack } from '../../hooks/useSafeBack';
 
 const DAYS_SHORT = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -78,6 +79,7 @@ export default function ScheduleScreen() {
   const { theme } = useTheme();
   const { user } = useAuth();
   const router = useRouter();
+  const goBack = useSafeBack('/admin');
   const c = theme.colors;
 
   const [sessions, setSessions] = useState<ScheduledSession[]>([]);
@@ -557,7 +559,7 @@ export default function ScheduleScreen() {
     <View style={styles.container}>
       {/* Minimal header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.backBtn} onPress={goBack} activeOpacity={0.7}>
           <Text style={styles.backBtnText}>‹ Back</Text>
         </TouchableOpacity>
         <View style={styles.headerSpacer} />
