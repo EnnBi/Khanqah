@@ -9,6 +9,7 @@ import {
   PanResponder,
   Animated,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,7 +21,7 @@ import { useSafeBack } from '../../hooks/useSafeBack';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useI18n } from '../../providers/I18nProvider';
 import { TopicsList } from '../../components/TopicsList';
-import { YouTubeEmbed, isYouTubeUrl } from '../../components/YouTubeEmbed';
+import { YouTubeEmbed, isYouTubeUrl, isDirectVideoUrl } from '../../components/YouTubeEmbed';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const ARTWORK_SIZE = 240;
@@ -165,6 +166,8 @@ export default function PlayerScreen() {
 
   const contentSymbol = content ? (TYPE_SYMBOL[content.type] ?? '♪') : '♪';
   const isYouTube = isYouTubeUrl(content?.media_url);
+  const isDirectVideo = !isYouTube && isDirectVideoUrl(content?.media_url);
+  const isNativeVideoPlayback = isYouTube || isDirectVideo;
 
   if (loading) {
     return (
@@ -202,10 +205,26 @@ export default function PlayerScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* ── Artwork / YouTube embed ── */}
+        {/* ── Artwork / YouTube embed / direct video ── */}
         {isYouTube && content ? (
           <View style={styles.youtubeContainer}>
             <YouTubeEmbed url={content.media_url} title={content.title_en} />
+          </View>
+        ) : isDirectVideo && content ? (
+          <View style={styles.youtubeContainer}>
+            {Platform.OS === 'web'
+              ? React.createElement('video', {
+                  src: content.media_url,
+                  controls: true,
+                  playsInline: true,
+                  style: {
+                    width: '100%',
+                    aspectRatio: '16 / 9',
+                    background: '#000',
+                    borderRadius: 8,
+                  },
+                })
+              : null}
           </View>
         ) : (
           <View style={styles.artworkContainer}>
@@ -256,7 +275,7 @@ export default function PlayerScreen() {
         )}
 
         {/* ── Progress Bar (hidden for YouTube or when media_url is absent) ── */}
-        {!isYouTube && !!content?.media_url && (
+        {!isNativeVideoPlayback && !!content?.media_url && (
         <View style={styles.progressSection}>
           <View
             ref={progressBarRef}
@@ -286,7 +305,7 @@ export default function PlayerScreen() {
         )}
 
         {/* ── Player Controls (hidden for YouTube or when media_url is absent) ── */}
-        {!isYouTube && !!content?.media_url && (
+        {!isNativeVideoPlayback && !!content?.media_url && (
         <View style={styles.controlsRow}>
           {/* Previous */}
           <TouchableOpacity
@@ -347,7 +366,7 @@ export default function PlayerScreen() {
         )}
 
         {/* ── Speed pill (hidden for YouTube or when media_url is absent) ── */}
-        {!isYouTube && !!content?.media_url && (
+        {!isNativeVideoPlayback && !!content?.media_url && (
         <View style={styles.speedRow}>
           <TouchableOpacity
             onPress={handleSpeedPress}

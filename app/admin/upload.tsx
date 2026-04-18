@@ -20,7 +20,7 @@ import { supabase } from '../../lib/supabase';
 import { ContentType, Category } from '../../lib/types';
 import type { MirrorFormat } from '../../lib/types';
 import { type as typeP, font } from '../../lib/typography';
-import { isYouTubeUrl } from '../../components/YouTubeEmbed';
+import { isYouTubeUrl, isDirectVideoUrl } from '../../components/YouTubeEmbed';
 
 interface ContentTypeOption {
   value: ContentType;
@@ -159,7 +159,10 @@ export default function UploadContentScreen() {
     let error;
 
     if (editId) {
-      const isVideo = isYouTubeSubmit || selectedType === 'clip';
+      const isVideo =
+        isYouTubeSubmit ||
+        isDirectVideoUrl(mediaUrl.trim()) ||
+        selectedType === 'clip';
       ({ error } = await supabase.from('content').update({
         title_en: titleEn.trim(),
         title_ur: titleUr.trim(),
@@ -192,7 +195,11 @@ export default function UploadContentScreen() {
       } else {
         payload.media_url         = mediaUrl.trim();
         payload.mirror_status     = 'not_applicable';
-        payload.is_video          = selectedType === 'clip';
+        // Detect video from the file extension first (.mp4/.mov/etc.);
+        // fall back to the content-type convention for URL shapes we
+        // can't sniff (e.g. bare archive.org HLS manifests).
+        payload.is_video          =
+          isDirectVideoUrl(mediaUrl.trim()) || selectedType === 'clip';
       }
 
       ({ error } = await supabase.from('content').insert(payload));

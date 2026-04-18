@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import type { Content } from '../lib/types';
-import { isYouTubeUrl } from '../components/YouTubeEmbed';
+import { isYouTubeUrl, isDirectVideoUrl } from '../components/YouTubeEmbed';
 
 // Web PlayerProvider — uses HTML5 <audio> since react-native-track-player
 // is native-only. Supports play/pause/seek/speed and queueing.
@@ -84,10 +84,12 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
   const playContentInternal = useCallback(
     async (content: Content) => {
-      // YouTube URLs can't stream through <audio>. The player screen
-      // renders an <iframe> for them — just track the state here so
-      // the mini-player and queue reflect what the user is viewing.
-      if (isYouTubeUrl(content.media_url)) {
+      // YouTube URLs go through an iframe; direct video files (.mp4
+      // etc.) go through an HTML5 <video> tag rendered on the player
+      // screen. In either case we don't load the URL into the shared
+      // <audio> element, but we still track the current content so the
+      // mini-player + queue reflect what the user is viewing.
+      if (isYouTubeUrl(content.media_url) || isDirectVideoUrl(content.media_url)) {
         audioRef.current?.pause();
         setCurrentContent(content);
         setPosition(0);
@@ -133,7 +135,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     // cases: the current track is a YouTube URL (we skip loading those
     // into <audio> — they render via iframe), or no track has been
     // selected yet. Either way there's nothing to resume.
-    if (!audio || !audio.src || isYouTubeUrl(audio.src)) return;
+    if (!audio || !audio.src || isYouTubeUrl(audio.src) || isDirectVideoUrl(audio.src)) return;
     try {
       await audio.play();
     } catch (err) {

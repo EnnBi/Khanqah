@@ -16,6 +16,16 @@ export function isYouTubeUrl(url: string | null | undefined): boolean {
   );
 }
 
+// Rough "is this URL a direct video file?" check — matches on the extension
+// before any querystring/fragment. We use this to decide whether to render
+// an HTML5 <video> element vs. an <audio> element when the row isn't a
+// YouTube iframe.
+export function isDirectVideoUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  const path = url.split(/[?#]/)[0].toLowerCase();
+  return /\.(mp4|m4v|mov|webm|mkv|ogv)$/.test(path);
+}
+
 function extractVideoId(url: string): string | null {
   const short = url.match(/youtu\.be\/([^?&#/]+)/);
   if (short) return short[1];
