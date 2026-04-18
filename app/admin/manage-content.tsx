@@ -306,10 +306,24 @@ export default function ManageContentScreen() {
     },
 
     // ── Filter pills ─────────────────────────────────────────
+    // A horizontal ScrollView inside a flex column on React Native Web has
+    // no intrinsic height and collapses to a single text line (~16 px),
+    // clipping the pills. flexGrow/flexShrink: 0 + minHeight keeps the
+    // row tall enough for the pills' own padding.
     filterRow: {
+      flexGrow: 0,
+      flexShrink: 0,
+      minHeight: 52,
+      borderBottomWidth: 1,
+      borderBottomColor: c.hairline,
+      marginBottom: 6,
+    },
+    filterRowContent: {
       paddingHorizontal: 16,
-      paddingBottom: 12,
-      paddingTop: 10,
+      paddingRight: 24,
+      paddingVertical: 10,
+      alignItems: 'center',
+      gap: 8,
     },
     filterPill: {
       paddingHorizontal: 14,
@@ -318,7 +332,6 @@ export default function ManageContentScreen() {
       borderWidth: 1,
       borderColor: c.border,
       backgroundColor: c.surface,
-      marginRight: 8,
     },
     filterPillActive: {
       backgroundColor: c.primary,
@@ -331,7 +344,8 @@ export default function ManageContentScreen() {
       color: c.textMuted,
     },
     filterPillTextActive: {
-      color: '#ffffff',
+      color: c.onPrimary,
+      fontFamily: font.sansSemiBold,
     },
 
     // ── List ─────────────────────────────────────────────────
@@ -571,7 +585,7 @@ export default function ManageContentScreen() {
         horizontal
         showsHorizontalScrollIndicator={false}
         style={styles.filterRow}
-        contentContainerStyle={{ paddingRight: 8 }}
+        contentContainerStyle={styles.filterRowContent}
       >
         {filterPills.map((pill) => {
           const isActive = selectedType === pill.key;
@@ -581,6 +595,8 @@ export default function ManageContentScreen() {
               style={[styles.filterPill, isActive && styles.filterPillActive]}
               onPress={() => setSelectedType(pill.key)}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityState={{ selected: isActive }}
             >
               <Text style={[styles.filterPillText, isActive && styles.filterPillTextActive]}>
                 {pill.label}
