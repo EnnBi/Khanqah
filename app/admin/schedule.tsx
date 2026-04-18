@@ -365,7 +365,9 @@ export default function ScheduleScreen() {
     },
     fabText: {
       ...typeP.button,
-      color: c.primary,
+      // FAB bg is c.accent (always gold), so dark-forest text contrasts in
+      // both themes. c.primary goes gold in dark mode, making it invisible.
+      color: '#0f2e24',
     },
 
     // ── Empty ────────────────────────────────────────────────
@@ -485,7 +487,7 @@ export default function ScheduleScreen() {
     saveBtnDisabled: { opacity: 0.6 },
     saveBtnText: {
       ...typeP.button,
-      color: c.accent,
+      color: c.onPrimary,
     },
     cancelBtn: {
       marginTop: 10,
