@@ -69,10 +69,7 @@ function PlayerProviderInner({ children }: { children: React.ReactNode }) {
   useActiveTrack(); // keep active track subscription alive
 
   const isPlaying = playbackState.state === State.Playing;
-  const isBuffering =
-    playbackState.state === State.Buffering ||
-    playbackState.state === State.Loading ||
-    playbackState.state === State.Connecting;
+  const isBuffering = playbackState.state === State.Buffering;
 
   const { user } = useAuth();
 
