@@ -6,9 +6,21 @@ function buildYtDlpArgs(format, outPathTemplate, url, cookiesPath) {
   // YouTube cookies and slip past the "Sign in to confirm you're not a
   // bot" gate.
   const cookieArgs = cookiesPath ? ['--cookies', cookiesPath] : [];
+
+  // Force yt-dlp to prefer clients that historically slip past the bot
+  // challenge even without cookies: tv_embedded + tv_simply are the
+  // embedded-TV JS surfaces (very light on auth), mweb is the mobile
+  // web client (fewer anti-bot signals). `default` falls back to the
+  // normal rotation if the preferred clients get rate-limited.
+  const extractorArgs = [
+    '--extractor-args',
+    'youtube:player_client=tv_embedded,tv_simply,mweb,default',
+  ];
+
   if (format === 'audio') {
     return [
       ...cookieArgs,
+      ...extractorArgs,
       '-x', '--audio-format', 'mp3', '--audio-quality', '128K',
       '-o', outPathTemplate, url,
     ];
@@ -16,6 +28,7 @@ function buildYtDlpArgs(format, outPathTemplate, url, cookiesPath) {
   if (format === 'video') {
     return [
       ...cookieArgs,
+      ...extractorArgs,
       '-f', 'bv*[height<=720]+ba/b[height<=720]',
       '--merge-output-format', 'mp4',
       '-o', outPathTemplate, url,
