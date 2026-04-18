@@ -418,16 +418,19 @@ export default function GoLiveScreen() {
   }, [isBroadcasting, startTime]);
 
   async function handleStartBroadcast() {
+    // Use the existing stream-error banner for validation too so the
+    // user gets visible feedback on web (Alert.alert is unreliable
+    // there and was swallowing these messages silently).
     if (!titleEn.trim()) {
-      Alert.alert('Required', 'Please enter a session title in English.');
+      setStreamError('Please enter a session title in English.');
       return;
     }
     if (!titleUr.trim()) {
-      Alert.alert('Required', 'Please enter a session title in Urdu.');
+      setStreamError('Please enter a session title in Urdu.');
       return;
     }
     if (!user) {
-      Alert.alert('Error', 'You must be logged in to start a broadcast.');
+      setStreamError('You must be logged in to start a broadcast.');
       return;
     }
 
