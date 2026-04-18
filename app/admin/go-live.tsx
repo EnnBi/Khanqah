@@ -85,9 +85,9 @@ async function startWebStream(): Promise<{
       reject(new Error(msg));
     };
 
-    ws.onopen = () => {
+    const handshake = () => {
       clearTimeout(timeoutHandle);
-      ws.send(JSON.stringify({ format: 'webm' }));
+      try { ws.send(JSON.stringify({ format: 'webm' })); } catch (_) {}
 
       mediaRecorder.ondataavailable = (e: BlobEvent) => {
         if (ws.readyState === WebSocket.OPEN && e.data.size > 0) {
@@ -107,10 +107,22 @@ async function startWebStream(): Promise<{
       });
     };
 
+    // Mic permission may have taken long enough that the WebSocket
+    // already connected (or already failed) before we got here.
+    // Sample readyState first — otherwise we'd miss the onopen event.
+    if (ws.readyState === WebSocket.OPEN) {
+      handshake();
+      return;
+    }
+    if (ws.readyState === WebSocket.CLOSING || ws.readyState === WebSocket.CLOSED) {
+      bail('WebSocket closed before handshake. Relay may be unreachable.');
+      return;
+    }
+
+    ws.onopen = handshake;
     ws.onerror = () => {
       bail('WebSocket connection to audio relay failed — check that the relay server is running and reachable.');
     };
-
     ws.onclose = (e) => {
       if (ws.readyState !== WebSocket.OPEN) {
         bail(`WebSocket closed before handshake (code ${e.code}). Relay may be unreachable.`);
