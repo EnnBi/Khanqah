@@ -52,3 +52,4 @@ ghurfa_extracted/
 
 # server sub-package
 server/package-lock.json
+.claude/
