@@ -57,6 +57,15 @@ function getDayNameFromDate(dateStr: string): string {
   return DAY_NAMES[date.getDay()];
 }
 
+// Convert an ISO timestamp from the DB into the YYYY-MM-DDTHH:MM string
+// that <input type="datetime-local"> (and our text fallback) expect.
+function toDatetimeLocalValue(isoString: string): string {
+  const d = new Date(isoString);
+  if (isNaN(d.getTime())) return '';
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 interface FormState {
   title_en: string;
   title_ur: string;
@@ -91,6 +100,7 @@ export default function ScheduleScreen() {
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const fetchSessions = useCallback(async () => {
     const now = new Date().toISOString();
@@ -165,13 +175,29 @@ export default function ScheduleScreen() {
   };
 
   const openModal = () => {
+    setEditingId(null);
     setForm(EMPTY_FORM);
+    setFormError(null);
+    setModalVisible(true);
+  };
+
+  const openEdit = (session: ScheduledSession) => {
+    setEditingId(session.id);
+    setForm({
+      title_en: session.title_en ?? '',
+      title_ur: session.title_ur ?? '',
+      description_en: session.description_en ?? '',
+      description_ur: session.description_ur ?? '',
+      scheduled_at: toDatetimeLocalValue(session.scheduled_at),
+      is_recurring: !!session.is_recurring,
+    });
     setFormError(null);
     setModalVisible(true);
   };
 
   const closeModal = () => {
     setModalVisible(false);
+    setEditingId(null);
     setFormError(null);
   };
 
@@ -197,32 +223,45 @@ export default function ScheduleScreen() {
 
     const recurrenceRule = form.is_recurring ? buildRRule(form.scheduled_at.trim()) : null;
 
-    const { data, error } = await supabase
-      .from('scheduled_sessions')
-      .insert({
-        title_en: form.title_en.trim(),
-        title_ur: form.title_ur.trim() || null,
-        description_en: form.description_en.trim() || null,
-        description_ur: form.description_ur.trim() || null,
-        scheduled_at: parsedDate.toISOString(),
-        is_recurring: form.is_recurring,
-        recurrence_rule: recurrenceRule,
-        created_by: user?.id ?? null,
-      })
-      .select()
-      .single();
+    const payload = {
+      title_en: form.title_en.trim(),
+      title_ur: form.title_ur.trim() || null,
+      description_en: form.description_en.trim() || null,
+      description_ur: form.description_ur.trim() || null,
+      scheduled_at: parsedDate.toISOString(),
+      is_recurring: form.is_recurring,
+      recurrence_rule: recurrenceRule,
+    };
+
+    const { data, error } = editingId
+      ? await supabase
+          .from('scheduled_sessions')
+          .update(payload)
+          .eq('id', editingId)
+          .select()
+          .single()
+      : await supabase
+          .from('scheduled_sessions')
+          .insert({ ...payload, created_by: user?.id ?? null })
+          .select()
+          .single();
 
     setSaving(false);
 
     if (error) {
-      setFormError('Failed to save session. Please try again.');
-      console.error('Insert error:', error);
+      setFormError(
+        editingId
+          ? 'Failed to update session. Please try again.'
+          : 'Failed to save session. Please try again.',
+      );
+      console.error('Save error:', error);
       return;
     }
 
     if (data) {
       setSessions((prev) => {
-        const updated = [...prev, data as ScheduledSession].sort(
+        const without = editingId ? prev.filter((s) => s.id !== editingId) : prev;
+        const updated = [...without, data as ScheduledSession].sort(
           (a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()
         );
         return updated;
@@ -330,6 +369,19 @@ export default function ScheduleScreen() {
       justifyContent: 'flex-end',
       marginTop: 10,
       gap: 8,
+    },
+    editBtn: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 4,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    editBtnText: {
+      fontFamily: font.sansMedium,
+      fontSize: 12,
+      letterSpacing: 0.5,
+      color: c.accent,
     },
     deleteBtn: {
       flexDirection: 'row',
@@ -526,6 +578,13 @@ export default function ScheduleScreen() {
 
           <View style={styles.cardFooter}>
             <TouchableOpacity
+              style={styles.editBtn}
+              onPress={() => openEdit(item)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.editBtnText}>EDIT</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
               style={styles.deleteBtn}
               onPress={() => handleDelete(item)}
               disabled={isDeleting}
@@ -620,7 +679,7 @@ export default function ScheduleScreen() {
         >
           <View style={styles.modalSheet}>
             <View style={styles.modalHandle} />
-            <Text style={styles.modalTitle}>New Session</Text>
+            <Text style={styles.modalTitle}>{editingId ? 'Edit Session' : 'New Session'}</Text>
 
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               {/* Title EN */}
@@ -754,7 +813,7 @@ export default function ScheduleScreen() {
                 {saving ? (
                   <ActivityIndicator color={c.onPrimary} />
                 ) : (
-                  <Text style={styles.saveBtnText}>SAVE SESSION</Text>
+                  <Text style={styles.saveBtnText}>{editingId ? 'UPDATE SESSION' : 'SAVE SESSION'}</Text>
                 )}
               </TouchableOpacity>
 
