@@ -670,15 +670,38 @@ export default function ScheduleScreen() {
 
               {/* Date & Time */}
               <Text style={styles.fieldLabel}>DATE & TIME *</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="e.g. 2026-04-10 20:00"
-                placeholderTextColor={c.textMuted}
-                value={form.scheduled_at}
-                onChangeText={(v) => setForm((f) => ({ ...f, scheduled_at: v }))}
-                keyboardType="numbers-and-punctuation"
-                autoCapitalize="none"
-              />
+              {Platform.OS === 'web' ? (
+                <View style={styles.input}>
+                  {React.createElement('input', {
+                    type: 'datetime-local',
+                    value: form.scheduled_at,
+                    onChange: (e: any) =>
+                      setForm((f) => ({ ...f, scheduled_at: e.target.value })),
+                    style: {
+                      width: '100%',
+                      border: 'none',
+                      outline: 'none',
+                      background: 'transparent',
+                      color: c.text,
+                      fontFamily: font.serif,
+                      fontSize: 15,
+                      // Keep the browser's native picker icon but re-tint it
+                      // for dark mode so it's visible against the surface.
+                      colorScheme: theme.dark ? 'dark' : 'light',
+                    },
+                  })}
+                </View>
+              ) : (
+                <TextInput
+                  style={styles.input}
+                  placeholder="e.g. 2026-04-10 20:00"
+                  placeholderTextColor={c.textMuted}
+                  value={form.scheduled_at}
+                  onChangeText={(v) => setForm((f) => ({ ...f, scheduled_at: v }))}
+                  keyboardType="numbers-and-punctuation"
+                  autoCapitalize="none"
+                />
+              )}
 
               {/* Is Recurring */}
               <View style={styles.toggleRow}>
@@ -716,7 +739,7 @@ export default function ScheduleScreen() {
                 activeOpacity={0.8}
               >
                 {saving ? (
-                  <ActivityIndicator color={c.accent} />
+                  <ActivityIndicator color={c.onPrimary} />
                 ) : (
                   <Text style={styles.saveBtnText}>SAVE SESSION</Text>
                 )}
