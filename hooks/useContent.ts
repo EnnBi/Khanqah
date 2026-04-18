@@ -85,6 +85,69 @@ export function useContentByCategory(categoryId: string) {
   return { content, loading, error };
 }
 
+/**
+ * Fetches recent recorded broadcasts, i.e. content rows under the
+ * "Live Sessions" category (seeded by migration 006 and written by
+ * record-and-upload.sh when a broadcast ends).
+ */
+export function useRecentLiveSessions(limit = 5) {
+  const [content, setContent] = useState<Content[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchSessions() {
+      setLoading(true);
+      setError(null);
+      try {
+        // Look up the category id once per render — the "Live Sessions"
+        // category is seeded by migration 006 and stable, but we avoid
+        // hard-coding the UUID in client code.
+        const { data: cats } = await supabase
+          .from('categories')
+          .select('id')
+          .eq('name_en', 'Live Sessions')
+          .eq('type', 'bayan')
+          .limit(1);
+        const categoryId = cats?.[0]?.id;
+        if (!categoryId) {
+          if (!cancelled) {
+            setContent([]);
+            setLoading(false);
+          }
+          return;
+        }
+
+        const { data, error: err } = await supabase
+          .from('content')
+          .select('*')
+          .eq('category_id', categoryId)
+          .in('mirror_status', ['ready', 'not_applicable'])
+          .order('created_at', { ascending: false })
+          .limit(limit);
+
+        if (!cancelled) {
+          if (err) setError(err.message);
+          else setContent(data ?? []);
+          setLoading(false);
+        }
+      } catch (e: any) {
+        if (!cancelled) {
+          setError(e?.message ?? String(e));
+          setLoading(false);
+        }
+      }
+    }
+
+    fetchSessions();
+    return () => { cancelled = true; };
+  }, [limit]);
+
+  return { content, loading, error };
+}
+
 export function useSearchContent(query: string) {
   const [content, setContent] = useState<Content[]>([]);
   const [loading, setLoading] = useState(false);

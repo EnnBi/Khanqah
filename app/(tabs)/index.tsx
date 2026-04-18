@@ -3,7 +3,7 @@ import { View, Text, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useI18n } from '../../providers/I18nProvider';
-import { useLatestContent } from '../../hooks/useContent';
+import { useLatestContent, useRecentLiveSessions } from '../../hooks/useContent';
 import { useLiveSession } from '../../hooks/useLiveSession';
 import { useNextScheduledSession } from '../../hooks/useScheduledSessions';
 import { ContentCard } from '../../components/ContentCard';
@@ -28,6 +28,7 @@ export default function HomeScreen() {
   const { session: nextSession } = useNextScheduledSession();
   const { content: bayans, loading: bayansLoading } = useLatestContent('bayan', 5);
   const { content: clips, loading: clipsLoading } = useLatestContent('clip', 5);
+  const { content: liveSessions, loading: liveSessionsLoading } = useRecentLiveSessions(5);
 
   const showNextSession = !liveSession && nextSession;
   const bayanCount = bayans.length;
@@ -86,6 +87,31 @@ export default function HomeScreen() {
         {showNextSession && nextSession && (
           <View style={styles.nextWrap}>
             <NextLiveCard session={nextSession} />
+          </View>
+        )}
+
+        {/* Section: Recent live sessions */}
+        {liveSessions.length > 0 && (
+          <View style={styles.section}>
+            <Text style={[styles.sectionLabel, { color: c.textMuted }]}>
+              {String(liveSessions.length).padStart(2, '0')} · RECORDINGS
+            </Text>
+            <Text style={[styles.sectionTitle, { color: c.primary }]}>Recent live sessions</Text>
+
+            {liveSessionsLoading ? (
+              <ActivityIndicator color={c.primary} style={styles.loader} />
+            ) : (
+              liveSessions.map((item) => (
+                <ContentCard
+                  key={item.id}
+                  content={item}
+                  language={language as 'en' | 'ur'}
+                  onPress={() =>
+                    router.push({ pathname: '/modal', params: { type: 'content', id: item.id } })
+                  }
+                />
+              ))
+            )}
           </View>
         )}
 
