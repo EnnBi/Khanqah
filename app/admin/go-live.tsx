@@ -333,6 +333,34 @@ export default function GoLiveScreen() {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const pulseOpacity = useRef(new Animated.Value(0.15)).current;
 
+  // Listener count via Supabase Realtime presence. While a session is
+  // live, listeners .track() on the `live:<sessionId>` channel; we
+  // simply count presence members. Cleanup on session end / unmount.
+  useEffect(() => {
+    if (!isBroadcasting || !sessionId) {
+      setListenerCount(0);
+      return;
+    }
+    const channel = supabase.channel(`live:${sessionId}`, {
+      config: { presence: { key: 'broadcaster' } },
+    });
+    channel
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState();
+        // Only count listener entries, exclude the broadcaster itself.
+        const listeners = Object.keys(state).filter((k) => k !== 'broadcaster');
+        setListenerCount(listeners.length);
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await channel.track({ role: 'broadcaster' });
+        }
+      });
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [isBroadcasting, sessionId]);
+
   useEffect(() => {
     if (!isBroadcasting) {
       pulseAnim.setValue(1);
@@ -457,50 +485,54 @@ export default function GoLiveScreen() {
   }
 
   async function handleStopBroadcast() {
-    Alert.alert(
-      'Stop Broadcasting',
-      'Are you sure you want to end this broadcast?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Stop',
-          style: 'destructive',
-          onPress: async () => {
-            if (!sessionId) return;
-            setIsStopping(true);
-
-            // Stop audio capture & WebSocket relay
-            streamRef.current?.stop();
-            streamRef.current = null;
-            setStreamError(null);
-
-            const { error } = await supabase
-              .from('live_sessions')
-              .update({ status: 'processing', ended_at: new Date().toISOString() })
-              .eq('id', sessionId);
-
-            setIsStopping(false);
-
-            if (error) {
-              Alert.alert('Error', `Failed to stop broadcast: ${error.message}`);
-              return;
-            }
-
-            setIsBroadcasting(false);
-            setSessionId(null);
-            setStartTime(null);
-            setElapsedSeconds(0);
-            setListenerCount(0);
-
+    // Alert.alert's onPress callbacks don't fire reliably on React Native
+    // Web, which was silently eating the "Stop" confirmation. Use the
+    // browser's native confirm() on web; Alert.alert still works on native.
+    const confirmed =
+      Platform.OS === 'web'
+        ? window.confirm('End this broadcast? Listeners will disconnect.')
+        : await new Promise<boolean>((resolve) => {
             Alert.alert(
-              'Broadcast Ended',
-              'The session has been saved. The server will process and upload the recording shortly.',
-              [{ text: 'OK' }],
+              'Stop Broadcasting',
+              'Are you sure you want to end this broadcast?',
+              [
+                { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
+                { text: 'Stop', style: 'destructive', onPress: () => resolve(true) },
+              ],
             );
-          },
-        },
-      ],
-    );
+          });
+
+    if (!confirmed) return;
+    if (!sessionId) return;
+
+    setIsStopping(true);
+
+    // Stop audio capture & WebSocket relay
+    streamRef.current?.stop();
+    streamRef.current = null;
+    setStreamError(null);
+
+    const { error } = await supabase
+      .from('live_sessions')
+      .update({ status: 'processing', ended_at: new Date().toISOString() })
+      .eq('id', sessionId);
+
+    setIsStopping(false);
+
+    if (error) {
+      if (Platform.OS === 'web') {
+        window.alert(`Failed to stop broadcast: ${error.message}`);
+      } else {
+        Alert.alert('Error', `Failed to stop broadcast: ${error.message}`);
+      }
+      return;
+    }
+
+    setIsBroadcasting(false);
+    setSessionId(null);
+    setStartTime(null);
+    setElapsedSeconds(0);
+    setListenerCount(0);
   }
 
   const styles = StyleSheet.create({

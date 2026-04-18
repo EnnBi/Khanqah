@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Content } from '../../lib/types';
+import { supabase } from '../../lib/supabase';
 import { useLiveSession } from '../../hooks/useLiveSession';
 import { usePlayer } from '../../hooks/usePlayer';
 import { useSafeBack } from '../../hooks/useSafeBack';
@@ -48,6 +49,7 @@ export default function LivePlayerScreen() {
   const { isPlaying, playContent, pause, resume } = usePlayer();
 
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [listenerCount, setListenerCount] = useState(0);
   const hasStartedPlayback = useRef(false);
 
   // Pulsing animation for live dot
@@ -93,6 +95,32 @@ export default function LivePlayerScreen() {
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
   }, [liveSession?.started_at]);
+
+  // Supabase presence — register this client as a listener and read the
+  // live count. Both admin + all listeners subscribe to the same
+  // `live:<id>` channel, so the count agrees on both sides.
+  useEffect(() => {
+    if (!liveSession?.id) {
+      setListenerCount(0);
+      return;
+    }
+    const clientKey = `listener-${Math.random().toString(36).slice(2)}`;
+    const channel = supabase.channel(`live:${liveSession.id}`, {
+      config: { presence: { key: clientKey } },
+    });
+    channel
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState();
+        const listeners = Object.keys(state).filter((k) => k !== 'broadcaster');
+        setListenerCount(listeners.length);
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await channel.track({ role: 'listener' });
+        }
+      });
+    return () => { channel.unsubscribe(); };
+  }, [liveSession?.id]);
 
   // Begin HLS playback when session is available
   useEffect(() => {
@@ -228,7 +256,9 @@ export default function LivePlayerScreen() {
               ]}
             />
             <View style={styles.liveDotInner} />
-            <Text style={styles.liveBadgeText}>LIVE · 127 LISTENING</Text>
+            <Text style={styles.liveBadgeText}>
+              LIVE · {listenerCount} LISTENING
+            </Text>
           </View>
 
           <TouchableOpacity style={styles.headerBtn} accessibilityLabel="Options">
