@@ -81,6 +81,26 @@ export default function PlayerScreen() {
   // Animated scale for play button press
   const playBtnScale = useRef(new Animated.Value(1)).current;
 
+  // Local state for direct <video> playback — the custom player chrome
+  // (scrubber, play/pause, speed pill) drives a local HTMLVideoElement
+  // instead of the shared PlayerProvider audio element. Lives on this
+  // screen only — navigating away stops the video.
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [vidPlaying, setVidPlaying] = useState(false);
+  const [vidPosition, setVidPosition] = useState(0);
+  const [vidDuration, setVidDuration] = useState(0);
+  const [vidSpeed, setVidSpeed] = useState(1);
+
+  // Derive once per render. `content` is declared above; isDirectVideo
+  // gates whether we use the local <video> state or the shared audio
+  // state everywhere downstream (handlers, scrubber, speed pill).
+  const isYouTube = isYouTubeUrl(content?.media_url);
+  const isDirectVideo = !isYouTube && isDirectVideoUrl(content?.media_url);
+  const activePosition = isDirectVideo ? vidPosition : position;
+  const activeDuration = isDirectVideo ? vidDuration : duration;
+  const activeIsPlaying = isDirectVideo ? vidPlaying : isPlaying;
+  const activeSpeed = isDirectVideo ? vidSpeed : playbackSpeed;
+
   // Fetch content from supabase
   useEffect(() => {
     if (!id) return;
@@ -106,11 +126,17 @@ export default function PlayerScreen() {
     }
   }, [content]);
 
-  // Cycle through speed options
+  // Cycle through speed options — video uses the local element, audio
+  // routes through the PlayerProvider as before.
   const handleSpeedPress = () => {
-    const idx = SPEED_OPTIONS.indexOf(playbackSpeed);
+    const idx = SPEED_OPTIONS.indexOf(activeSpeed);
     const next = SPEED_OPTIONS[(idx + 1) % SPEED_OPTIONS.length];
-    setSpeed(next);
+    if (isDirectVideo) {
+      if (videoRef.current) videoRef.current.playbackRate = next;
+      setVidSpeed(next);
+    } else {
+      setSpeed(next);
+    }
   };
 
   const handlePlayPause = () => {
@@ -118,6 +144,16 @@ export default function PlayerScreen() {
       Animated.timing(playBtnScale, { toValue: 0.92, duration: 80, useNativeDriver: true }),
       Animated.timing(playBtnScale, { toValue: 1, duration: 120, useNativeDriver: true }),
     ]).start();
+    if (isDirectVideo) {
+      const el = videoRef.current;
+      if (!el) return;
+      if (el.paused) {
+        el.play().catch((err: unknown) => console.warn('[player] video play failed:', err));
+      } else {
+        el.pause();
+      }
+      return;
+    }
     if (isPlaying) {
       pause();
     } else if (currentContent?.id === content?.id) {
@@ -129,10 +165,30 @@ export default function PlayerScreen() {
     }
   };
 
-  const displayPosition = isSeeking ? seekPosition : position;
-  const progress = duration > 0 ? displayPosition / duration : 0;
+  const handleSeekTo = (seconds: number) => {
+    if (isDirectVideo) {
+      const el = videoRef.current;
+      if (!el) return;
+      el.currentTime = Math.max(0, Math.min(seconds, el.duration || seconds));
+      return;
+    }
+    seekTo(seconds);
+  };
+
+  const handleSeekBy = (delta: number) => {
+    if (isDirectVideo) {
+      const el = videoRef.current;
+      if (!el) return;
+      el.currentTime = Math.max(0, Math.min(el.duration || 0, el.currentTime + delta));
+      return;
+    }
+    seekBy(delta);
+  };
+
+  const displayPosition = isSeeking ? seekPosition : activePosition;
+  const progress = activeDuration > 0 ? displayPosition / activeDuration : 0;
   const elapsed = formatTime(displayPosition);
-  const remaining = duration > 0 ? `-${formatTime(duration - displayPosition)}` : '--:--';
+  const remaining = activeDuration > 0 ? `-${formatTime(activeDuration - displayPosition)}` : '--:--';
 
   // Progress bar seek via PanResponder
   const progressBarRef = useRef<View>(null);
@@ -143,16 +199,16 @@ export default function PlayerScreen() {
       onPanResponderGrant: (evt) => {
         setIsSeeking(true);
         const ratio = Math.min(1, Math.max(0, evt.nativeEvent.locationX / PROGRESS_BAR_WIDTH));
-        setSeekPosition(ratio * (duration || 0));
+        setSeekPosition(ratio * (activeDuration || 0));
       },
       onPanResponderMove: (evt) => {
         const ratio = Math.min(1, Math.max(0, evt.nativeEvent.locationX / PROGRESS_BAR_WIDTH));
-        setSeekPosition(ratio * (duration || 0));
+        setSeekPosition(ratio * (activeDuration || 0));
       },
       onPanResponderRelease: (evt) => {
         const ratio = Math.min(1, Math.max(0, evt.nativeEvent.locationX / PROGRESS_BAR_WIDTH));
-        const targetSeconds = ratio * (duration || 0);
-        seekTo(targetSeconds);
+        const targetSeconds = ratio * (activeDuration || 0);
+        handleSeekTo(targetSeconds);
         setIsSeeking(false);
       },
     }),
@@ -165,9 +221,31 @@ export default function PlayerScreen() {
     : '';
 
   const contentSymbol = content ? (TYPE_SYMBOL[content.type] ?? '♪') : '♪';
-  const isYouTube = isYouTubeUrl(content?.media_url);
-  const isDirectVideo = !isYouTube && isDirectVideoUrl(content?.media_url);
-  const isNativeVideoPlayback = isYouTube || isDirectVideo;
+
+  // Attach listeners to the local <video> element so our custom chrome
+  // can reflect play/pause/time/duration/ended.
+  useEffect(() => {
+    if (!isDirectVideo || Platform.OS !== 'web') return;
+    const el = videoRef.current;
+    if (!el) return;
+    const onPlay = () => setVidPlaying(true);
+    const onPause = () => setVidPlaying(false);
+    const onEnded = () => setVidPlaying(false);
+    const onTime = () => setVidPosition(el.currentTime || 0);
+    const onMeta = () => setVidDuration(isFinite(el.duration) ? el.duration : 0);
+    el.addEventListener('play', onPlay);
+    el.addEventListener('pause', onPause);
+    el.addEventListener('ended', onEnded);
+    el.addEventListener('timeupdate', onTime);
+    el.addEventListener('loadedmetadata', onMeta);
+    return () => {
+      el.removeEventListener('play', onPlay);
+      el.removeEventListener('pause', onPause);
+      el.removeEventListener('ended', onEnded);
+      el.removeEventListener('timeupdate', onTime);
+      el.removeEventListener('loadedmetadata', onMeta);
+    };
+  }, [isDirectVideo, content?.id]);
 
   if (loading) {
     return (
@@ -214,14 +292,18 @@ export default function PlayerScreen() {
           <View style={styles.youtubeContainer}>
             {Platform.OS === 'web'
               ? React.createElement('video', {
+                  ref: videoRef,
                   src: content.media_url,
-                  controls: true,
                   playsInline: true,
+                  preload: 'metadata',
+                  // Our own scrubber / play-pause / speed chrome drives
+                  // this element — browser controls stay hidden.
                   style: {
                     width: '100%',
                     aspectRatio: '16 / 9',
                     background: '#000',
                     borderRadius: 8,
+                    display: 'block',
                   },
                 })
               : null}
@@ -275,7 +357,7 @@ export default function PlayerScreen() {
         )}
 
         {/* ── Progress Bar (hidden for YouTube or when media_url is absent) ── */}
-        {!isNativeVideoPlayback && !!content?.media_url && (
+        {!isYouTube && !!content?.media_url && (
         <View style={styles.progressSection}>
           <View
             ref={progressBarRef}
@@ -305,7 +387,7 @@ export default function PlayerScreen() {
         )}
 
         {/* ── Player Controls (hidden for YouTube or when media_url is absent) ── */}
-        {!isNativeVideoPlayback && !!content?.media_url && (
+        {!isYouTube && !!content?.media_url && (
         <View style={styles.controlsRow}>
           {/* Previous */}
           <TouchableOpacity
@@ -318,7 +400,7 @@ export default function PlayerScreen() {
 
           {/* Seek back 15s */}
           <TouchableOpacity
-            onPress={() => seekBy(-15)}
+            onPress={() => handleSeekBy(-15)}
             style={styles.seekControl}
             accessibilityLabel="Seek back 15 seconds"
           >
@@ -337,17 +419,17 @@ export default function PlayerScreen() {
                   shadowColor: c.gold,
                 },
               ]}
-              accessibilityLabel={isPlaying ? 'Pause' : 'Play'}
+              accessibilityLabel={activeIsPlaying ? "Pause" : "Play"}
             >
               <Text style={[styles.playBtnIcon, { color: c.onPrimary }]}>
-                {isPlaying ? '▌▌' : '▶'}
+                {activeIsPlaying ? "▌▌" : "▶"}
               </Text>
             </TouchableOpacity>
           </Animated.View>
 
           {/* Seek forward 15s */}
           <TouchableOpacity
-            onPress={() => seekBy(15)}
+            onPress={() => handleSeekBy(15)}
             style={styles.seekControl}
             accessibilityLabel="Seek forward 15 seconds"
           >
@@ -366,7 +448,7 @@ export default function PlayerScreen() {
         )}
 
         {/* ── Speed pill (hidden for YouTube or when media_url is absent) ── */}
-        {!isNativeVideoPlayback && !!content?.media_url && (
+        {!isYouTube && !!content?.media_url && (
         <View style={styles.speedRow}>
           <TouchableOpacity
             onPress={handleSpeedPress}
@@ -374,9 +456,9 @@ export default function PlayerScreen() {
             accessibilityLabel="Playback speed"
           >
             <Text style={[styles.speedPillText, { color: c.primary }]}>
-              {playbackSpeed % 1 === 0
-                ? `${playbackSpeed.toFixed(1)}×`
-                : `${playbackSpeed}×`}
+              {activeSpeed % 1 === 0
+                ? `${activeSpeed.toFixed(1)}×`
+                : `${activeSpeed}×`}
             </Text>
           </TouchableOpacity>
         </View>
