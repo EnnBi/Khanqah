@@ -507,32 +507,51 @@ export default function GoLiveScreen() {
 
     setIsStopping(true);
 
-    // Stop audio capture & WebSocket relay
-    streamRef.current?.stop();
+    // Close the mic + relay immediately — that's the part the user cares
+    // about. Everything else is DB cleanup and should never keep the UI
+    // from leaving the broadcasting state.
+    try { streamRef.current?.stop(); } catch (_) {}
     streamRef.current = null;
     setStreamError(null);
 
-    const { error } = await supabase
-      .from('live_sessions')
-      .update({ status: 'processing', ended_at: new Date().toISOString() })
-      .eq('id', sessionId);
-
-    setIsStopping(false);
-
-    if (error) {
-      if (Platform.OS === 'web') {
-        window.alert(`Failed to stop broadcast: ${error.message}`);
-      } else {
-        Alert.alert('Error', `Failed to stop broadcast: ${error.message}`);
-      }
-      return;
+    // Race the Supabase update against a 5 s safety timer so a stuck
+    // PATCH (network hiccup, realtime channel deadlock, etc.) doesn't
+    // leave the UI on STOPPING... forever.
+    let updateError: Error | null = null;
+    try {
+      const result = await Promise.race([
+        supabase
+          .from('live_sessions')
+          .update({ status: 'processing', ended_at: new Date().toISOString() })
+          .eq('id', sessionId),
+        new Promise<{ error: Error }>((resolve) =>
+          setTimeout(
+            () => resolve({ error: new Error('Supabase update timed out after 5s') }),
+            5000,
+          ),
+        ),
+      ]);
+      updateError = (result as any).error ?? null;
+    } catch (err: any) {
+      updateError = err instanceof Error ? err : new Error(String(err));
     }
 
+    // Reset UI state unconditionally — user has stopped broadcasting
+    // regardless of whether the DB write succeeded. If the write failed
+    // we surface it but we still let them leave the live screen.
+    setIsStopping(false);
     setIsBroadcasting(false);
     setSessionId(null);
     setStartTime(null);
     setElapsedSeconds(0);
     setListenerCount(0);
+
+    if (updateError) {
+      console.warn('[go-live] stop DB update failed:', updateError.message);
+      const msg = `Broadcast stopped, but we couldn't update the session record: ${updateError.message}`;
+      if (Platform.OS === 'web') window.alert(msg);
+      else Alert.alert('Warning', msg);
+    }
   }
 
   const styles = StyleSheet.create({
