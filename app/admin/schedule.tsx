@@ -10,7 +10,6 @@ import {
   ActivityIndicator,
   Modal,
   ScrollView,
-  Switch,
   RefreshControl,
   KeyboardAvoidingView,
   Platform,
@@ -44,11 +43,21 @@ function formatSessionDate(isoString: string): { dayTime: string; recurrenceHint
   };
 }
 
-function buildRRule(dateStr: string): string {
+type Recurrence = 'once' | 'weekly' | 'daily';
+
+function buildRRule(dateStr: string, recurrence: Recurrence): string | null {
+  if (recurrence === 'once') return null;
+  if (recurrence === 'daily') return 'FREQ=DAILY';
   const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return '';
+  if (isNaN(date.getTime())) return null;
   const dayCode = DAYS_SHORT[date.getDay()];
   return `FREQ=WEEKLY;BYDAY=${dayCode}`;
+}
+
+function recurrenceFromSession(isRecurring: boolean, rule: string | null | undefined): Recurrence {
+  if (!isRecurring) return 'once';
+  if (rule && rule.toUpperCase().includes('DAILY')) return 'daily';
+  return 'weekly';
 }
 
 function getDayNameFromDate(dateStr: string): string {
@@ -72,7 +81,7 @@ interface FormState {
   description_en: string;
   description_ur: string;
   scheduled_at: string;
-  is_recurring: boolean;
+  recurrence: Recurrence;
 }
 
 const EMPTY_FORM: FormState = {
@@ -81,7 +90,8 @@ const EMPTY_FORM: FormState = {
   description_en: '',
   description_ur: '',
   scheduled_at: '',
-  is_recurring: false,
+  // Default is one-off: create-a-session is a single click away from saving.
+  recurrence: 'once',
 };
 
 export default function ScheduleScreen() {
@@ -189,7 +199,7 @@ export default function ScheduleScreen() {
       description_en: session.description_en ?? '',
       description_ur: session.description_ur ?? '',
       scheduled_at: toDatetimeLocalValue(session.scheduled_at),
-      is_recurring: !!session.is_recurring,
+      recurrence: recurrenceFromSession(!!session.is_recurring, session.recurrence_rule),
     });
     setFormError(null);
     setModalVisible(true);
@@ -221,7 +231,7 @@ export default function ScheduleScreen() {
 
     setSaving(true);
 
-    const recurrenceRule = form.is_recurring ? buildRRule(form.scheduled_at.trim()) : null;
+    const recurrenceRule = buildRRule(form.scheduled_at.trim(), form.recurrence);
 
     const payload = {
       title_en: form.title_en.trim(),
@@ -229,7 +239,7 @@ export default function ScheduleScreen() {
       description_en: form.description_en.trim() || null,
       description_ur: form.description_ur.trim() || null,
       scheduled_at: parsedDate.toISOString(),
-      is_recurring: form.is_recurring,
+      is_recurring: form.recurrence !== 'once',
       recurrence_rule: recurrenceRule,
     };
 
@@ -508,6 +518,40 @@ export default function ScheduleScreen() {
       fontSize: 15,
       color: c.text,
     },
+    recurrenceRow: {
+      flexDirection: 'row',
+      gap: 8,
+      marginBottom: 8,
+    },
+    recurrencePill: {
+      flex: 1,
+      paddingVertical: 10,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: c.border,
+      backgroundColor: c.surface,
+      alignItems: 'center',
+    },
+    recurrencePillActive: {
+      backgroundColor: c.primary,
+      borderColor: c.primary,
+    },
+    recurrencePillText: {
+      fontFamily: font.sansMedium,
+      fontSize: 12,
+      letterSpacing: 1,
+      color: c.textMuted,
+    },
+    recurrencePillTextActive: {
+      color: c.onPrimary,
+      fontFamily: font.sansSemiBold,
+    },
+    recurrenceHint: {
+      fontFamily: font.serifItalic,
+      fontSize: 13,
+      color: c.textMuted,
+      marginBottom: 4,
+    },
     rruleInfo: {
       marginTop: 10,
       backgroundColor: c.surface2,
@@ -612,7 +656,21 @@ export default function ScheduleScreen() {
   };
 
   const dayName = form.scheduled_at.trim() ? getDayNameFromDate(form.scheduled_at.trim()) : '';
-  const rrule = form.is_recurring && form.scheduled_at.trim() ? buildRRule(form.scheduled_at.trim()) : '';
+  const timeLabel = (() => {
+    const d = new Date(form.scheduled_at.trim());
+    if (isNaN(d.getTime())) return '';
+    const h = d.getHours();
+    const m = d.getMinutes().toString().padStart(2, '0');
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const display = h % 12 === 0 ? 12 : h % 12;
+    return `${display}:${m} ${ampm}`;
+  })();
+  const recurrenceHint = (() => {
+    if (!form.scheduled_at.trim()) return 'Pick a date & time first.';
+    if (form.recurrence === 'once') return `Happens once on ${dayName} at ${timeLabel}.`;
+    if (form.recurrence === 'daily') return `Repeats every day at ${timeLabel}.`;
+    return `Repeats every ${dayName} at ${timeLabel}.`;
+  })();
 
   return (
     <View style={styles.container}>
@@ -775,30 +833,34 @@ export default function ScheduleScreen() {
                 />
               )}
 
-              {/* Is Recurring */}
-              <View style={styles.toggleRow}>
-                <Text style={styles.toggleLabel}>Is Recurring</Text>
-                <Switch
-                  value={form.is_recurring}
-                  onValueChange={(v) => setForm((f) => ({ ...f, is_recurring: v }))}
-                  trackColor={{ false: c.border, true: c.primary }}
-                  thumbColor={form.is_recurring ? '#ffffff' : c.textMuted}
-                />
+              {/* Recurrence */}
+              <Text style={styles.fieldLabel}>REPEATS</Text>
+              <View style={styles.recurrenceRow}>
+                {(['once', 'weekly', 'daily'] as Recurrence[]).map((r) => {
+                  const active = form.recurrence === r;
+                  const label = r === 'once' ? 'ONCE' : r === 'weekly' ? 'WEEKLY' : 'DAILY';
+                  return (
+                    <TouchableOpacity
+                      key={r}
+                      style={[styles.recurrencePill, active && styles.recurrencePillActive]}
+                      onPress={() => setForm((f) => ({ ...f, recurrence: r }))}
+                      activeOpacity={0.7}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: active }}
+                    >
+                      <Text
+                        style={[
+                          styles.recurrencePillText,
+                          active && styles.recurrencePillTextActive,
+                        ]}
+                      >
+                        {label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
-
-              {/* Recurrence Rule info */}
-              {form.is_recurring && (
-                <View style={styles.rruleInfo}>
-                  {dayName ? (
-                    <>
-                      <Text style={styles.rruleText}>Weekly on {dayName}</Text>
-                      <Text style={styles.rruleCode}>{rrule}</Text>
-                    </>
-                  ) : (
-                    <Text style={styles.rruleText}>Enter a date above to see the recurrence rule.</Text>
-                  )}
-                </View>
-              )}
+              <Text style={styles.recurrenceHint}>{recurrenceHint}</Text>
 
               {/* Error */}
               {!!formError && <Text style={styles.errorText}>{formError}</Text>}
