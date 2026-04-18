@@ -17,6 +17,10 @@ export function useLatestContent(type?: ContentType, limit = 5) {
         let query = supabase
           .from('content')
           .select('*')
+          // Public surfaces only show content that's fully published —
+          // admins bypass the RLS equivalent of this filter, so we apply
+          // it explicitly here to keep the home list clean for everyone.
+          .in('mirror_status', ['ready', 'not_applicable'])
           .order('created_at', { ascending: false })
           .limit(limit);
 
@@ -64,6 +68,7 @@ export function useContentByCategory(categoryId: string) {
         .from('content')
         .select('*')
         .eq('category_id', categoryId)
+        .in('mirror_status', ['ready', 'not_applicable'])
         .order('created_at', { ascending: false });
 
       if (!cancelled) {
@@ -101,6 +106,7 @@ export function useSearchContent(query: string) {
         .from('content')
         .select('*')
         .or(`title_en.ilike.%${sanitized}%,title_ur.ilike.%${sanitized}%`)
+        .in('mirror_status', ['ready', 'not_applicable'])
         .order('created_at', { ascending: false });
 
       if (err) setError(err.message);
