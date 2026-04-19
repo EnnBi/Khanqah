@@ -30,8 +30,11 @@ export function PdfReader(props: PdfReaderProps) {
           import('react-pdf/dist/Page/AnnotationLayer.css'),
         ]);
         // Pin the worker to the matching CDN build so the deployed
-        // bundle doesn't have to carry the worker itself.
-        pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+        // bundle doesn't have to carry the worker itself. pdfjs-dist
+        // v4's classic-module worker uses .min.js (not .mjs) — this
+        // avoids Metro's inability to transform pdfjs v5's ESM-only
+        // import.meta references.
+        pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
         if (!cancelled) setMod({ Document, Page });
       } catch (err: any) {
         if (!cancelled) setLoadError(err?.message ?? 'Failed to load PDF engine.');
