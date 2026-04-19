@@ -37,6 +37,13 @@ http {
     access_log /var/log/nginx/access.log;
     error_log /var/log/nginx/error.log;
     gzip on;
+
+    # Disk cache for the /pdf-proxy/ location — reuses archive.org byte
+    # ranges across requests/users so pdfjs doesn't re-hit the upstream
+    # for every scroll. 5GB ceiling, inactive entries evicted after 7d.
+    proxy_cache_path /var/cache/nginx/pdf keys_zone=pdf_cache:50m
+                     max_size=5g inactive=7d use_temp_path=off;
+
     include /etc/nginx/sites-enabled/*;
 }
 

@@ -4,6 +4,10 @@ const CONFIG_CACHE_KEY = 'app_remote_config_v2';
 const CONFIG_URL = 'http://165.22.208.103/api/config.json';
 const CONFIG_TTL_MS = 60 * 60 * 1000; // Re-fetch every 1 hour
 
+// Origin of the DO server — used by clients that need to hit server-side
+// endpoints (e.g. the PDF proxy at /pdf-proxy/).
+export const API_BASE_URL = CONFIG_URL.replace(/\/api\/config\.json$/, '');
+
 // Fallback config for local development when remote config is unreachable
 // Fallback reads from .env.local for local dev only — no real creds in source
 const FALLBACK_CONFIG: AppConfig = {
