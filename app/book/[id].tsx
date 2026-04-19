@@ -11,9 +11,9 @@ import { showMessage } from '../../lib/alert';
 import { useSafeBack } from '../../hooks/useSafeBack';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { WebView, WebViewNavigation } from 'react-native-webview';
 import * as FileSystem from 'expo-file-system/legacy';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { PdfReader } from '../../components/PdfReader';
 
 import { supabase } from '../../lib/supabase';
 import { Content } from '../../lib/types';
@@ -204,62 +204,10 @@ export default function BookViewerScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* PDF viewer area — on web, a native <iframe> renders the PDF
-          via the browser's built-in PDF viewer (Chromium PDFium / Firefox
-          PDF.js). react-native-webview's iframe fallback combined with
-          Google Docs Viewer gets blocked by X-Frame-Options, which was
-          leaving the "Loading book..." overlay stuck forever. Native
-          platforms keep the WebView + Google Docs Viewer path since
-          iOS/Android WebViews can't render PDF URLs directly. */}
+      {/* PDF reader — PdfReader.web renders via react-pdf / pdfjs with
+          our own chrome; PdfReader (native) falls back to a WebView. */}
       <View style={[styles.webViewSurround, { backgroundColor: c.background }]}>
-        {Platform.OS === 'web' ? (
-          React.createElement('iframe', {
-            src: content.media_url,
-            title,
-            onLoad: () => setWebViewLoading(false),
-            onError: () => {
-              setWebViewLoading(false);
-              setError('Failed to load the book. Please check your connection.');
-            },
-            style: {
-              width: '100%',
-              height: '100%',
-              border: 0,
-              backgroundColor: '#fff',
-              display: 'block',
-            },
-          })
-        ) : (
-          <WebView
-            source={{ uri: viewerUrl }}
-            style={styles.webView}
-            onLoadStart={() => setWebViewLoading(true)}
-            onLoadEnd={() => setWebViewLoading(false)}
-            onMessage={handleMessage}
-            injectedJavaScript={injectedJavaScript}
-            javaScriptEnabled
-            domStorageEnabled
-            startInLoadingState={false}
-            allowsInlineMediaPlayback
-            onNavigationStateChange={(_navState: WebViewNavigation) => {
-              // Allow navigation within the viewer
-            }}
-            onError={() => {
-              setWebViewLoading(false);
-              setError('Failed to load the book. Please check your connection.');
-            }}
-          />
-        )}
-
-        {/* Loading overlay */}
-        {webViewLoading && (
-          <View style={[styles.webViewOverlay, { backgroundColor: c.background }]}>
-            <ActivityIndicator size="large" color={c.primary} />
-            <Text style={[styles.loadingText, { color: c.textMuted }]}>
-              Loading book...
-            </Text>
-          </View>
-        )}
+        <PdfReader url={content.media_url} />
       </View>
     </View>
   );
