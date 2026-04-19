@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -203,29 +204,54 @@ export default function BookViewerScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* WebView area with cream surround */}
+      {/* PDF viewer area — on web, a native <iframe> renders the PDF
+          via the browser's built-in PDF viewer (Chromium PDFium / Firefox
+          PDF.js). react-native-webview's iframe fallback combined with
+          Google Docs Viewer gets blocked by X-Frame-Options, which was
+          leaving the "Loading book..." overlay stuck forever. Native
+          platforms keep the WebView + Google Docs Viewer path since
+          iOS/Android WebViews can't render PDF URLs directly. */}
       <View style={[styles.webViewSurround, { backgroundColor: c.background }]}>
-        <WebView
-          source={{ uri: viewerUrl }}
-          style={styles.webView}
-          onLoadStart={() => setWebViewLoading(true)}
-          onLoadEnd={() => setWebViewLoading(false)}
-          onMessage={handleMessage}
-          injectedJavaScript={injectedJavaScript}
-          javaScriptEnabled
-          domStorageEnabled
-          startInLoadingState={false}
-          allowsInlineMediaPlayback
-          onNavigationStateChange={(_navState: WebViewNavigation) => {
-            // Allow navigation within the viewer
-          }}
-          onError={() => {
-            setWebViewLoading(false);
-            setError('Failed to load the book. Please check your connection.');
-          }}
-        />
+        {Platform.OS === 'web' ? (
+          React.createElement('iframe', {
+            src: content.media_url,
+            title,
+            onLoad: () => setWebViewLoading(false),
+            onError: () => {
+              setWebViewLoading(false);
+              setError('Failed to load the book. Please check your connection.');
+            },
+            style: {
+              width: '100%',
+              height: '100%',
+              border: 0,
+              backgroundColor: '#fff',
+              display: 'block',
+            },
+          })
+        ) : (
+          <WebView
+            source={{ uri: viewerUrl }}
+            style={styles.webView}
+            onLoadStart={() => setWebViewLoading(true)}
+            onLoadEnd={() => setWebViewLoading(false)}
+            onMessage={handleMessage}
+            injectedJavaScript={injectedJavaScript}
+            javaScriptEnabled
+            domStorageEnabled
+            startInLoadingState={false}
+            allowsInlineMediaPlayback
+            onNavigationStateChange={(_navState: WebViewNavigation) => {
+              // Allow navigation within the viewer
+            }}
+            onError={() => {
+              setWebViewLoading(false);
+              setError('Failed to load the book. Please check your connection.');
+            }}
+          />
+        )}
 
-        {/* Loading overlay for WebView */}
+        {/* Loading overlay */}
         {webViewLoading && (
           <View style={[styles.webViewOverlay, { backgroundColor: c.background }]}>
             <ActivityIndicator size="large" color={c.primary} />
