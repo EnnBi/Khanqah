@@ -11,6 +11,7 @@ const TYPE_LABEL: Record<ContentType, string> = {
   quran:     'Recitations',
   hamd_naat: 'Hamd & Naat',
   book:      'Volumes',
+  muamulaat: 'Dealings',
 };
 
 interface CategoryTileProps {

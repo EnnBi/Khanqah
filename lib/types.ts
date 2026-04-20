@@ -1,4 +1,4 @@
-export type ContentType = 'bayan' | 'clip' | 'nazam' | 'quran' | 'hamd_naat' | 'book';
+export type ContentType = 'bayan' | 'clip' | 'nazam' | 'quran' | 'hamd_naat' | 'book' | 'muamulaat';
 export type UserRole = 'listener' | 'editor' | 'admin';
 export type ThemePref = 'light' | 'dark' | 'system';
 export type LiveSessionStatus = 'live' | 'ended' | 'processing';

@@ -12,6 +12,7 @@ const TYPE_SYMBOL: Record<ContentType, string> = {
   quran:     '☪',
   hamd_naat: '✦',
   book:      '❖',
+  muamulaat: '⚖',
 };
 
 const TYPE_LABEL: Record<ContentType, string> = {
@@ -21,6 +22,7 @@ const TYPE_LABEL: Record<ContentType, string> = {
   quran:     'QURAN',
   hamd_naat: 'HAMD & NAAT',
   book:      'BOOK',
+  muamulaat: 'MUAMULAAT',
 };
 
 interface ContentCardProps {

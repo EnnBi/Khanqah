@@ -46,6 +46,7 @@ const TYPE_SYMBOL: Record<ContentType, string> = {
   quran: '☪',
   hamd_naat: '✦',
   book: '❖',
+  muamulaat: '⚖',
 };
 
 export default function PlayerScreen() {
