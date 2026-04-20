@@ -45,8 +45,6 @@ export default function HomeScreen() {
           <View style={[styles.circleA, { borderColor: 'rgba(212, 168, 83, 0.2)' }]} />
           <View style={[styles.circleB, { borderColor: 'rgba(212, 168, 83, 0.15)' }]} />
 
-          <Text style={[styles.kicker, { color: c.accent }]}>{formatIslamicDate()}</Text>
-
           <View style={styles.brandBlock}>
             <Image
               source={require('../../assets/images/icon.png')}
@@ -54,8 +52,6 @@ export default function HomeScreen() {
               resizeMode="contain"
               accessibilityLabel="Ar-Rashid"
             />
-            <Text style={styles.brandSubtitle}>Khanqah Maseeh-ul-Ummah</Text>
-            <Text style={styles.brandUrdu}>خانقاہ مسیح الامت</Text>
           </View>
         </View>
 

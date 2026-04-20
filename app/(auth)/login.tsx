@@ -146,12 +146,6 @@ export default function LoginScreen() {
             resizeMode="contain"
             accessibilityLabel="Ar-Rashid"
           />
-          <Text style={[styles.logoSubtitle, { color: c.textSecondary }]}>
-            Khanqah Maseeh-ul-Ummah
-          </Text>
-          <Text style={[styles.logoUrdu, { color: c.gold }]}>
-            خانقاہ مسیح الامت
-          </Text>
           <Text style={[styles.tagline, { color: c.textMuted }]}>
             SEEKING NEARNESS THROUGH SOUND
           </Text>
