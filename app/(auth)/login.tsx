@@ -139,7 +139,7 @@ export default function LoginScreen() {
       >
         {/* Logo block */}
         <View style={styles.logoBlock}>
-          <Text style={[styles.logoTitle, { color: c.primary }]}>Khanqah</Text>
+          <Text style={[styles.logoTitle, { color: c.primary }]}>Ar-Rashid</Text>
           <Text style={[styles.logoSubtitle, { color: c.textSecondary }]}>
             Maseeh-ul-Ummah
           </Text>
