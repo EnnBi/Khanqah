@@ -17,7 +17,8 @@ describe('types', () => {
   it('Content object satisfies the type', () => {
     const content: Content = {
       id: '123', title_en: 'Test Bayan', title_ur: 'ٹیسٹ بیان',
-      description_en: null, description_ur: null, type: 'bayan',
+      description_en: null, description_ur: null,
+      credit_en: null, credit_ur: null, type: 'bayan',
       category_id: '456', media_url: 'https://archive.org/download/test/test.mp3',
       thumbnail_url: null, duration: 2700, file_size: null,
       is_video: false, uploaded_by: '789',

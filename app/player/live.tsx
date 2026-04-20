@@ -133,6 +133,8 @@ export default function LivePlayerScreen() {
       title_ur: liveSession.title_ur,
       description_en: null,
       description_ur: null,
+      credit_en: null,
+      credit_ur: null,
       type: 'bayan',
       category_id: '',
       media_url: liveSession.stream_url,
