@@ -206,66 +206,72 @@ export default function CategoryListingScreen() {
   };
 
   // Hero header rendered as FlatList ListHeaderComponent
-  const renderHeader = () => (
-    <View style={[styles.hero, { backgroundColor: c.primary, paddingTop: insets.top + 12 }]}>
-      {/* Concentric circles decoration (top-right) */}
-      <View style={styles.circlesWrap} pointerEvents="none">
-        <View style={[styles.circle, styles.circle1, { borderColor: 'rgba(212,168,83,0.12)' }]} />
-        <View style={[styles.circle, styles.circle2, { borderColor: 'rgba(212,168,83,0.08)' }]} />
-        <View style={[styles.circle, styles.circle3, { borderColor: 'rgba(212,168,83,0.05)' }]} />
+  const renderHeader = useCallback(
+    () => (
+      <View style={[styles.hero, { backgroundColor: c.primary, paddingTop: insets.top + 12 }]}>
+        {/* Concentric circles decoration (top-right) */}
+        <View style={styles.circlesWrap} pointerEvents="none">
+          <View style={[styles.circle, styles.circle1, { borderColor: 'rgba(212,168,83,0.12)' }]} />
+          <View style={[styles.circle, styles.circle2, { borderColor: 'rgba(212,168,83,0.08)' }]} />
+          <View style={[styles.circle, styles.circle3, { borderColor: 'rgba(212,168,83,0.05)' }]} />
+        </View>
+
+        {/* Back button */}
+        <TouchableOpacity style={styles.backBtn} onPress={goBack} activeOpacity={0.7}>
+          <Text style={[styles.backText, { color: c.onPrimary }]}>{'‹ BACK'}</Text>
+        </TouchableOpacity>
+
+        {/* Kicker */}
+        {kicker ? (
+          <Text style={[styles.kicker, { color: c.onPrimary }]}>{kicker}</Text>
+        ) : null}
+
+        {/* Category title */}
+        <Text
+          style={[
+            styles.heroTitle,
+            { color: '#f7f5f0' },
+            language === 'ur' && { fontFamily: 'NastaleeqUrdu', writingDirection: 'rtl', textAlign: 'right', lineHeight: 52 },
+          ]}
+          numberOfLines={2}
+        >
+          {categoryName}
+        </Text>
+
+        {/* Arabic / Urdu name */}
+        {categoryNameArabic ? (
+          <Text style={[styles.heroArabic, { color: c.onPrimary }]}>
+            {categoryNameArabic}
+          </Text>
+        ) : null}
+
+        {/* Count */}
+        {!loading && (
+          <Text style={[styles.heroCount, { color: 'rgba(247,245,240,0.55)' }]}>
+            {contentCount} {contentCount === 1 ? 'ITEM' : 'ITEMS'}
+            {debouncedQuery ? ' MATCHING' : ''}
+          </Text>
+        )}
+
+        {/* Inline search — title or credit, scoped to this category */}
+        <TextInput
+          style={[
+            styles.searchInput,
+            {
+              backgroundColor: c.onPrimary + '1f',
+              color: c.onPrimary,
+            },
+          ]}
+          placeholder="Search title or credit…"
+          placeholderTextColor={c.onPrimary + '8c'}
+          value={query}
+          onChangeText={setQuery}
+          autoCapitalize="none"
+          returnKeyType="search"
+        />
       </View>
-
-      {/* Back button */}
-      <TouchableOpacity style={styles.backBtn} onPress={goBack} activeOpacity={0.7}>
-        <Text style={[styles.backText, { color: c.onPrimary }]}>{'‹ BACK'}</Text>
-      </TouchableOpacity>
-
-      {/* Kicker */}
-      {kicker ? (
-        <Text style={[styles.kicker, { color: c.onPrimary }]}>{kicker}</Text>
-      ) : null}
-
-      {/* Category title */}
-      <Text
-        style={[
-          styles.heroTitle,
-          { color: '#f7f5f0' },
-          language === 'ur' && { fontFamily: 'NastaleeqUrdu', writingDirection: 'rtl', textAlign: 'right', lineHeight: 52 },
-        ]}
-        numberOfLines={2}
-      >
-        {categoryName}
-      </Text>
-
-      {/* Arabic / Urdu name */}
-      {categoryNameArabic ? (
-        <Text style={[styles.heroArabic, { color: c.onPrimary }]}>
-          {categoryNameArabic}
-        </Text>
-      ) : null}
-
-      {/* Count */}
-      {!loading && (
-        <Text style={[styles.heroCount, { color: 'rgba(247,245,240,0.55)' }]}>
-          {contentCount} {contentCount === 1 ? 'ITEM' : 'ITEMS'}
-          {debouncedQuery ? ' MATCHING' : ''}
-        </Text>
-      )}
-
-      {/* Inline search — title or credit, scoped to this category */}
-      <TextInput
-        style={[
-          styles.searchInput,
-          { backgroundColor: 'rgba(247,245,240,0.12)', color: '#f7f5f0' },
-        ]}
-        placeholder="Search title or credit…"
-        placeholderTextColor="rgba(247,245,240,0.55)"
-        value={query}
-        onChangeText={setQuery}
-        autoCapitalize="none"
-        returnKeyType="search"
-      />
-    </View>
+    ),
+    [c, insets.top, goBack, kicker, categoryName, categoryNameArabic, language, loading, contentCount, debouncedQuery, query],
   );
 
   return (
