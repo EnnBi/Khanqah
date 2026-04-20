@@ -116,7 +116,7 @@ export default function BookViewerScreen() {
   const title = content
     ? content.title_en || content.title_ur || 'Book'
     : 'Book';
-  const credit = content ? pickCredit(content, language as 'en' | 'ur') : null;
+  const credit = content ? pickCredit(content, language) : null;
 
   // --- Loading state ---
   if (loading) {

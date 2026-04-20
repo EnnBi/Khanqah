@@ -89,10 +89,11 @@ export interface PushSubscription {
 // when both are empty, so the caller can skip rendering.
 export function pickCredit(
   content: Pick<Content, 'credit_en' | 'credit_ur'>,
-  language: 'en' | 'ur',
+  language: string,
 ): string | null {
-  const primary = language === 'ur' ? content.credit_ur : content.credit_en;
-  const fallback = language === 'ur' ? content.credit_en : content.credit_ur;
+  const isUr = language === 'ur';
+  const primary = isUr ? content.credit_ur : content.credit_en;
+  const fallback = isUr ? content.credit_en : content.credit_ur;
   const value = (primary && primary.trim()) || (fallback && fallback.trim()) || null;
   return value;
 }
