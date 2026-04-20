@@ -153,6 +153,10 @@ export default function UploadContentScreen() {
       showMessage('Validation', 'Please enter the media URL.');
       return;
     }
+    if (!editId && !user?.id) {
+      showMessage('Not signed in', 'You need to sign in again before publishing.');
+      return;
+    }
 
     setSubmitting(true);
 
@@ -185,7 +189,7 @@ export default function UploadContentScreen() {
         description_ur: null,
         duration: null,
         file_size: null,
-        uploaded_by: user?.id ?? '',
+        uploaded_by: user!.id,
       };
 
       if (isYouTubeSubmit) {
