@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTheme } from '../providers/ThemeProvider';
-import { Content, ContentType } from '../lib/types';
+import { Content, ContentType, pickCredit } from '../lib/types';
 import { BilingualText } from './BilingualText';
 
 // Calm Architecture: unified forest thumb with gold symbol per type.
@@ -35,6 +35,7 @@ export function ContentCard({ content, onPress, language }: ContentCardProps) {
 
   const symbol = TYPE_SYMBOL[content.type] ?? TYPE_SYMBOL.bayan;
   const typeLabel = TYPE_LABEL[content.type] ?? 'BAYAN';
+  const credit = pickCredit(content, language);
 
   const durationMin = content.duration ? Math.round(content.duration / 60) : null;
   const metaParts: string[] = [];
@@ -59,6 +60,14 @@ export function ContentCard({ content, onPress, language }: ContentCardProps) {
           style={[styles.title, { color: c.primary }]}
           numberOfLines={2}
         />
+        {credit ? (
+          <Text
+            style={[styles.credit, { color: c.textMuted }]}
+            numberOfLines={1}
+          >
+            {credit}
+          </Text>
+        ) : null}
         <Text style={[styles.meta, { color: c.textMuted }]}>
           {metaParts.join(' · ')}
         </Text>
@@ -98,6 +107,12 @@ const styles = StyleSheet.create({
     fontSize: 17,
     lineHeight: 22,
     letterSpacing: -0.2,
+  },
+  credit: {
+    fontFamily: 'CrimsonPro-Italic',
+    fontSize: 13,
+    lineHeight: 16,
+    marginTop: 2,
   },
   meta: {
     fontFamily: 'DMSans-Medium',

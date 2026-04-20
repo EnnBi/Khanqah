@@ -82,3 +82,17 @@ export interface PushSubscription {
   id: string; user_id: string; onesignal_player_id: string;
   device_type: 'android' | 'ios' | 'web'; created_at: string;
 }
+
+// Picks the credit string to display for a content item. Prefers the
+// user's current language; falls back to the other language so a row
+// with only one credit filled in still shows something; returns null
+// when both are empty, so the caller can skip rendering.
+export function pickCredit(
+  content: Pick<Content, 'credit_en' | 'credit_ur'>,
+  language: 'en' | 'ur',
+): string | null {
+  const primary = language === 'ur' ? content.credit_ur : content.credit_en;
+  const fallback = language === 'ur' ? content.credit_en : content.credit_ur;
+  const value = (primary && primary.trim()) || (fallback && fallback.trim()) || null;
+  return value;
+}
