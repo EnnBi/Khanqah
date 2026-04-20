@@ -27,6 +27,7 @@ export type MirrorFormat = 'audio' | 'video';
 export interface Content {
   id: string; title_en: string; title_ur: string;
   description_en: string | null; description_ur: string | null;
+  credit_en: string | null; credit_ur: string | null;
   type: ContentType; category_id: string; media_url: string;
   thumbnail_url: string | null; duration: number | null;
   file_size: number | null; is_video: boolean;
