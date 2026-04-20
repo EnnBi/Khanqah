@@ -144,9 +144,11 @@ export default function BookViewerScreen() {
           >
             <Text style={[styles.backArrow, { color: c.primary }]}>{'‹'}</Text>
           </TouchableOpacity>
-          <Text style={[styles.topBarTitle, { color: c.text }]} numberOfLines={1}>
-            Book
-          </Text>
+          <View style={styles.topBarTitleWrap}>
+            <Text style={[styles.topBarTitle, { color: c.text }]} numberOfLines={1}>
+              Book
+            </Text>
+          </View>
           <View style={styles.topBarBtn} />
         </View>
         <View style={styles.centered}>
