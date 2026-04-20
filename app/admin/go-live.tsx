@@ -34,7 +34,7 @@ function getRelayUrl(): string {
     const rtmpHost = new URL(config.streamRtmpUrl.replace('rtmp://', 'http://')).hostname;
     return `ws://${rtmpHost}:3001`;
   } catch {
-    return 'wss://arrashid.ennbi.com/ws';
+    return 'wss://arrashid.ennbi.com/ws/';
   }
 }
 
