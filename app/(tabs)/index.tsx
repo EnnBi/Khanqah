@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useI18n } from '../../providers/I18nProvider';
@@ -47,15 +47,16 @@ export default function HomeScreen() {
 
           <Text style={[styles.kicker, { color: c.accent }]}>{formatIslamicDate()}</Text>
 
-          <Text style={styles.heroTitle}>
-            Seeking{' '}
-            <Text style={[styles.heroTitleItalic, { color: c.accent }]}>nearness</Text>
-            {'\n'}through sound
-          </Text>
-
-          <Text style={styles.heroArabic}>خانقاہ مسیح الامت</Text>
-
-          <Text style={styles.heroMeta}>Hazrat Mufti Abdur Rasheed Miftahi Sahab</Text>
+          <View style={styles.brandBlock}>
+            <Image
+              source={require('../../assets/images/icon.png')}
+              style={styles.brandMark}
+              resizeMode="contain"
+              accessibilityLabel="Ar-Rashid"
+            />
+            <Text style={styles.brandSubtitle}>Khanqah Maseeh-ul-Ummah</Text>
+            <Text style={styles.brandUrdu}>خانقاہ مسیح الامت</Text>
+          </View>
         </View>
 
         {/* Floating Live Card (negative margin over hero) */}
@@ -208,31 +209,27 @@ const styles = StyleSheet.create({
     ...typeP.label,
     marginBottom: 18,
   },
-  heroTitle: {
-    fontFamily: 'CrimsonPro',
-    fontSize: 34,
-    lineHeight: 38,
-    letterSpacing: -0.5,
-    color: '#f7f5f0',
+  brandBlock: {
+    alignItems: 'center',
   },
-  heroTitleItalic: {
+  brandMark: {
+    width: 220,
+    height: 220,
+    marginBottom: 6,
+  },
+  brandSubtitle: {
     fontFamily: 'CrimsonPro-Italic',
+    fontSize: 18,
+    color: '#f7f5f0',
+    marginBottom: 6,
   },
-  heroArabic: {
+  brandUrdu: {
     fontFamily: 'NastaleeqUrdu',
-    fontSize: 22,
-    textAlign: 'right',
+    fontSize: 24,
+    textAlign: 'center',
     writingDirection: 'rtl',
     color: '#d4a853',
-    marginTop: 20,
-    lineHeight: 36,
-  },
-  heroMeta: {
-    fontFamily: 'DMSans',
-    fontSize: 11,
-    letterSpacing: 0.5,
-    color: 'rgba(247, 245, 240, 0.6)',
-    marginTop: 16,
+    lineHeight: 40,
   },
 
   // Live card (floats over hero)
