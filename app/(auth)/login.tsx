@@ -393,8 +393,8 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   logoMark: {
-    width: 180,
-    height: 180,
+    width: 260,
+    height: 260,
     marginBottom: 8,
   },
   logoSubtitle: {
