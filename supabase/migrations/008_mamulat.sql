@@ -1,5 +1,5 @@
 -- 008_mamulat.sql — add 'mamulat' content type + starter category.
--- "Mamulat" / معاملات is Islamic content about dealings/transactions,
+-- "Mamulat" / مامولات is Islamic content about dealings/transactions,
 -- ethics, and social conduct. Extends the content_type enum and seeds a
 -- default category so admins can file uploads immediately.
 --
@@ -10,5 +10,5 @@
 ALTER TYPE public.content_type ADD VALUE IF NOT EXISTS 'mamulat';
 
 INSERT INTO public.categories (name_en, name_ur, type, sort_order)
-VALUES ('Mamulat', 'معاملات', 'mamulat', 70)
+VALUES ('Mamulat', 'مامولات', 'mamulat', 70)
 ON CONFLICT DO NOTHING;
