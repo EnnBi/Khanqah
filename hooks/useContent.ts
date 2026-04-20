@@ -160,8 +160,11 @@ export function useSearchContent(query: string) {
       return;
     }
 
-    setLoading(true);
+    // Debounce: flipping loading true happens inside the timer, not before,
+    // so the spinner doesn't flash on every keystroke while the user is
+    // still typing. 500ms gives most people time to finish a word.
     const timer = setTimeout(async () => {
+      setLoading(true);
       setError(null);
       // Sanitize query to prevent PostgREST filter injection
       const sanitized = query.replace(/[,%()\\]/g, '');
@@ -177,7 +180,7 @@ export function useSearchContent(query: string) {
       if (err) setError(err.message);
       else setContent(data ?? []);
       setLoading(false);
-    }, 300);
+    }, 500);
 
     return () => clearTimeout(timer);
   }, [query]);
