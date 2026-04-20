@@ -168,7 +168,9 @@ export function useSearchContent(query: string) {
       const { data, error: err } = await supabase
         .from('content')
         .select('*')
-        .or(`title_en.ilike.%${sanitized}%,title_ur.ilike.%${sanitized}%`)
+        .or(
+          `title_en.ilike.%${sanitized}%,title_ur.ilike.%${sanitized}%,credit_en.ilike.%${sanitized}%,credit_ur.ilike.%${sanitized}%`,
+        )
         .in('mirror_status', ['ready', 'not_applicable'])
         .order('created_at', { ascending: false });
 
