@@ -21,7 +21,7 @@ const CATEGORY_SYMBOL: Record<ContentType, string> = {
   quran:     '☪',
   hamd_naat: '✦',
   book:      '❖',
-  mamulat:   '⚖',
+  mamulat:   '❂',
 };
 
 export default function LibraryScreen() {

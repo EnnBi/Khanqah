@@ -12,7 +12,7 @@ const TYPE_SYMBOL: Record<ContentType, string> = {
   quran:     '☪',
   hamd_naat: '✦',
   book:      '❖',
-  mamulat:   '⚖',
+  mamulat:   '❂',
 };
 
 const TYPE_LABEL: Record<ContentType, string> = {
