@@ -16,8 +16,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PdfReader } from '../../components/PdfReader';
 
 import { supabase } from '../../lib/supabase';
-import { Content } from '../../lib/types';
+import { Content, pickCredit } from '../../lib/types';
 import { useTheme } from '../../providers/ThemeProvider';
+import { useI18n } from '../../providers/I18nProvider';
 
 const BOOKMARK_KEY_PREFIX = 'book_scroll_';
 
@@ -32,6 +33,7 @@ export default function BookViewerScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const c = theme.colors;
+  const { language } = useI18n();
 
   const [content, setContent] = useState<Content | null>(null);
   const [loading, setLoading] = useState(true);
@@ -114,6 +116,7 @@ export default function BookViewerScreen() {
   const title = content
     ? content.title_en || content.title_ur || 'Book'
     : 'Book';
+  const credit = content ? pickCredit(content, language as 'en' | 'ur') : null;
 
   // --- Loading state ---
   if (loading) {
@@ -181,10 +184,20 @@ export default function BookViewerScreen() {
           <Text style={[styles.backArrow, { color: c.primary }]}>{'‹'}</Text>
         </TouchableOpacity>
 
-        {/* Title */}
-        <Text style={[styles.topBarTitle, { color: c.text }]} numberOfLines={1}>
-          {title}
-        </Text>
+        {/* Title + credit */}
+        <View style={styles.topBarTitleWrap}>
+          <Text style={[styles.topBarTitle, { color: c.text }]} numberOfLines={1}>
+            {title}
+          </Text>
+          {credit ? (
+            <Text
+              style={[styles.topBarCredit, { color: c.textMuted }]}
+              numberOfLines={1}
+            >
+              {credit}
+            </Text>
+          ) : null}
+        </View>
 
         {/* Menu (⋮) — triggers download */}
         <TouchableOpacity
@@ -246,11 +259,19 @@ const styles = StyleSheet.create({
     lineHeight: 38,
   },
   topBarTitle: {
-    flex: 1,
     fontFamily: 'CrimsonPro-Medium',
     fontSize: 17,
-    textAlign: 'center',
+  },
+  topBarTitleWrap: {
+    flex: 1,
     marginHorizontal: 4,
+    alignItems: 'center',
+  },
+  topBarCredit: {
+    fontFamily: 'CrimsonPro-Italic',
+    fontSize: 12,
+    marginTop: 2,
+    textAlign: 'center',
   },
   menuIcon: {
     fontSize: 22,
