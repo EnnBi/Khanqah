@@ -1,5 +1,5 @@
--- 008_muamulaat.sql — add 'muamulaat' content type + starter category.
--- "Muamulaat" / معاملات is Islamic content about dealings/transactions,
+-- 008_mamulat.sql — add 'mamulat' content type + starter category.
+-- "Mamulat" / معاملات is Islamic content about dealings/transactions,
 -- ethics, and social conduct. Extends the content_type enum and seeds a
 -- default category so admins can file uploads immediately.
 --
@@ -7,8 +7,8 @@
 -- Postgres < 12.10, so run each statement independently (Supabase SQL
 -- Editor does this by default; do not wrap in BEGIN/COMMIT).
 
-ALTER TYPE public.content_type ADD VALUE IF NOT EXISTS 'muamulaat';
+ALTER TYPE public.content_type ADD VALUE IF NOT EXISTS 'mamulat';
 
 INSERT INTO public.categories (name_en, name_ur, type, sort_order)
-VALUES ('Muamulaat', 'معاملات', 'muamulaat', 70)
+VALUES ('Mamulat', 'معاملات', 'mamulat', 70)
 ON CONFLICT DO NOTHING;

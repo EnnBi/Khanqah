@@ -35,7 +35,7 @@ const CONTENT_TYPES: ContentTypeOption[] = [
   { value: 'quran', label: 'Quran' },
   { value: 'hamd_naat', label: 'Hamd & Naat' },
   { value: 'book', label: 'Book' },
-  { value: 'muamulaat', label: 'Muamulaat' },
+  { value: 'mamulat', label: 'Mamulat' },
 ];
 
 export default function UploadContentScreen() {

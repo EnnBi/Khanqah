@@ -32,7 +32,7 @@ const TYPE_KICKER: Record<string, string> = {
   quran: 'QURAN · RECITATION',
   hamd_naat: 'HAMD & NAAT',
   book: 'BOOKS · TEXTS',
-  muamulaat: 'MUAMULAAT · DEALINGS',
+  mamulat: 'MAMULAT · DEALINGS',
 };
 
 export default function CategoryListingScreen() {
