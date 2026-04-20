@@ -141,7 +141,7 @@ export default function LoginScreen() {
         <View style={styles.logoBlock}>
           <Text style={[styles.logoTitle, { color: c.primary }]}>Ar-Rashid</Text>
           <Text style={[styles.logoSubtitle, { color: c.textSecondary }]}>
-            Khanqah
+            Khanqah Maseeh-ul-Ummah
           </Text>
           <Text style={[styles.logoUrdu, { color: c.gold }]}>
             خانقاہ مسیح الامت
