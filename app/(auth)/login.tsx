@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../providers/ThemeProvider';
@@ -139,7 +140,12 @@ export default function LoginScreen() {
       >
         {/* Logo block */}
         <View style={styles.logoBlock}>
-          <Text style={[styles.logoTitle, { color: c.primary }]}>Ar-Rashid</Text>
+          <Image
+            source={require('../../assets/images/icon.png')}
+            style={styles.logoMark}
+            resizeMode="contain"
+            accessibilityLabel="Ar-Rashid"
+          />
           <Text style={[styles.logoSubtitle, { color: c.textSecondary }]}>
             Khanqah Maseeh-ul-Ummah
           </Text>
@@ -386,11 +392,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 40,
   },
-  logoTitle: {
-    fontFamily: 'CrimsonPro-SemiBold',
-    fontSize: 48,
-    letterSpacing: 0.5,
-    marginBottom: 2,
+  logoMark: {
+    width: 180,
+    height: 180,
+    marginBottom: 8,
   },
   logoSubtitle: {
     fontFamily: 'CrimsonPro-Italic',
