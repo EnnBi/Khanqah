@@ -5,6 +5,7 @@ import {
   FlatList,
   ActivityIndicator,
   StyleSheet,
+  TextInput,
   TouchableOpacity,
   RefreshControl,
 } from 'react-native';
@@ -18,6 +19,10 @@ import { useTheme } from '../../providers/ThemeProvider';
 import { useI18n } from '../../providers/I18nProvider';
 
 const PAGE_SIZE = 20;
+
+// Same set as hooks/useContent.ts::useSearchContent — strip chars that
+// would break out of a PostgREST filter expression.
+const SANITIZE_RE = /[,%()\\]/g;
 
 // Map content type to a display kicker label
 const TYPE_KICKER: Record<string, string> = {
@@ -43,6 +48,8 @@ export default function CategoryListingScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
 
   const c = theme.colors;
 
@@ -59,6 +66,14 @@ export default function CategoryListingScreen() {
       });
   }, [categoryId]);
 
+  // Debounce typed input by 300ms so each keystroke doesn't fire a fetch.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedQuery(query.trim().replace(SANITIZE_RE, ''));
+    }, 300);
+    return () => clearTimeout(t);
+  }, [query]);
+
   // Initial fetch
   const fetchContent = useCallback(
     async (fromStart = true) => {
@@ -72,10 +87,19 @@ export default function CategoryListingScreen() {
 
       const offset = fromStart ? 0 : content.length;
 
-      const { data, error } = await supabase
+      let builder = supabase
         .from('content')
         .select('*')
-        .eq('category_id', categoryId)
+        .eq('category_id', categoryId);
+
+      if (debouncedQuery) {
+        const q = debouncedQuery;
+        builder = builder.or(
+          `title_en.ilike.%${q}%,title_ur.ilike.%${q}%,credit_en.ilike.%${q}%,credit_ur.ilike.%${q}%`,
+        );
+      }
+
+      const { data, error } = await builder
         .order('created_at', { ascending: false })
         .range(offset, offset + PAGE_SIZE - 1);
 
@@ -91,22 +115,31 @@ export default function CategoryListingScreen() {
       if (fromStart) setLoading(false);
       else setLoadingMore(false);
     },
-    [categoryId, content.length],
+    [categoryId, content.length, debouncedQuery],
   );
 
   useEffect(() => {
     fetchContent(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoryId]);
+  }, [categoryId, debouncedQuery]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     if (!categoryId) { setRefreshing(false); return; }
 
-    const { data, error } = await supabase
+    let builder = supabase
       .from('content')
       .select('*')
-      .eq('category_id', categoryId)
+      .eq('category_id', categoryId);
+
+    if (debouncedQuery) {
+      const q = debouncedQuery;
+      builder = builder.or(
+        `title_en.ilike.%${q}%,title_ur.ilike.%${q}%,credit_en.ilike.%${q}%,credit_ur.ilike.%${q}%`,
+      );
+    }
+
+    const { data, error } = await builder
       .order('created_at', { ascending: false })
       .range(0, PAGE_SIZE - 1);
 
@@ -115,7 +148,7 @@ export default function CategoryListingScreen() {
       setHasMore(data.length === PAGE_SIZE);
     }
     setRefreshing(false);
-  }, [categoryId]);
+  }, [categoryId, debouncedQuery]);
 
   const handleEndReached = useCallback(() => {
     if (!loadingMore && hasMore && !loading) {
@@ -215,8 +248,23 @@ export default function CategoryListingScreen() {
       {!loading && (
         <Text style={[styles.heroCount, { color: 'rgba(247,245,240,0.55)' }]}>
           {contentCount} {contentCount === 1 ? 'ITEM' : 'ITEMS'}
+          {debouncedQuery ? ' MATCHING' : ''}
         </Text>
       )}
+
+      {/* Inline search — title or credit, scoped to this category */}
+      <TextInput
+        style={[
+          styles.searchInput,
+          { backgroundColor: 'rgba(247,245,240,0.12)', color: '#f7f5f0' },
+        ]}
+        placeholder="Search title or credit…"
+        placeholderTextColor="rgba(247,245,240,0.55)"
+        value={query}
+        onChangeText={setQuery}
+        autoCapitalize="none"
+        returnKeyType="search"
+      />
     </View>
   );
 
@@ -332,6 +380,14 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
     textTransform: 'uppercase',
     marginTop: 4,
+  },
+  searchInput: {
+    marginTop: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 8,
+    fontFamily: 'DMSans',
+    fontSize: 14,
   },
 
   // List
