@@ -15,7 +15,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { supabase } from '../../lib/supabase';
-import { Content, ContentType } from '../../lib/types';
+import { Content, ContentType, pickCredit } from '../../lib/types';
 import { usePlayer } from '../../hooks/usePlayer';
 import { useSafeBack } from '../../hooks/useSafeBack';
 import { useTheme } from '../../providers/ThemeProvider';
@@ -223,6 +223,8 @@ export default function PlayerScreen() {
       : content.title_en
     : '';
 
+  const credit = content ? pickCredit(content, language) : null;
+
   const contentSymbol = content ? (TYPE_SYMBOL[content.type] ?? '♪') : '♪';
 
   // Attach listeners to the local <video> element so our custom chrome
@@ -363,9 +365,11 @@ export default function PlayerScreen() {
           >
             {title || '—'}
           </Text>
-          <Text style={[styles.trackArtist, { color: c.textMuted }]} numberOfLines={1}>
-            Hazrat Mufti Abdur Rasheed Miftahi Sahab
-          </Text>
+          {credit ? (
+            <Text style={[styles.trackArtist, { color: c.textMuted }]} numberOfLines={1}>
+              {credit}
+            </Text>
+          ) : null}
         </View>
 
         {/* ── Mirror-processing placeholder (no media_url yet) ── */}
