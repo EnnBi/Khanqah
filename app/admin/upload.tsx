@@ -53,6 +53,8 @@ export default function UploadContentScreen() {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [mediaUrl, setMediaUrl] = useState('');
   const [thumbnailUrl, setThumbnailUrl] = useState('');
+  const [creditEn, setCreditEn] = useState('');
+  const [creditUr, setCreditUr] = useState('');
 
   // Category picker state
   const [categories, setCategories] = useState<Category[]>([]);
@@ -96,6 +98,8 @@ export default function UploadContentScreen() {
       setTitleUr(data.title_ur ?? '');
       setMediaUrl(data.media_url ?? '');
       setThumbnailUrl(data.thumbnail_url ?? '');
+      setCreditEn(data.credit_en ?? '');
+      setCreditUr(data.credit_ur ?? '');
       // category will be resolved once categories load
       setPendingCategoryId(data.category_id ?? null);
       setLoadingEdit(false);
@@ -176,6 +180,8 @@ export default function UploadContentScreen() {
         category_id: selectedCategory.id,
         media_url: mediaUrl.trim(),
         thumbnail_url: thumbnailUrl.trim() || null,
+        credit_en: creditEn.trim() || null,
+        credit_ur: creditUr.trim() || null,
         is_video: isVideo,
       }).eq('id', editId));
     } else {
@@ -185,6 +191,8 @@ export default function UploadContentScreen() {
         type: selectedType,
         category_id: selectedCategory.id,
         thumbnail_url: thumbnailUrl.trim() || null,
+        credit_en: creditEn.trim() || null,
+        credit_ur: creditUr.trim() || null,
         description_en: null,
         description_ur: null,
         duration: null,
@@ -587,6 +595,30 @@ export default function UploadContentScreen() {
               placeholderTextColor={c.textMuted}
               value={titleUr}
               onChangeText={setTitleUr}
+              textAlign="right"
+              returnKeyType="next"
+            />
+          </View>
+
+          {/* Credit (English) */}
+          <Text style={styles.sectionLabel}>CREDIT</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Speaker, reciter, author…"
+            placeholderTextColor={c.textMuted}
+            value={creditEn}
+            onChangeText={setCreditEn}
+            returnKeyType="next"
+          />
+
+          {/* Credit (Urdu) */}
+          <View style={{ marginTop: 10 }}>
+            <TextInput
+              style={[styles.input, styles.inputRtl]}
+              placeholder="مقرر، قاری، مصنف…"
+              placeholderTextColor={c.textMuted}
+              value={creditUr}
+              onChangeText={setCreditUr}
               textAlign="right"
               returnKeyType="next"
             />
