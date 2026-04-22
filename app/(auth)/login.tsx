@@ -141,7 +141,7 @@ export default function LoginScreen() {
         {/* Logo block */}
         <View style={styles.logoBlock}>
           <Image
-            source={require('../../assets/images/icon.png')}
+            source={require('../../assets/images/khanqah-logo.png')}
             style={styles.logoMark}
             resizeMode="contain"
             accessibilityLabel="Ar-Rashid"
