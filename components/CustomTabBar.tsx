@@ -1,125 +1,65 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { Feather } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
 import { useTheme } from '../providers/ThemeProvider';
-import { useAuth } from '../providers/AuthProvider';
 
-type IconName = React.ComponentProps<typeof Feather>['name'];
-
-// Map tab route names → icon + label config
-const TAB_CONFIG: Record<string, { icon: IconName; iconActive?: IconName; label: string }> = {
-  index:      { icon: 'home',     label: 'Home' },
-  library:    { icon: 'grid',     label: 'Library' },
-  collection: { icon: 'bookmark', label: 'Saved' },
-  profile:    { icon: 'user',     label: 'Profile' },
+const ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
+  index: 'home-outline',
+  bayanaat: 'mic-outline',
+  clips: 'play-circle-outline',
+  ashaar: 'musical-notes-outline',
+  books: 'book-outline',
 };
 
-// Admin tab uses a different icon
-const ADMIN_CONFIG = { icon: 'sliders' as IconName, label: 'Admin' };
+const LABELS: Record<string, string> = {
+  index: 'Home',
+  bayanaat: 'Bayanaat',
+  clips: 'Clips',
+  ashaar: 'Ashaar',
+  books: 'Books',
+};
 
-export function CustomTabBar(props: BottomTabBarProps) {
-  const { state, descriptors, navigation } = props;
+export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const { theme } = useTheme();
-  const { user, isAdmin, isEditor } = useAuth();
-  const router = useRouter();
   const c = theme.colors;
   const insets = useSafeAreaInsets();
-  const isPrivileged = isAdmin || isEditor;
+
+  const order = ['index', 'bayanaat', 'clips', 'ashaar', 'books'];
+  const visible = state.routes
+    .map((r) => ({ route: r, index: state.routes.indexOf(r) }))
+    .filter(({ route }) => order.includes(route.name))
+    .sort((a, b) => order.indexOf(a.route.name) - order.indexOf(b.route.name));
 
   return (
-    <View
-      style={[
-        styles.wrap,
-        {
-          backgroundColor: c.surface,
-          borderTopColor: c.hairline,
-          paddingBottom: Math.max(insets.bottom, 10),
-        },
-      ]}
-    >
-      {/* Hairline gold accent at top */}
-      <View style={[styles.topAccent, { backgroundColor: c.accent }]} />
-
-      <View style={styles.row}>
-        {state.routes.map((route, index) => {
-          const { options } = descriptors[route.key];
-          const isFocused = state.index === index;
-
-          // Skip hidden routes (href === null means hidden from tab bar)
-          if ((options as any).href === null) return null;
-
-          // Hide the Collection/Saved tab for guests — they have nothing saved
-          if (route.name === 'collection' && !user) return null;
-
-          const config = TAB_CONFIG[route.name] ?? { icon: 'circle' as IconName, label: route.name };
-
-          // Profile tab becomes Admin for privileged users
-          const isAdminTab = route.name === 'profile' && isPrivileged;
-          const iconName = isAdminTab ? ADMIN_CONFIG.icon : config.icon;
-          const displayLabel = isAdminTab ? ADMIN_CONFIG.label : config.label;
-
-          const onPress = () => {
-            const event = navigation.emit({
-              type: 'tabPress',
-              target: route.key,
-              canPreventDefault: true,
-            });
-            if (event.defaultPrevented) return;
-
-            // Admin users: the "profile" tab should route to the admin dashboard
-            if (isAdminTab) {
-              router.push('/admin' as any);
-              return;
-            }
-
-            if (!isFocused) {
-              navigation.navigate(route.name as never);
-            }
-          };
-
-          const onLongPress = () => {
-            navigation.emit({ type: 'tabLongPress', target: route.key });
-          };
-
-          const activeColor = isAdminTab ? c.accent : c.primary;
-          const inactiveColor = c.textMuted;
-          const color = isFocused ? activeColor : inactiveColor;
-
+    <View style={[styles.wrap, { bottom: 12 + insets.bottom / 2 }]} pointerEvents="box-none">
+      <View style={[styles.pill, { backgroundColor: c.primary }]}>
+        {visible.map(({ route, index }) => {
+          const focused = state.index === index;
+          const color = focused ? c.accent : 'rgba(247,245,240,0.55)';
+          const icon = ICONS[route.name] || 'ellipse-outline';
+          const label = LABELS[route.name] || route.name;
           return (
             <TouchableOpacity
               key={route.key}
               accessibilityRole="button"
-              accessibilityState={isFocused ? { selected: true } : {}}
-              accessibilityLabel={options.tabBarAccessibilityLabel}
-              onPress={onPress}
-              onLongPress={onLongPress}
+              accessibilityState={focused ? { selected: true } : {}}
+              onPress={() => {
+                const event = navigation.emit({
+                  type: 'tabPress',
+                  target: route.key,
+                  canPreventDefault: true,
+                });
+                if (!focused && !event.defaultPrevented) {
+                  navigation.navigate(route.name as never);
+                }
+              }}
               style={styles.tab}
-              activeOpacity={0.7}
+              activeOpacity={0.8}
             >
-              {/* Active indicator dot */}
-              {isFocused && (
-                <View style={[styles.activeDot, { backgroundColor: c.accent }]} />
-              )}
-
-              <View style={styles.iconWrap}>
-                <Feather name={iconName} size={20} color={color} strokeWidth={isFocused ? 2 : 1.6} />
-              </View>
-
-              <Text
-                style={[
-                  styles.label,
-                  {
-                    color,
-                    fontFamily: isFocused ? 'DMSans-SemiBold' : 'DMSans-Medium',
-                  },
-                ]}
-                numberOfLines={1}
-              >
-                {displayLabel}
-              </Text>
+              <Ionicons name={icon} size={20} color={color} />
+              <Text style={[styles.label, { color }]}>{label}</Text>
             </TouchableOpacity>
           );
         })}
@@ -130,30 +70,23 @@ export function CustomTabBar(props: BottomTabBarProps) {
 
 const styles = StyleSheet.create({
   wrap: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    paddingTop: 10,
-    paddingHorizontal: 8,
-    // Subtle shadow lifting the bar
-    shadowColor: '#0f2e24',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 4,
-    position: 'relative',
-  },
-  topAccent: {
     position: 'absolute',
-    top: 0,
-    left: '40%',
-    right: '40%',
-    height: 2,
-    borderRadius: 1,
-  },
-  row: {
-    flexDirection: 'row',
+    left: 0,
+    right: 0,
     alignItems: 'center',
-    justifyContent: 'space-around',
-    paddingHorizontal: 8,
+  },
+  pill: {
+    flexDirection: 'row',
+    paddingHorizontal: 6,
+    paddingVertical: 8,
+    borderRadius: 28,
+    gap: 2,
+    shadowColor: '#0f2e24',
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 6,
+    minWidth: 320,
   },
   tab: {
     flex: 1,
@@ -161,25 +94,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 6,
     paddingHorizontal: 4,
-    position: 'relative',
-  },
-  activeDot: {
-    position: 'absolute',
-    top: -4,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-  },
-  iconWrap: {
-    height: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 4,
+    borderRadius: 22,
   },
   label: {
+    fontFamily: 'DMSans-Medium',
     fontSize: 10,
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
-    textAlign: 'center',
+    marginTop: 2,
   },
 });
