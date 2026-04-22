@@ -37,7 +37,11 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
       <View style={[styles.pill, { backgroundColor: c.primary }]}>
         {visible.map(({ route, index }) => {
           const focused = state.index === index;
-          const color = focused ? c.accent : 'rgba(247,245,240,0.55)';
+          // `c.onPrimary` contrasts with `c.primary` in both themes:
+          // light → gold on forest, dark → forest on gold. Using
+          // `c.accent` (always gold) made the active tab invisible on
+          // the dark-mode gold pill.
+          const color = focused ? c.onPrimary : `${c.onPrimary}8c`;
           const icon = ICONS[route.name] || 'ellipse-outline';
           const label = LABELS[route.name] || route.name;
           return (
@@ -60,6 +64,9 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
             >
               <Ionicons name={icon} size={20} color={color} />
               <Text style={[styles.label, { color }]}>{label}</Text>
+              {focused ? (
+                <View style={[styles.indicator, { backgroundColor: color }]} />
+              ) : null}
             </TouchableOpacity>
           );
         })}
@@ -100,5 +107,11 @@ const styles = StyleSheet.create({
     fontFamily: 'DMSans-Medium',
     fontSize: 10,
     marginTop: 2,
+  },
+  indicator: {
+    width: 14,
+    height: 2,
+    borderRadius: 1,
+    marginTop: 3,
   },
 });
