@@ -25,8 +25,14 @@ export function useLiveSession() {
 
     fetchLive();
 
+    // Channel name must be unique per hook instance. supabase-js reuses a
+    // channel with a shared name, and calling `.on()` after another caller's
+    // `.subscribe()` throws "cannot add postgres_changes callbacks after
+    // subscribe()". Multiple components call this hook (home screen + live
+    // card) so give each mount its own channel.
+    const channelName = `live_sessions_changes_${Math.random().toString(36).slice(2, 10)}`;
     const channel = supabase
-      .channel('live_sessions_changes')
+      .channel(channelName)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'live_sessions' },
