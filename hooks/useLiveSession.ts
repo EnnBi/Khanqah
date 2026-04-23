@@ -10,6 +10,15 @@ export function useLiveSession() {
     let cancelled = false;
 
     async function fetchLive() {
+      // Auto-close sessions whose heartbeat is older than 90 s — covers
+      // tab-close / crash where the admin never hit Stop.
+      const cutoff = new Date(Date.now() - 90_000).toISOString();
+      await supabase
+        .from('live_sessions')
+        .update({ status: 'ended', ended_at: new Date().toISOString() })
+        .eq('status', 'live')
+        .lt('last_heartbeat_at', cutoff);
+
       const { data } = await supabase
         .from('live_sessions')
         .select('*')

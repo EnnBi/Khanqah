@@ -18,7 +18,7 @@ import { ContentCard } from '../../components/ContentCard';
 export default function HomeScreen() {
   const { theme } = useTheme();
   const { language } = useI18n();
-  const { isAdmin, isEditor } = useAuth();
+  const { user, isAdmin, isEditor } = useAuth();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const c = theme.colors;
@@ -54,8 +54,12 @@ export default function HomeScreen() {
     else router.push('/library');
   };
   const onLiveSessions = () => {
-    if (live) router.push('/player/live');
-    else if (liveCategory) router.push(`/library/${liveCategory.id}`);
+    if (live) {
+      if (user?.id === live.started_by) router.push('/admin/go-live');
+      else router.push('/player/live');
+      return;
+    }
+    if (liveCategory) router.push(`/library/${liveCategory.id}`);
     else router.push('/library');
   };
   const onMajlisTimings = () => {
