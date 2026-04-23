@@ -82,7 +82,7 @@ export function FilteredContentList({ kicker, types }: FilteredContentListProps)
     <ContentCard
       content={item}
       onPress={() =>
-        item.type === 'book'
+        isBookContent(item)
           ? router.push(`/book/${item.id}`)
           : router.push(`/player/${item.id}`)
       }
