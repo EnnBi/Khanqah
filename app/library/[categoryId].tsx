@@ -75,10 +75,15 @@ export default function CategoryListingScreen() {
     return () => clearTimeout(t);
   }, [query]);
 
-  // Initial fetch
+  // Initial fetch. Belt-and-braces: filter by both category_id AND the
+  // category's own type, so a content row whose category_id was saved with
+  // a mismatched type (e.g. a book row filed under a 'bayan' category)
+  // doesn't leak into the wrong category page. Queries are deferred until
+  // we know the category's type.
+  const categoryType = category?.type ?? null;
   const fetchContent = useCallback(
     async (fromStart = true) => {
-      if (!categoryId) return;
+      if (!categoryId || !categoryType) return;
 
       if (fromStart) {
         setLoading(true);
@@ -91,7 +96,8 @@ export default function CategoryListingScreen() {
       let builder = supabase
         .from('content')
         .select('*')
-        .eq('category_id', categoryId);
+        .eq('category_id', categoryId)
+        .eq('type', categoryType);
 
       if (debouncedQuery) {
         const q = debouncedQuery;
@@ -116,22 +122,23 @@ export default function CategoryListingScreen() {
       if (fromStart) setLoading(false);
       else setLoadingMore(false);
     },
-    [categoryId, content.length, debouncedQuery],
+    [categoryId, categoryType, content.length, debouncedQuery],
   );
 
   useEffect(() => {
     fetchContent(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoryId, debouncedQuery]);
+  }, [categoryId, categoryType, debouncedQuery]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    if (!categoryId) { setRefreshing(false); return; }
+    if (!categoryId || !categoryType) { setRefreshing(false); return; }
 
     let builder = supabase
       .from('content')
       .select('*')
-      .eq('category_id', categoryId);
+      .eq('category_id', categoryId)
+      .eq('type', categoryType);
 
     if (debouncedQuery) {
       const q = debouncedQuery;
@@ -149,7 +156,7 @@ export default function CategoryListingScreen() {
       setHasMore(data.length === PAGE_SIZE);
     }
     setRefreshing(false);
-  }, [categoryId, debouncedQuery]);
+  }, [categoryId, categoryType, debouncedQuery]);
 
   const handleEndReached = useCallback(() => {
     if (!loadingMore && hasMore && !loading) {
