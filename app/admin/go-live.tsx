@@ -147,6 +147,22 @@ export default function GoLiveScreen() {
     return () => clearInterval(t);
   }, [active]);
 
+  // Listener count via the same presence channel listeners join in
+  // app/player/live.tsx. We don't track ourselves (broadcaster isn't a
+  // listener) — just read the presence state and count unique keys.
+  const [listenerCount, setListenerCount] = useState(0);
+  useEffect(() => {
+    if (!active) { setListenerCount(0); return; }
+    const channel = supabase.channel(`live:${active.id}`);
+    channel
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState();
+        setListenerCount(Object.keys(state).length);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [active]);
+
   if (active) {
     const mm = Math.floor(elapsed / 60).toString().padStart(2, '0');
     const ss = (elapsed % 60).toString().padStart(2, '0');
@@ -161,6 +177,9 @@ export default function GoLiveScreen() {
         </Text>
         <Text style={{ color: c.accent, fontSize: 36, fontFamily: 'CrimsonPro-SemiBold', textAlign: 'center', marginTop: 24 }}>
           {mm}:{ss}
+        </Text>
+        <Text style={{ color: c.textMuted, fontFamily: 'DMSans-Medium', fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', textAlign: 'center', marginTop: 10 }}>
+          {listenerCount} {listenerCount === 1 ? 'Listener' : 'Listeners'}
         </Text>
         <TouchableOpacity
           onPress={onStop}

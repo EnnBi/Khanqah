@@ -14,7 +14,7 @@ import { useRouter } from 'expo-router';
 import { useSafeBack } from '../../hooks/useSafeBack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSearchContent } from '../../hooks/useContent';
-import { Content } from '../../lib/types';
+import { Content, isBookContent } from '../../lib/types';
 import { ContentCard } from '../../components/ContentCard';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useI18n } from '../../providers/I18nProvider';
@@ -36,7 +36,7 @@ export default function SearchScreen() {
 
   const handlePress = useCallback(
     (item: Content) => {
-      if (item.type === 'book') {
+      if (isBookContent(item)) {
         router.push(`/book/${item.id}` as any);
       } else {
         router.push(`/player/${item.id}` as any);

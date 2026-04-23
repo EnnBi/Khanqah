@@ -13,7 +13,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeBack } from '../../hooks/useSafeBack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
-import { Content, Category } from '../../lib/types';
+import { Content, Category, isBookContent } from '../../lib/types';
 import { ContentCard } from '../../components/ContentCard';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useI18n } from '../../providers/I18nProvider';
@@ -166,7 +166,7 @@ export default function CategoryListingScreen() {
 
   const handlePress = useCallback(
     (item: Content) => {
-      if (item.type === 'book') {
+      if (isBookContent(item)) {
         router.push(`/book/${item.id}` as any);
       } else {
         router.push(`/player/${item.id}` as any);

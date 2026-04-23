@@ -97,3 +97,15 @@ export function pickCredit(
   const value = (primary && primary.trim()) || (fallback && fallback.trim()) || null;
   return value;
 }
+
+// Whether a content row should open in the PDF reader instead of the
+// audio/video player. Mostly driven by content.type === 'book', but also
+// sniffs the media_url extension so rows filed under non-book types
+// (e.g. a mamulat PDF like Munajaat e Maqbool) still render correctly.
+export function isBookContent(
+  content: Pick<Content, 'type' | 'media_url'>,
+): boolean {
+  if (content.type === 'book') return true;
+  const url = (content.media_url || '').split('?')[0].split('#')[0].toLowerCase();
+  return url.endsWith('.pdf');
+}

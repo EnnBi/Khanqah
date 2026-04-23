@@ -3,7 +3,7 @@ import { View, Text, ScrollView, StyleSheet, FlatList, TouchableOpacity } from '
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
-import { Category } from '../../lib/types';
+import { Category, isBookContent } from '../../lib/types';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useI18n } from '../../providers/I18nProvider';
 import { useAuth } from '../../providers/AuthProvider';
@@ -120,7 +120,7 @@ export default function HomeScreen() {
               <ContentCard
                 content={item}
                 onPress={() =>
-                  item.type === 'book'
+                  isBookContent(item)
                     ? router.push(`/book/${item.id}`)
                     : router.push(`/player/${item.id}`)
                 }
