@@ -33,15 +33,7 @@
     "plugins": [
       "expo-router",
       "expo-sqlite",
-      "expo-web-browser",
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "kotlinVersion": "1.9.25"
-          }
-        }
-      ]
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
