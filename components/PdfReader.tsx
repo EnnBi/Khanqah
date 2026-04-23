@@ -12,7 +12,11 @@ interface PdfReaderProps {
 
 function toViewerUrl(pdfUrl: string): string {
   if (Platform.OS === 'android') {
-    return `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(pdfUrl)}`;
+    // Mozilla's hosted pdf.js viewer ships with a toolbar that exposes
+    // page navigation (prev/next + page-number field) and zoom (+/−
+    // + fit-page). iOS WebView renders PDFs inline natively with its
+    // own controls, so we only need this shim on Android.
+    return `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(pdfUrl)}`;
   }
   return pdfUrl;
 }
