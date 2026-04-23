@@ -65,7 +65,7 @@ export default function UploadContentScreen() {
   const [mirrorFormat, setMirrorFormat] = useState<MirrorFormat>('audio');
 
   // Derive whether the pasted media URL is a YouTube link
-  const isYouTube = isYouTubeUrl(mediaUrl.trim());
+  const isYouTube = isYouTubeUrl(normalizedMediaUrl);
 
   // Default the toggle whenever the content type changes so clips prefer Video
   // and everything else prefers Audio. Users can still override.
@@ -154,7 +154,7 @@ export default function UploadContentScreen() {
       showMessage('Validation', 'Please select a category.');
       return;
     }
-    if (!mediaUrl.trim()) {
+    if (!normalizedMediaUrl) {
       showMessage('Validation', 'Please enter the media URL.');
       return;
     }
@@ -165,22 +165,34 @@ export default function UploadContentScreen() {
 
     setSubmitting(true);
 
-    const isYouTubeSubmit = isYouTubeUrl(mediaUrl.trim());
+    // Normalize the pasted URL. `encodeURI(decodeURI(...))` is idempotent:
+    // literal spaces become %20, already-encoded %20 stays %20, and
+    // accidental double-encoding like %2520 collapses back to %20.
+    // Falls back to the raw trimmed value if the URL is malformed.
+    const normalizeUrl = (raw: string): string => {
+      const v = raw.trim();
+      if (!v) return v;
+      try { return encodeURI(decodeURI(v)); } catch { return v; }
+    };
+    const normalizedMediaUrl = normalizeUrl(mediaUrl);
+    const normalizedThumbnailUrl = normalizeUrl(thumbnailUrl);
+
+    const isYouTubeSubmit = isYouTubeUrl(normalizedMediaUrl);
 
     let error;
 
     if (editId) {
       const isVideo =
         isYouTubeSubmit ||
-        isDirectVideoUrl(mediaUrl.trim()) ||
+        isDirectVideoUrl(normalizedMediaUrl) ||
         selectedType === 'clip';
       ({ error } = await supabase.from('content').update({
         title_en: titleEn.trim(),
         title_ur: titleUr.trim(),
         type: selectedType,
         category_id: selectedCategory.id,
-        media_url: mediaUrl.trim(),
-        thumbnail_url: thumbnailUrl.trim() || null,
+        media_url: normalizedMediaUrl,
+        thumbnail_url: normalizedThumbnailUrl || null,
         credit_en: creditEn.trim() || null,
         credit_ur: creditUr.trim() || null,
         is_video: isVideo,
@@ -191,7 +203,7 @@ export default function UploadContentScreen() {
         title_ur: titleUr.trim(),
         type: selectedType,
         category_id: selectedCategory.id,
-        thumbnail_url: thumbnailUrl.trim() || null,
+        thumbnail_url: normalizedThumbnailUrl || null,
         credit_en: creditEn.trim() || null,
         credit_ur: creditUr.trim() || null,
         description_en: null,
@@ -203,18 +215,18 @@ export default function UploadContentScreen() {
 
       if (isYouTubeSubmit) {
         payload.media_url         = '';
-        payload.mirror_source_url = mediaUrl.trim();
+        payload.mirror_source_url = normalizedMediaUrl;
         payload.mirror_status     = 'pending';
         payload.mirror_format     = mirrorFormat;
         payload.is_video          = mirrorFormat === 'video';
       } else {
-        payload.media_url         = mediaUrl.trim();
+        payload.media_url         = normalizedMediaUrl;
         payload.mirror_status     = 'not_applicable';
         // Detect video from the file extension first (.mp4/.mov/etc.);
         // fall back to the content-type convention for URL shapes we
         // can't sniff (e.g. bare archive.org HLS manifests).
         payload.is_video          =
-          isDirectVideoUrl(mediaUrl.trim()) || selectedType === 'clip';
+          isDirectVideoUrl(normalizedMediaUrl) || selectedType === 'clip';
       }
 
       ({ error } = await supabase.from('content').insert(payload));
