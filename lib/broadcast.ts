@@ -107,13 +107,29 @@ export const broadcast = {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       state.mediaStream = stream;
 
-      // 2. Open WebSocket to relay.
+      // 2. Open WebSocket to relay. Mobile networks (5G with carrier
+      // middleboxes, spotty cell signal) can push the TLS + upgrade
+      // handshake past 10 s, so give it 20 s before giving up.
       const ws = new WebSocket(getRelayUrl());
       state.ws = ws;
       await new Promise<void>((resolve, reject) => {
-        const t = setTimeout(() => reject(new Error('Relay handshake timed out')), 10_000);
+        const t = setTimeout(
+          () => reject(new Error('Relay handshake timed out after 20s')),
+          20_000,
+        );
         ws.onopen = () => { clearTimeout(t); resolve(); };
-        ws.onerror = () => { clearTimeout(t); reject(new Error('Relay unreachable')); };
+        ws.onerror = () => {
+          clearTimeout(t);
+          reject(new Error('Relay unreachable'));
+        };
+        ws.onclose = (ev) => {
+          // If the socket closes before onopen fires, surface the close
+          // code so the user (and logs) see something actionable.
+          if (ws.readyState !== WebSocket.OPEN) {
+            clearTimeout(t);
+            reject(new Error(`Relay closed before handshake (code ${ev.code})`));
+          }
+        };
       });
 
       // 3. Insert (or reuse) the live_sessions row.
