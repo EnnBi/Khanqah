@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ResizeMode, Video } from 'expo-av';
 
 import { supabase } from '../../lib/supabase';
 import { Content, ContentType, pickCredit } from '../../lib/types';
@@ -121,14 +122,18 @@ export default function PlayerScreen() {
       });
   }, [id]);
 
-  // Start playback if this content isn't already playing
+  // Start playback if this content isn't already playing. Skip for
+  // YouTube and direct-video URLs — those have their own in-page
+  // players (YouTubeEmbed, HTML5 <video> on web, expo-av Video on
+  // native) and must not be pushed through PlayerProvider's audio path.
   useEffect(() => {
     if (!content) return;
     if (!content.media_url) return;
+    if (isYouTube || isDirectVideo) return;
     if (currentContent?.id !== content.id) {
       playContent(content);
     }
-  }, [content]);
+  }, [content, isYouTube, isDirectVideo]);
 
   // Cycle through speed options — video uses the local element, audio
   // routes through the PlayerProvider as before.
@@ -322,8 +327,16 @@ export default function PlayerScreen() {
                     display: 'block',
                   },
                 })
-              : null}
-            {activeBuffering && (
+              : (
+                <Video
+                  source={{ uri: content.media_url }}
+                  style={{ width: '100%', aspectRatio: 16 / 9, borderRadius: 8, backgroundColor: '#000' }}
+                  resizeMode={ResizeMode.CONTAIN}
+                  useNativeControls
+                  shouldPlay
+                />
+              )}
+            {activeBuffering && Platform.OS === 'web' && (
               <View style={styles.mediaBufferingOverlay} pointerEvents="none">
                 <ActivityIndicator size="large" color={c.gold} />
               </View>
@@ -385,7 +398,7 @@ export default function PlayerScreen() {
         )}
 
         {/* ── Progress Bar (hidden for YouTube or when media_url is absent) ── */}
-        {!isYouTube && !!content?.media_url && (
+        {!isYouTube && !(isDirectVideo && Platform.OS !== 'web') && !!content?.media_url && (
         <View style={styles.progressSection}>
           <View
             ref={progressBarRef}
@@ -415,7 +428,7 @@ export default function PlayerScreen() {
         )}
 
         {/* ── Player Controls (hidden for YouTube or when media_url is absent) ── */}
-        {!isYouTube && !!content?.media_url && (
+        {!isYouTube && !(isDirectVideo && Platform.OS !== 'web') && !!content?.media_url && (
         <View style={styles.controlsRow}>
           {/* Previous */}
           <TouchableOpacity
@@ -476,7 +489,7 @@ export default function PlayerScreen() {
         )}
 
         {/* ── Speed pill (hidden for YouTube or when media_url is absent) ── */}
-        {!isYouTube && !!content?.media_url && (
+        {!isYouTube && !(isDirectVideo && Platform.OS !== 'web') && !!content?.media_url && (
         <View style={styles.speedRow}>
           <TouchableOpacity
             onPress={handleSpeedPress}
