@@ -51,6 +51,11 @@ export default function ScheduleScreen() {
               <Text style={[styles.rowTitle, { color: c.text }]}>
                 {item.title_en || item.title_ur}
               </Text>
+              {(item.description_en || item.description_ur) ? (
+                <Text style={[styles.rowDesc, { color: c.textMuted }]}>
+                  {item.description_en || item.description_ur}
+                </Text>
+              ) : null}
             </View>
           )}
         />
@@ -67,4 +72,5 @@ const styles = StyleSheet.create({
   row: { padding: 14, borderRadius: 12, borderWidth: 1, marginBottom: 10 },
   when: { fontFamily: 'DMSans-Medium', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase' },
   rowTitle: { fontFamily: 'CrimsonPro-Medium', fontSize: 16, marginTop: 4 },
+  rowDesc: { fontFamily: 'CrimsonPro', fontSize: 13, lineHeight: 18, marginTop: 4 },
 });
