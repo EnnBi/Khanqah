@@ -16,7 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PdfReader } from '../../components/PdfReader';
 
 import { supabase } from '../../lib/supabase';
-import { Content, pickCredit } from '../../lib/types';
+import { Content, pickCredit, isBookContent } from '../../lib/types';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useI18n } from '../../providers/I18nProvider';
 
@@ -53,7 +53,7 @@ export default function BookViewerScreen() {
       .then(({ data, error: fetchError }) => {
         if (fetchError || !data) {
           setError('Content not found.');
-        } else if ((data as Content).type !== 'book') {
+        } else if (!isBookContent(data as Content)) {
           setError('This content is not a book.');
         } else {
           setContent(data as Content);
