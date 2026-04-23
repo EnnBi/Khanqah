@@ -65,7 +65,7 @@ export default function UploadContentScreen() {
   const [mirrorFormat, setMirrorFormat] = useState<MirrorFormat>('audio');
 
   // Derive whether the pasted media URL is a YouTube link
-  const isYouTube = isYouTubeUrl(normalizedMediaUrl);
+  const isYouTube = isYouTubeUrl(mediaUrl.trim());
 
   // Default the toggle whenever the content type changes so clips prefer Video
   // and everything else prefers Audio. Users can still override.
@@ -154,7 +154,7 @@ export default function UploadContentScreen() {
       showMessage('Validation', 'Please select a category.');
       return;
     }
-    if (!normalizedMediaUrl) {
+    if (!mediaUrl.trim()) {
       showMessage('Validation', 'Please enter the media URL.');
       return;
     }
