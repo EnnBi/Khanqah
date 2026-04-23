@@ -1,13 +1,19 @@
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import TrackPlayer, {
-  State,
-  useActiveTrack,
-  usePlaybackState,
-  useProgress,
-} from 'react-native-track-player';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+import {
+  Audio,
+  AVPlaybackStatus,
+  InterruptionModeAndroid,
+  InterruptionModeIOS,
+} from 'expo-av';
 
 import { Content } from '../lib/types';
-import { setupPlayer } from '../services/player-service';
 import { saveProgress } from '../hooks/useListeningProgress';
 import { useAuth } from '../hooks/useAuth';
 
@@ -49,95 +55,150 @@ const PlayerContext = createContext<PlayerContextValue>({
   stop: async () => {},
 });
 
-function contentToTrack(content: Content, language: string = 'en') {
-  return {
-    id: content.id,
-    url: content.media_url,
-    title: language === 'ur' ? content.title_ur : content.title_en,
-    artist: 'Mufti Abdur Rasheed Miftahi Sahab',
-    artwork: content.thumbnail_url ?? undefined,
-    duration: content.duration ?? undefined,
-  };
-}
-
 function PlayerProviderInner({ children }: { children: React.ReactNode }) {
+  const soundRef = useRef<Audio.Sound | null>(null);
+  const queueRef = useRef<Content[]>([]);
+  const indexRef = useRef<number>(-1);
+
   const [currentContent, setCurrentContent] = useState<Content | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(false);
+  const [position, setPosition] = useState(0);
+  const [duration, setDuration] = useState(0);
   const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
-
-  const playbackState = usePlaybackState();
-  const progress = useProgress();
-  useActiveTrack(); // keep active track subscription alive
-
-  const isPlaying = playbackState.state === State.Playing;
-  const isBuffering = playbackState.state === State.Buffering;
 
   const { user } = useAuth();
 
-  // Auto-save progress every 10 seconds while playing
-  useEffect(() => {
-    if (!user?.id || !currentContent) return;
-
-    const interval = setInterval(async () => {
-      const { position: pos, duration: dur } = await TrackPlayer.getProgress();
-      if (pos <= 0) return;
-
-      const completed = dur > 0 && pos >= dur - 2;
-      saveProgress(user.id, currentContent.id, pos, completed);
-    }, 10_000);
-
-    return () => clearInterval(interval);
-  }, [user?.id, currentContent]);
-
-  const playContent = useCallback(async (content: Content) => {
-    const track = contentToTrack(content);
-    await TrackPlayer.reset();
-    await TrackPlayer.add(track);
-    await TrackPlayer.play();
-    setCurrentContent(content);
+  const onStatus = useCallback((status: AVPlaybackStatus) => {
+    if (!status.isLoaded) {
+      setIsPlaying(false);
+      setIsBuffering(false);
+      return;
+    }
+    setIsPlaying(status.isPlaying);
+    setIsBuffering(status.isBuffering);
+    setPosition((status.positionMillis ?? 0) / 1000);
+    if (status.durationMillis) setDuration(status.durationMillis / 1000);
   }, []);
 
+  const unload = useCallback(async () => {
+    const s = soundRef.current;
+    soundRef.current = null;
+    if (s) {
+      try { await s.unloadAsync(); } catch { /* noop */ }
+    }
+  }, []);
+
+  const loadAndPlay = useCallback(
+    async (content: Content) => {
+      await unload();
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: content.media_url },
+        {
+          shouldPlay: true,
+          rate: playbackSpeed,
+          shouldCorrectPitch: true,
+        },
+        onStatus,
+      );
+      soundRef.current = sound;
+      setCurrentContent(content);
+    },
+    [onStatus, playbackSpeed, unload],
+  );
+
+  const playContent = useCallback(
+    async (content: Content) => {
+      queueRef.current = [content];
+      indexRef.current = 0;
+      await loadAndPlay(content);
+    },
+    [loadAndPlay],
+  );
+
   const pause = useCallback(async () => {
-    await TrackPlayer.pause();
+    try { await soundRef.current?.pauseAsync(); } catch { /* noop */ }
   }, []);
 
   const resume = useCallback(async () => {
-    await TrackPlayer.play();
+    try { await soundRef.current?.playAsync(); } catch { /* noop */ }
   }, []);
 
   const seekTo = useCallback(async (seconds: number) => {
-    await TrackPlayer.seekTo(seconds);
+    try {
+      await soundRef.current?.setPositionAsync(Math.max(0, seconds) * 1000);
+    } catch { /* noop */ }
   }, []);
 
   const seekBy = useCallback(async (seconds: number) => {
-    const current = (await TrackPlayer.getProgress()).position;
-    await TrackPlayer.seekTo(current + seconds);
+    const s = soundRef.current;
+    if (!s) return;
+    try {
+      const status = await s.getStatusAsync();
+      if (!status.isLoaded) return;
+      const next = ((status.positionMillis ?? 0) + seconds * 1000);
+      await s.setPositionAsync(Math.max(0, next));
+    } catch { /* noop */ }
   }, []);
 
   const setSpeed = useCallback(async (rate: number) => {
-    await TrackPlayer.setRate(rate);
+    try {
+      await soundRef.current?.setRateAsync(rate, true);
+    } catch { /* noop */ }
     setPlaybackSpeed(rate);
   }, []);
 
   const skipToNext = useCallback(async () => {
-    await TrackPlayer.skipToNext();
-  }, []);
+    const next = indexRef.current + 1;
+    if (next >= queueRef.current.length) return;
+    indexRef.current = next;
+    await loadAndPlay(queueRef.current[next]);
+  }, [loadAndPlay]);
 
   const skipToPrevious = useCallback(async () => {
-    await TrackPlayer.skipToPrevious();
-  }, []);
+    const prev = indexRef.current - 1;
+    if (prev < 0) return;
+    indexRef.current = prev;
+    await loadAndPlay(queueRef.current[prev]);
+  }, [loadAndPlay]);
 
   const addToQueue = useCallback(async (contents: Content[]) => {
-    const tracks = contents.map((c) => contentToTrack(c));
-    await TrackPlayer.add(tracks);
+    queueRef.current = [...queueRef.current, ...contents];
   }, []);
 
   const stop = useCallback(async () => {
-    try {
-      await TrackPlayer.stop();
-      await TrackPlayer.reset();
-    } catch { /* no-op if TrackPlayer isn't set up yet */ }
+    await unload();
     setCurrentContent(null);
-  }, []);
+    setIsPlaying(false);
+    setPosition(0);
+    setDuration(0);
+    queueRef.current = [];
+    indexRef.current = -1;
+  }, [unload]);
+
+  useEffect(() => {
+    return () => {
+      void unload();
+    };
+  }, [unload]);
+
+  useEffect(() => {
+    if (!user?.id || !currentContent) return;
+    const interval = setInterval(async () => {
+      const s = soundRef.current;
+      if (!s) return;
+      try {
+        const status = await s.getStatusAsync();
+        if (!status.isLoaded) return;
+        const pos = (status.positionMillis ?? 0) / 1000;
+        if (pos <= 0) return;
+        const dur = (status.durationMillis ?? 0) / 1000;
+        const completed = dur > 0 && pos >= dur - 2;
+        saveProgress(user.id, currentContent.id, pos, completed);
+      } catch { /* noop */ }
+    }, 10_000);
+    return () => clearInterval(interval);
+  }, [user?.id, currentContent]);
 
   return (
     <PlayerContext.Provider
@@ -145,8 +206,8 @@ function PlayerProviderInner({ children }: { children: React.ReactNode }) {
         currentContent,
         isPlaying,
         isBuffering,
-        position: progress.position,
-        duration: progress.duration,
+        position,
+        duration,
         playbackSpeed,
         playContent,
         pause,
@@ -166,13 +227,24 @@ function PlayerProviderInner({ children }: { children: React.ReactNode }) {
 }
 
 export function PlayerProvider({ children }: { children: React.ReactNode }) {
-  const [playerReady, setPlayerReady] = useState(false);
+  const [audioReady, setAudioReady] = useState(false);
 
   useEffect(() => {
-    setupPlayer().then(() => setPlayerReady(true));
+    let cancelled = false;
+    Audio.setAudioModeAsync({
+      staysActiveInBackground: true,
+      playsInSilentModeIOS: true,
+      interruptionModeIOS: InterruptionModeIOS.DoNotMix,
+      interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
+      shouldDuckAndroid: false,
+      playThroughEarpieceAndroid: false,
+    })
+      .catch(() => { /* best-effort — still render children */ })
+      .finally(() => { if (!cancelled) setAudioReady(true); });
+    return () => { cancelled = true; };
   }, []);
 
-  if (!playerReady) return <>{children}</>;
+  if (!audioReady) return <>{children}</>;
 
   return <PlayerProviderInner>{children}</PlayerProviderInner>;
 }
