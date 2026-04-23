@@ -16,6 +16,18 @@ const { spawn } = require('child_process');
 const PORT = 3001;
 const RTMP_URL = 'rtmp://127.0.0.1:1935/live/stream';
 
+// How often to ping clients so we can detect dead connections that the OS
+// hasn't closed for us. If a client misses a pong we treat the socket as
+// dead and free the activeStream slot — otherwise a silent disconnect
+// (tab crash behind nginx's hour-long proxy_read_timeout) jams the relay
+// until the process is restarted.
+const PING_MS = 15_000;
+const PONG_GRACE_MS = 10_000;
+
+// If a connected client hasn't sent any data within this window, assume
+// it's dead and tear it down so a new broadcaster can claim the slot.
+const IDLE_MS = 45_000;
+
 const wss = new WebSocket.Server({ port: PORT });
 
 // Only allow one active stream at a time
@@ -31,23 +43,21 @@ wss.on('connection', (ws, req) => {
     return;
   }
 
-  // The first message is a JSON config packet that tells us the input format.
-  // Subsequent messages are binary audio data.
   let ffmpeg = null;
   let inputFormat = null;
   let configured = false;
+  let lastDataAt = Date.now();
+  let pongReceived = true;
+  let pingInterval = null;
+  let idleInterval = null;
 
   function startFfmpeg(format) {
-    // Low-latency flags applied to both formats: don't buffer incoming
-    // demuxed packets, don't reorder on output, and flush every packet
-    // to the RTMP sink as soon as ffmpeg has it.
     const lowLatencyInput = ['-fflags', 'nobuffer', '-flags', 'low_delay'];
     const lowLatencyOutput = ['-flush_packets', '1'];
 
     const args = format === 'pcm'
       ? [
           ...lowLatencyInput,
-          // expo-av on native sends raw PCM (16-bit LE, 44100 Hz, mono)
           '-f', 's16le',
           '-ar', '44100',
           '-ac', '1',
@@ -60,7 +70,6 @@ wss.on('connection', (ws, req) => {
         ]
       : [
           ...lowLatencyInput,
-          // Web MediaRecorder sends WebM/Opus
           '-f', 'webm',
           '-i', 'pipe:0',
           '-c:a', 'aac',
@@ -91,6 +100,8 @@ wss.on('connection', (ws, req) => {
   }
 
   function cleanup() {
+    if (pingInterval) { clearInterval(pingInterval); pingInterval = null; }
+    if (idleInterval) { clearInterval(idleInterval); idleInterval = null; }
     if (activeStream === ws) {
       activeStream = null;
     }
@@ -103,8 +114,34 @@ wss.on('connection', (ws, req) => {
 
   activeStream = ws;
 
+  // Heartbeat: ping every PING_MS; if no pong by the next tick, terminate
+  // the socket so a dead client can't keep the slot.
+  pingInterval = setInterval(() => {
+    if (!pongReceived) {
+      console.log('[relay] Client missed pong — terminating');
+      try { ws.terminate(); } catch (_) {}
+      cleanup();
+      return;
+    }
+    pongReceived = false;
+    try { ws.ping(); } catch (_) {}
+  }, PING_MS);
+
+  // Idle-data watchdog: if the client connected but never sends audio
+  // (or stops sending for IDLE_MS), reclaim the slot.
+  idleInterval = setInterval(() => {
+    if (Date.now() - lastDataAt > IDLE_MS) {
+      console.log('[relay] Client idle too long — terminating');
+      try { ws.close(4002, 'Idle timeout'); } catch (_) {}
+      cleanup();
+    }
+  }, Math.max(5_000, Math.floor(IDLE_MS / 2)));
+
+  ws.on('pong', () => { pongReceived = true; });
+
   ws.on('message', (data) => {
-    // First message: JSON config like { "format": "webm" } or { "format": "pcm" }
+    lastDataAt = Date.now();
+
     if (!configured) {
       try {
         const config = JSON.parse(data.toString());
@@ -115,7 +152,6 @@ wss.on('connection', (ws, req) => {
         ws.send(JSON.stringify({ status: 'ok', message: 'Streaming started' }));
         return;
       } catch (_) {
-        // Not JSON — assume webm and treat this as audio data
         inputFormat = 'webm';
         ffmpeg = startFfmpeg(inputFormat);
         configured = true;
@@ -123,13 +159,12 @@ wss.on('connection', (ws, req) => {
       }
     }
 
-    // Binary audio data
     if (ffmpeg && ffmpeg.stdin.writable) {
       ffmpeg.stdin.write(Buffer.isBuffer(data) ? data : Buffer.from(data));
     }
   });
 
-  ws.on('close', (code, reason) => {
+  ws.on('close', (code) => {
     console.log(`[relay] Client disconnected (code=${code})`);
     cleanup();
   });
