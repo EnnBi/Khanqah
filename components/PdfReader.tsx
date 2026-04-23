@@ -1,21 +1,27 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { Platform, View, StyleSheet } from 'react-native';
 import { WebView } from 'react-native-webview';
 
-// Native fallback: the react-pdf library is web-only (needs a browser
-// canvas + pdfjs worker). On iOS/Android we drop into a WebView
-// pointed at the raw PDF — both platforms' WebViews render PDFs
-// natively in modern OS versions.
+// iOS WebView renders PDFs inline. Android WebView triggers a download
+// instead of rendering — so on Android we route through Google Docs
+// Viewer which renders a PDF as HTML.
 
 interface PdfReaderProps {
   url: string;
+}
+
+function toViewerUrl(pdfUrl: string): string {
+  if (Platform.OS === 'android') {
+    return `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(pdfUrl)}`;
+  }
+  return pdfUrl;
 }
 
 export function PdfReader({ url }: PdfReaderProps) {
   return (
     <View style={styles.wrapper}>
       <WebView
-        source={{ uri: url }}
+        source={{ uri: toViewerUrl(url) }}
         style={styles.webView}
         javaScriptEnabled
         domStorageEnabled

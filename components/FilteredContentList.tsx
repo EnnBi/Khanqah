@@ -3,7 +3,7 @@ import { View, Text, TextInput, FlatList, ActivityIndicator, StyleSheet } from '
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../lib/supabase';
-import { Content, ContentType } from '../lib/types';
+import { Content, ContentType, isBookContent } from '../lib/types';
 import { ContentCard } from './ContentCard';
 import { useTheme } from '../providers/ThemeProvider';
 import { useI18n } from '../providers/I18nProvider';
