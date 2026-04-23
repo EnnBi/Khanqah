@@ -11,6 +11,7 @@ import { usePlaylists, createPlaylist } from '../../hooks/usePlaylists';
 import { useDownloads } from '../../hooks/useDownloads';
 import { ContentCard } from '../../components/ContentCard';
 import { useContinueListening, useHistory } from '../../hooks/useListeningProgress';
+import { isBookContent } from '../../lib/types';
 import { showMessage } from '../../lib/alert';
 
 // ── Section header (Calm Architecture style) ──────────────────────────────
@@ -537,7 +538,11 @@ export default function CollectionScreen() {
             <ContentCard
               key={content.id}
               content={content}
-              onPress={() => {}}
+              onPress={() =>
+                isBookContent(content)
+                  ? router.push(`/book/${content.id}`)
+                  : router.push(`/player/${content.id}`)
+              }
               language={user?.language_pref ?? 'en'}
             />
           ))
@@ -558,7 +563,11 @@ export default function CollectionScreen() {
             <ContentCard
               key={content.id}
               content={content}
-              onPress={() => router.push(`/player/${content.id}`)}
+              onPress={() =>
+                isBookContent(content)
+                  ? router.push(`/book/${content.id}`)
+                  : router.push(`/player/${content.id}`)
+              }
               language={user?.language_pref ?? 'en'}
             />
           ))
