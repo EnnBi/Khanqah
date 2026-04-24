@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Pdf from 'react-native-pdf';
 import { useTheme } from '../providers/ThemeProvider';
@@ -11,17 +11,24 @@ export function PdfReader({ url }: PdfReaderProps) {
   const { theme } = useTheme();
   const c = theme.colors;
 
+  const pdfRef = useRef<Pdf | null>(null);
+
   const [numPages, setNumPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [scale, setScale] = useState(1);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [loadPercent, setLoadPercent] = useState(0);
 
   const onLoadComplete = useCallback((n: number) => {
     setNumPages(n);
     setCurrentPage(1);
     setErrorMsg(null);
+    setLoadPercent(100);
   }, []);
 
+  // onPageChanged fires on user scroll/swipe. We keep state read-only-ish
+  // here — the Pdf component drives the page indicator, we only write
+  // when the user taps prev/next (see goToPage below).
   const onPageChanged = useCallback((page: number) => {
     setCurrentPage(page);
   }, []);
@@ -30,6 +37,22 @@ export function PdfReader({ url }: PdfReaderProps) {
     const message = (err as { message?: string })?.message ?? 'Failed to load the PDF.';
     setErrorMsg(message);
   }, []);
+
+  const onLoadProgress = useCallback((percent: number) => {
+    setLoadPercent(Math.round(percent * 100));
+  }, []);
+
+  const goToPage = useCallback(
+    (target: number) => {
+      if (!pdfRef.current) return;
+      if (target < 1 || (numPages > 0 && target > numPages)) return;
+      pdfRef.current.setPage(target);
+      setCurrentPage(target);
+    },
+    [numPages],
+  );
+
+  const loading = !errorMsg && numPages === 0;
 
   return (
     <View style={[styles.wrapper, { backgroundColor: c.background }]}>
@@ -51,25 +74,34 @@ export function PdfReader({ url }: PdfReaderProps) {
             <Text style={[styles.statusText, { color: c.liveRed }]}>{errorMsg}</Text>
           </View>
         ) : (
-          <Pdf
-            source={{ uri: url, cache: true }}
-            page={currentPage}
-            scale={scale}
-            minScale={0.5}
-            maxScale={3.0}
-            trustAllCerts={false}
-            onLoadComplete={onLoadComplete}
-            onPageChanged={onPageChanged}
-            onError={onError}
-            renderActivityIndicator={() => <ActivityIndicator size="large" color={c.accent} />}
-            style={[styles.pdf, { backgroundColor: c.background }]}
-          />
+          <>
+            <Pdf
+              ref={pdfRef}
+              source={{ uri: url, cache: true }}
+              scale={scale}
+              minScale={0.5}
+              maxScale={3.0}
+              onLoadComplete={onLoadComplete}
+              onPageChanged={onPageChanged}
+              onError={onError}
+              onLoadProgress={onLoadProgress}
+              style={[styles.pdf, { backgroundColor: c.background }]}
+            />
+            {loading && (
+              <View style={[styles.loadingOverlay, { backgroundColor: c.background }]}>
+                <ActivityIndicator size="large" color={c.accent} />
+                <Text style={[styles.statusText, { color: c.textMuted, marginTop: 14 }]}>
+                  {loadPercent > 0 ? `Loading book… ${loadPercent}%` : 'Loading book…'}
+                </Text>
+              </View>
+            )}
+          </>
         )}
       </View>
 
       <View style={[styles.chrome, { backgroundColor: c.surface, borderTopColor: c.hairline }]}>
         <TouchableOpacity
-          onPress={() => setCurrentPage((p) => Math.max(1, p - 1))}
+          onPress={() => goToPage(currentPage - 1)}
           disabled={currentPage <= 1}
           style={[styles.navBtn, currentPage <= 1 && styles.navBtnDisabled]}
           activeOpacity={0.7}
@@ -83,7 +115,7 @@ export function PdfReader({ url }: PdfReaderProps) {
         </Text>
 
         <TouchableOpacity
-          onPress={() => setCurrentPage((p) => Math.min(numPages || 1, p + 1))}
+          onPress={() => goToPage(currentPage + 1)}
           disabled={currentPage >= numPages}
           style={[styles.navBtn, currentPage >= numPages && styles.navBtnDisabled]}
           activeOpacity={0.7}
@@ -132,10 +164,16 @@ const styles = StyleSheet.create({
   },
   viewport: {
     flex: 1,
+    position: 'relative',
   },
   pdf: {
     flex: 1,
     width: '100%',
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   statusBlock: {
     flex: 1,

@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ResizeMode, Video } from 'expo-av';
+import { AVPlaybackStatus, ResizeMode, Video } from 'expo-av';
 
 import { supabase } from '../../lib/supabase';
 import { Content, ContentType, pickCredit } from '../../lib/types';
@@ -89,6 +89,7 @@ export default function PlayerScreen() {
   // instead of the shared PlayerProvider audio element. Lives on this
   // screen only — navigating away stops the video.
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const nativeVideoRef = useRef<Video | null>(null);
   const [vidPlaying, setVidPlaying] = useState(false);
   const [vidPosition, setVidPosition] = useState(0);
   const [vidDuration, setVidDuration] = useState(0);
@@ -141,7 +142,11 @@ export default function PlayerScreen() {
     const idx = SPEED_OPTIONS.indexOf(activeSpeed);
     const next = SPEED_OPTIONS[(idx + 1) % SPEED_OPTIONS.length];
     if (isDirectVideo) {
-      if (videoRef.current) videoRef.current.playbackRate = next;
+      if (Platform.OS === 'web') {
+        if (videoRef.current) videoRef.current.playbackRate = next;
+      } else {
+        nativeVideoRef.current?.setRateAsync(next, true).catch(() => {});
+      }
       setVidSpeed(next);
     } else {
       setSpeed(next);
@@ -154,12 +159,19 @@ export default function PlayerScreen() {
       Animated.timing(playBtnScale, { toValue: 1, duration: 120, useNativeDriver: true }),
     ]).start();
     if (isDirectVideo) {
-      const el = videoRef.current;
-      if (!el) return;
-      if (el.paused) {
-        el.play().catch((err: unknown) => console.warn('[player] video play failed:', err));
+      if (Platform.OS === 'web') {
+        const el = videoRef.current;
+        if (!el) return;
+        if (el.paused) {
+          el.play().catch((err: unknown) => console.warn('[player] video play failed:', err));
+        } else {
+          el.pause();
+        }
       } else {
-        el.pause();
+        const ref = nativeVideoRef.current;
+        if (!ref) return;
+        if (vidPlaying) ref.pauseAsync().catch(() => {});
+        else ref.playAsync().catch(() => {});
       }
       return;
     }
@@ -176,9 +188,13 @@ export default function PlayerScreen() {
 
   const handleSeekTo = (seconds: number) => {
     if (isDirectVideo) {
-      const el = videoRef.current;
-      if (!el) return;
-      el.currentTime = Math.max(0, Math.min(seconds, el.duration || seconds));
+      if (Platform.OS === 'web') {
+        const el = videoRef.current;
+        if (!el) return;
+        el.currentTime = Math.max(0, Math.min(seconds, el.duration || seconds));
+      } else {
+        nativeVideoRef.current?.setPositionAsync(Math.max(0, seconds) * 1000).catch(() => {});
+      }
       return;
     }
     seekTo(seconds);
@@ -186,12 +202,29 @@ export default function PlayerScreen() {
 
   const handleSeekBy = (delta: number) => {
     if (isDirectVideo) {
-      const el = videoRef.current;
-      if (!el) return;
-      el.currentTime = Math.max(0, Math.min(el.duration || 0, el.currentTime + delta));
+      if (Platform.OS === 'web') {
+        const el = videoRef.current;
+        if (!el) return;
+        el.currentTime = Math.max(0, Math.min(el.duration || 0, el.currentTime + delta));
+      } else {
+        const target = Math.max(0, (vidPosition + delta));
+        nativeVideoRef.current?.setPositionAsync(target * 1000).catch(() => {});
+      }
       return;
     }
     seekBy(delta);
+  };
+
+  // Native-Video playback status → drives the same vid* state that web uses.
+  const onNativeVideoStatus = (status: AVPlaybackStatus) => {
+    if (!status.isLoaded) {
+      setVidPlaying(false);
+      return;
+    }
+    setVidPlaying(status.isPlaying);
+    setVidBuffering(status.isBuffering);
+    setVidPosition((status.positionMillis ?? 0) / 1000);
+    if (status.durationMillis) setVidDuration(status.durationMillis / 1000);
   };
 
   const displayPosition = isSeeking ? seekPosition : activePosition;
@@ -329,14 +362,15 @@ export default function PlayerScreen() {
                 })
               : (
                 <Video
+                  ref={nativeVideoRef}
                   source={{ uri: content.media_url }}
                   style={{ width: '100%', aspectRatio: 16 / 9, borderRadius: 8, backgroundColor: '#000' }}
                   resizeMode={ResizeMode.CONTAIN}
-                  useNativeControls
                   shouldPlay
+                  onPlaybackStatusUpdate={onNativeVideoStatus}
                 />
               )}
-            {activeBuffering && Platform.OS === 'web' && (
+            {activeBuffering && (
               <View style={styles.mediaBufferingOverlay} pointerEvents="none">
                 <ActivityIndicator size="large" color={c.gold} />
               </View>
@@ -398,7 +432,7 @@ export default function PlayerScreen() {
         )}
 
         {/* ── Progress Bar (hidden for YouTube or when media_url is absent) ── */}
-        {!isYouTube && !(isDirectVideo && Platform.OS !== 'web') && !!content?.media_url && (
+        {!isYouTube && !!content?.media_url && (
         <View style={styles.progressSection}>
           <View
             ref={progressBarRef}
@@ -428,7 +462,7 @@ export default function PlayerScreen() {
         )}
 
         {/* ── Player Controls (hidden for YouTube or when media_url is absent) ── */}
-        {!isYouTube && !(isDirectVideo && Platform.OS !== 'web') && !!content?.media_url && (
+        {!isYouTube && !!content?.media_url && (
         <View style={styles.controlsRow}>
           {/* Previous */}
           <TouchableOpacity
@@ -489,7 +523,7 @@ export default function PlayerScreen() {
         )}
 
         {/* ── Speed pill (hidden for YouTube or when media_url is absent) ── */}
-        {!isYouTube && !(isDirectVideo && Platform.OS !== 'web') && !!content?.media_url && (
+        {!isYouTube && !!content?.media_url && (
         <View style={styles.speedRow}>
           <TouchableOpacity
             onPress={handleSpeedPress}
