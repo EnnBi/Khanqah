@@ -77,14 +77,15 @@ export function PdfReader({ url }: PdfReaderProps) {
           <>
             <Pdf
               ref={pdfRef}
-              // trustAllCerts:true bypasses react-native-blob-util's buggy
-              // custom-trust-manager code path that otherwise throws
+              source={{ uri: url, cache: true }}
+              // Top-level prop — react-native-pdf reads trustAllCerts here,
+              // not from source. Setting true bypasses react-native-blob-util's
+              // buggy custom-trust-manager slot that otherwise throws
               // "Use of own trust manager but none defined" on some Android
-              // TLS stacks (notably Jio 5G). archive.org serves valid Let's
-              // Encrypt / DigiCert chains, so the system trust store is still
-              // honoured when TLS negotiation happens — we're just avoiding a
+              // TLS stacks (Jio 4G/5G). archive.org serves valid Let's Encrypt
+              // / DigiCert chains; we're not loosening TLS, just avoiding a
               // broken optional pinning slot.
-              source={{ uri: url, cache: true, trustAllCerts: true }}
+              trustAllCerts={true}
               scale={scale}
               minScale={0.5}
               maxScale={3.0}
