@@ -86,6 +86,12 @@ export function PdfReader({ url }: PdfReaderProps) {
               onError={onError}
               onLoadProgress={onLoadProgress}
               style={[styles.pdf, { backgroundColor: c.background }]}
+              // Do NOT pass trustAllCerts here. react-native-blob-util has a
+              // known bug where trustAllCerts={false} installs a custom
+              // trust-manager slot without populating it, then throws
+              // "Use of own trust manager but none defined" on some Android
+              // TLS stacks (notably Jio 5G). Letting the prop default keeps
+              // the system trust-manager active, which is what we want.
             />
             {loading && (
               <View style={[styles.loadingOverlay, { backgroundColor: c.background }]}>
