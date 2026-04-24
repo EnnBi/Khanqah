@@ -1,8 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, View, Text, TouchableOpacity, Platform } from 'react-native';
+import { ActivityIndicator, View, Text, TouchableOpacity, Platform, Image, StyleSheet } from 'react-native';
 import { Slot, useRouter, useSegments, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
+import * as SplashScreen from 'expo-splash-screen';
+
+// Keep the native splash visible until we've mounted our own branded
+// JS splash. On Android 12+ MIUI doesn't paint the native splash
+// window with the configured backgroundColor beyond the status bar,
+// so our JS-rendered forest-green splash is the primary brand moment.
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 import { loadConfig, getConfig } from '../lib/remote-config';
 import { initSupabase } from '../lib/supabase';
@@ -61,49 +68,105 @@ async function clearCachedDataAndReload() {
   }
 }
 
-/** Loader with a recovery button if we stay loading too long. */
+/** Branded boot splash — full-screen forest green with the Khanqah
+ *  logo + subtitle that matches the BrandBanner on the home page.
+ *  Shown while config loads; after 8s an escape hatch appears.
+ */
 function BootLoader() {
   const [stuck, setStuck] = useState(false);
   useEffect(() => {
+    SplashScreen.hideAsync().catch(() => {});
     const t = setTimeout(() => setStuck(true), 8000);
     return () => clearTimeout(t);
   }, []);
 
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#09090b', padding: 24 }}>
-      <ActivityIndicator size="large" color="#047857" />
+    <View style={bootStyles.root}>
+      <Image
+        source={require('../assets/images/khanqah-logo.png')}
+        style={bootStyles.logo}
+        resizeMode="contain"
+      />
+      <View style={bootStyles.subtitleRow}>
+        <View style={bootStyles.rule} />
+        <Text style={bootStyles.diamond}>◆</Text>
+        <Text style={bootStyles.subtitle}>Khanqah Maseeh-ul-Ummah</Text>
+        <Text style={bootStyles.diamond}>◆</Text>
+        <View style={bootStyles.rule} />
+      </View>
+      <ActivityIndicator size="small" color="#d4a853" style={{ marginTop: 48 }} />
       {stuck && (
         <>
-          <Text style={{ color: '#a1a1aa', fontSize: 13, marginTop: 20, textAlign: 'center' }}>
-            Taking longer than usual…
-          </Text>
-          <TouchableOpacity
-            onPress={clearCachedDataAndReload}
-            style={{
-              marginTop: 14,
-              backgroundColor: '#d4a853',
-              paddingHorizontal: 20,
-              paddingVertical: 10,
-              borderRadius: 8,
-            }}
-          >
-            <Text
-              style={{
-                color: '#0f2e24',
-                fontWeight: '600',
-                letterSpacing: 1,
-                textTransform: 'uppercase',
-                fontSize: 11,
-              }}
-            >
-              Clear Data & Reload
-            </Text>
+          <Text style={bootStyles.stuckText}>Taking longer than usual…</Text>
+          <TouchableOpacity onPress={clearCachedDataAndReload} style={bootStyles.reloadBtn}>
+            <Text style={bootStyles.reloadBtnText}>Clear Data & Reload</Text>
           </TouchableOpacity>
         </>
       )}
     </View>
   );
 }
+
+const bootStyles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: '#0f2e24',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  logo: {
+    width: 200,
+    height: 280,
+  },
+  subtitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 20,
+    maxWidth: '100%',
+  },
+  rule: {
+    width: 22,
+    height: 1,
+    backgroundColor: '#d4a853',
+    opacity: 0.7,
+    marginHorizontal: 8,
+  },
+  diamond: {
+    fontSize: 10,
+    color: '#d4a853',
+    marginHorizontal: 4,
+  },
+  subtitle: {
+    fontFamily: 'CrimsonPro-Italic',
+    fontSize: 17,
+    color: '#e8c672',
+    letterSpacing: 0.3,
+    marginHorizontal: 4,
+  },
+  stuckText: {
+    color: '#e8c672',
+    opacity: 0.7,
+    fontSize: 13,
+    marginTop: 28,
+    textAlign: 'center',
+    fontFamily: 'CrimsonPro-Italic',
+  },
+  reloadBtn: {
+    marginTop: 14,
+    backgroundColor: '#d4a853',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  reloadBtnText: {
+    color: '#0f2e24',
+    fontWeight: '600',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    fontSize: 11,
+  },
+});
 
 function AuthGate() {
   const { session, user, loading } = useAuth();
