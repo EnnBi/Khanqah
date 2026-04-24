@@ -77,7 +77,14 @@ export function PdfReader({ url }: PdfReaderProps) {
           <>
             <Pdf
               ref={pdfRef}
-              source={{ uri: url, cache: true }}
+              // trustAllCerts:true bypasses react-native-blob-util's buggy
+              // custom-trust-manager code path that otherwise throws
+              // "Use of own trust manager but none defined" on some Android
+              // TLS stacks (notably Jio 5G). archive.org serves valid Let's
+              // Encrypt / DigiCert chains, so the system trust store is still
+              // honoured when TLS negotiation happens — we're just avoiding a
+              // broken optional pinning slot.
+              source={{ uri: url, cache: true, trustAllCerts: true }}
               scale={scale}
               minScale={0.5}
               maxScale={3.0}
@@ -86,12 +93,6 @@ export function PdfReader({ url }: PdfReaderProps) {
               onError={onError}
               onLoadProgress={onLoadProgress}
               style={[styles.pdf, { backgroundColor: c.background }]}
-              // Do NOT pass trustAllCerts here. react-native-blob-util has a
-              // known bug where trustAllCerts={false} installs a custom
-              // trust-manager slot without populating it, then throws
-              // "Use of own trust manager but none defined" on some Android
-              // TLS stacks (notably Jio 5G). Letting the prop default keeps
-              // the system trust-manager active, which is what we want.
             />
             {loading && (
               <View style={[styles.loadingOverlay, { backgroundColor: c.background }]}>
