@@ -38,7 +38,8 @@
           "imageWidth": 280,
           "resizeMode": "contain"
         }
-      ]
+      ],
+      "./plugins/with-splash-window-bg"
     ],
     "experiments": {
       "typedRoutes": true
