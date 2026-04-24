@@ -13,6 +13,7 @@
     },
     "android": {
       "package": "com.ennbi.khanqah",
+      "backgroundColor": "#0f2e24",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#0f2e24"
@@ -34,7 +35,8 @@
         {
           "backgroundColor": "#0f2e24",
           "image": "./assets/images/splash-icon.png",
-          "resizeMode": "cover"
+          "imageWidth": 280,
+          "resizeMode": "contain"
         }
       ]
     ],
