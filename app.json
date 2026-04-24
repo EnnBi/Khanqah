@@ -8,11 +8,6 @@
     "scheme": "khanqah",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/images/splash-icon.png",
-      "resizeMode": "cover",
-      "backgroundColor": "#0f2e24"
-    },
     "ios": {
       "supportsTablet": true
     },
@@ -33,7 +28,16 @@
     "plugins": [
       "expo-router",
       "expo-sqlite",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0f2e24",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 240,
+          "resizeMode": "contain"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
