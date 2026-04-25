@@ -139,6 +139,12 @@ const ur = {
     library: 'یہاں ابھی کوئی آئٹم نہیں۔',
     recents: 'آپ کی سننے کی تاریخ خالی ہے۔',
   },
+  comingSoon: {
+    thisFeature: 'یہ خصوصیت',
+    title: '{{name}} — جلد آرہا ہے',
+    body: 'ہم اس پر کام کر رہے ہیں۔',
+    back: 'واپس',
+  },
   confirm: {
     cancel: 'منسوخ',
     languageRestart: {

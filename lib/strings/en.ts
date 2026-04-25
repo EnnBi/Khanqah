@@ -139,6 +139,12 @@ const en = {
     library: 'No items here yet.',
     recents: 'Your listening history is empty.',
   },
+  comingSoon: {
+    thisFeature: 'This feature',
+    title: '{{name}} — coming soon',
+    body: "We're working on this.",
+    back: 'Back',
+  },
   confirm: {
     cancel: 'Cancel',
     languageRestart: {
