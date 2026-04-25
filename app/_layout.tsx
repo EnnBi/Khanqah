@@ -11,6 +11,16 @@ import * as SplashScreen from 'expo-splash-screen';
 // so our JS-rendered forest-green splash is the primary brand moment.
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
+import { rtlBootstrap } from '../lib/rtl-bootstrap';
+
+// Reapply persisted RTL state on every launch BEFORE any UI renders.
+// If a previous toggle saved Urdu but the current process started LTR,
+// this triggers Updates.reloadAsync() once so the rest of the app sees
+// a consistent direction. Subsequent boots are no-ops.
+rtlBootstrap().catch((err) => {
+  console.warn('[rtl-bootstrap] failed:', err);
+});
+
 import { loadConfig, getConfig } from '../lib/remote-config';
 import { initSupabase } from '../lib/supabase';
 import { ThemeProvider, useTheme } from '../providers/ThemeProvider';
