@@ -363,7 +363,7 @@ export default function LoginScreen() {
           onPress={() => router.replace('/(tabs)')}
           activeOpacity={0.7}
         >
-          <Text style={[styles.guestText, { color: c.textMuted }]}>CONTINUE AS GUEST</Text>
+          <Text style={[styles.guestText, { color: c.textMuted }]}>{t('auth.continueAsGuest')}</Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
