@@ -12,7 +12,7 @@ import {
   MicConfigFrame,
   MicPermissionDeniedError,
 } from './mic';
-import { createMicSource } from './mic.web'; // Metro replaces with mic.native on native
+import { createMicSource } from './mic-source';
 export { MicPermissionDeniedError };
 
 export type ActiveSession = {
@@ -51,6 +51,7 @@ type State = {
   heartbeat: ReturnType<typeof setInterval> | null;
   starting: boolean;
   stopping: boolean;
+  resuming: boolean;
   micUnsubChunk: (() => void) | null;
   micUnsubErr: (() => void) | null;
   micUnsubInt: (() => void) | null;
@@ -64,6 +65,7 @@ const state: State = {
   heartbeat: null,
   starting: false,
   stopping: false,
+  resuming: false,
   micUnsubChunk: null,
   micUnsubErr: null,
   micUnsubInt: null,
@@ -96,6 +98,11 @@ async function openWebsocket(configFrame: MicConfigFrame): Promise<WebSocket> {
     };
   });
   ws.send(JSON.stringify(configFrame));
+  // Known gap: caller must wire ws.onclose / ws.onerror immediately
+  // after we return. Between this point and that wiring, a socket
+  // drop is silently absorbed (the handshake-era onclose just
+  // rejects an already-resolved Promise). Acceptable on stable
+  // networks; revisit if we observe missed-disconnects in the wild.
   return ws;
 }
 
@@ -193,6 +200,7 @@ export const broadcast = {
 
         if (error) {
           if ((error as any).code === '23505') {
+          // 23505 = unique_violation — someone else is live.
             const existing = await supabase
               .from('live_sessions')
               .select('id, started_by, title_en')
@@ -261,6 +269,7 @@ export const broadcast = {
       await cleanupTransport();
       state.micUnsubInt?.();
       state.micUnsubInt = null;
+      state.configFrame = null;
       throw err;
     } finally {
       state.starting = false;
@@ -274,29 +283,38 @@ export const broadcast = {
     try { state.ws?.close(); } catch {}
     state.ws = null;
     if (state.mic) {
-      try { await state.mic.stop(); } catch {}
+      const m = state.mic;
+      state.mic = null;
+      try { await m.stop(); } catch {}
     }
   },
 
   async _resumeFromInterruption(): Promise<void> {
     if (!state.active || !state.active.paused) return;
+    if (state.resuming) return;
     if (!state.configFrame) {
       throw new Error('No config frame to resume with');
     }
-    const mic = createMicSource();
-    state.mic = mic;
-    const newFrame = await mic.start();
-    state.configFrame = newFrame;
-    const ws = await openWebsocket(newFrame);
-    state.ws = ws;
-    attachChunkPump();
-    ws.onclose = () => {
-      if (!state.active || state.active.paused) return;
-      emit('error', new Error('Relay connection closed'));
-      broadcast.stop().catch(() => {});
-    };
-    ws.onerror = () => emit('error', new Error('Relay connection errored'));
-    state.active = { ...state.active, paused: false };
+    state.resuming = true;
+    try {
+      const mic = createMicSource();
+      const newFrame = await mic.start();
+      // Only commit to state after the mic actually came up.
+      state.mic = mic;
+      state.configFrame = newFrame;
+      const ws = await openWebsocket(newFrame);
+      state.ws = ws;
+      attachChunkPump();
+      ws.onclose = () => {
+        if (!state.active || state.active.paused) return;
+        emit('error', new Error('Relay connection closed'));
+        broadcast.stop().catch(() => {});
+      };
+      ws.onerror = () => emit('error', new Error('Relay connection errored'));
+      state.active = { ...state.active, paused: false };
+    } finally {
+      state.resuming = false;
+    }
   },
 
   async stop(): Promise<void> {
