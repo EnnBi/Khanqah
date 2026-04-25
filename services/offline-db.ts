@@ -19,6 +19,10 @@ export function initOfflineDB() {
   `);
 }
 
+// Ensure the schema exists before any caller reads/writes the DB. Module
+// load happens once per JS context, so this is cheap and idempotent.
+initOfflineDB();
+
 export function saveDownloadedContent(id: string, contentJson: string, localPath: string) {
   db.runSync(
     `INSERT OR REPLACE INTO downloaded_content (id, content_json, local_file_path, downloaded_at) VALUES (?, ?, ?, ?)`,
