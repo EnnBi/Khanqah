@@ -8,8 +8,10 @@ import type { Language } from '../lib/language-pref';
 /**
  * Switch the app language end-to-end:
  *  1. AsyncStorage save (always — persists even if user cancels)
- *  2. Supabase users.language_pref update (best-effort, signed-in only)
- *  3. Alert prompt — on confirm, forceRTL + reload
+ *  2. Alert prompt — on confirm, forceRTL + reload
+ *  3. Supabase users.language_pref update fires fire-and-forget;
+ *     it never gates the prompt or the reload, so a slow/hung
+ *     network can't prevent the user from restarting.
  */
 export function useLanguageToggle() {
   return useCallback(async (next: Language): Promise<void> => {
@@ -17,21 +19,24 @@ export function useLanguageToggle() {
     // the new language on next launch.
     await saveStoredLanguage(next);
 
-    // (2) Best-effort cloud sync. Failure is silent — AsyncStorage is
-    // authoritative for this device.
-    try {
-      const { data } = await supabase.auth.getUser();
-      const userId = data.user?.id;
-      if (userId) {
-        await supabase.from('users').update({ language_pref: next }).eq('id', userId);
+    // (2) Best-effort cloud sync — fire and forget. We do NOT await this.
+    // If the user is signed in we update users.language_pref; otherwise
+    // we just skip. Either branch is silent on failure because the
+    // AsyncStorage save above is authoritative for this device.
+    void (async () => {
+      try {
+        const { data } = await supabase.auth.getUser();
+        const userId = data.user?.id;
+        if (userId) {
+          await supabase.from('users').update({ language_pref: next }).eq('id', userId);
+        }
+      } catch {
+        // Ignore.
       }
-    } catch {
-      // Network or auth issue; ignore.
-    }
+    })();
 
-    // (3) Confirm + reload. The reload itself happens inside the
-    // confirm handler so cancelling leaves the app running with the
-    // pref saved but layout unchanged until the next manual launch.
+    // (3) Confirm + reload. Cancelling leaves the app running with the
+    // pref saved; next launch will pick up the new direction.
     return new Promise<void>((resolve) => {
       Alert.alert(
         'Switch language?',
@@ -49,7 +54,9 @@ export function useLanguageToggle() {
               if (Platform.OS === 'web') {
                 if (typeof window !== 'undefined') window.location.reload();
               } else {
-                Promise.resolve(Updates.reloadAsync()).catch(() => { /* fall through */ });
+                Promise.resolve(Updates.reloadAsync()).catch((err) => {
+                  console.warn('[language-toggle] Updates.reloadAsync failed:', err);
+                });
               }
               resolve();
             },
