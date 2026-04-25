@@ -22,12 +22,10 @@ rtlBootstrap().catch((err) => {
   console.warn('[rtl-bootstrap] failed:', err);
 });
 
-// Set the default Text font to NastaleeqUrdu when the stored language
-// is Urdu, so every <Text> renders in Jameel Noori without per-component
-// changes. Components that explicitly set their own fontFamily still win.
-applyTextDefaults().catch((err) => {
-  console.warn('[text-defaults] failed:', err);
-});
+// Set the default Text font to JameelNooriNastaleeq when current
+// layout is RTL (Urdu), so every <Text> renders in Nastaleeq without
+// per-component changes. Synchronous so it runs BEFORE the first render.
+applyTextDefaults();
 
 import { loadConfig, getConfig } from '../lib/remote-config';
 import { initSupabase } from '../lib/supabase';
