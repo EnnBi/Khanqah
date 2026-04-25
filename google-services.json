@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "853834561000",
+    "project_id": "khanqah-e7aa2",
+    "storage_bucket": "khanqah-e7aa2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:853834561000:android:eb247e03632072f215205d",
+        "android_client_info": {
+          "package_name": "com.ennbi.khanqah"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBwv_1QX3iv-AdBH5yr4E7NWQEX-CTxzCM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

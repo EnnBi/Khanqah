@@ -15,6 +15,7 @@
     "android": {
       "package": "com.ennbi.khanqah",
       "backgroundColor": "#0f2e24",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#0f2e24"
@@ -41,7 +42,11 @@
         }
       ],
       "./plugins/with-splash-window-bg",
-      "./plugins/with-broadcast-native"
+      "./plugins/with-broadcast-native",
+      [
+        "onesignal-expo-plugin",
+        { "mode": "production" }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

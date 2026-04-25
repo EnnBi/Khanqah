@@ -36,6 +36,7 @@
     "expo-system-ui": "~6.0.9",
     "expo-web-browser": "~15.0.10",
     "i18next": "^26.0.3",
+    "onesignal-expo-plugin": "^2.4.0",
     "pdfjs-dist": "^4.8.69",
     "react": "19.1.0",
     "react-dom": "19.1.0",
