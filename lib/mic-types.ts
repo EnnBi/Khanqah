@@ -16,8 +16,19 @@ export interface MicSource {
    *  WebSocket message. May throw MicPermissionDeniedError. */
   start(): Promise<MicConfigFrame>;
 
-  /** Release the mic and stop emitting chunks. Idempotent. */
+  /** Release the mic and stop emitting chunks. Idempotent.
+   *  Tears down the entire native session (audio focus, FG service). */
   stop(): Promise<void>;
+
+  /** Pause mic capture without tearing down the native session — keeps
+   *  the audio-focus listener registered so AUDIOFOCUS_GAIN after a phone
+   *  call still reaches the JS layer. Optional; web omits it. */
+  pauseMic?(): Promise<void>;
+
+  /** Resume mic capture after pauseMic(). The native session is still
+   *  alive, so this just re-inits AudioRecord and starts capture again.
+   *  Optional; web omits it. */
+  resumeMic?(): Promise<void>;
 
   /** Subscribe to audio chunks. Each chunk is a Uint8Array, ready to
    *  be passed straight to ws.send(). Only fires while started. */

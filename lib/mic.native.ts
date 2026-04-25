@@ -94,6 +94,31 @@ class NativeMic implements MicSource {
     try { await BroadcastService.stopSession(); } catch {}
   }
 
+  async pauseMic(): Promise<void> {
+    // Stop AudioRecord but keep BroadcastService running, so the audio
+    // focus listener remains registered and AUDIOFOCUS_GAIN after the
+    // phone call ends can still reach the JS interruption handler.
+    try { await AudioRecord.stop(); } catch {}
+    try { this.dataSub?.remove(); } catch {}
+    this.dataSub = null;
+  }
+
+  async resumeMic(): Promise<void> {
+    // Re-init AudioRecord (no BroadcastService calls — that's still alive).
+    AudioRecord.init({
+      sampleRate: SAMPLE_RATE,
+      channels: CHANNELS,
+      bitsPerSample: BITS_PER_SAMPLE,
+      audioSource: 6,
+      wavFile: 'unused.wav',
+    });
+    this.dataSub = AudioRecord.on('data', (data: string) => {
+      const buf = new Uint8Array(Buffer.from(data, 'base64'));
+      for (const cb of this.chunkCbs) cb(buf);
+    }) as unknown as { remove: () => void };
+    AudioRecord.start();
+  }
+
   onChunk(cb: ChunkCb): () => void {
     this.chunkCbs.push(cb);
     return () => {

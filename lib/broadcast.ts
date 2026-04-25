@@ -283,9 +283,19 @@ export const broadcast = {
     try { state.ws?.close(); } catch {}
     state.ws = null;
     if (state.mic) {
-      const m = state.mic;
-      state.mic = null;
-      try { await m.stop(); } catch {}
+      // Prefer pauseMic() when the platform offers it — it stops AudioRecord
+      // but keeps the audio-focus listener registered, so the AUDIOFOCUS_GAIN
+      // signal that fires when the call ends can still reach _resume.
+      // Fallback (web): just call stop(), since web has no interruption flow.
+      try {
+        if (state.mic.pauseMic) {
+          await state.mic.pauseMic();
+        } else {
+          const m = state.mic;
+          state.mic = null;
+          await m.stop();
+        }
+      } catch { /* swallow */ }
     }
   },
 
@@ -297,12 +307,18 @@ export const broadcast = {
     }
     state.resuming = true;
     try {
-      const mic = createMicSource();
-      const newFrame = await mic.start();
-      // Only commit to state after the mic actually came up.
-      state.mic = mic;
-      state.configFrame = newFrame;
-      const ws = await openWebsocket(newFrame);
+      // Two paths: (a) we still have the original mic with resumeMic() —
+      // re-init AudioRecord without recreating the audio session. (b) the
+      // mic was fully torn down on pause (web fallback) — recreate it.
+      if (state.mic && state.mic.resumeMic) {
+        await state.mic.resumeMic();
+      } else {
+        const mic = createMicSource();
+        const newFrame = await mic.start();
+        state.mic = mic;
+        state.configFrame = newFrame;
+      }
+      const ws = await openWebsocket(state.configFrame);
       state.ws = ws;
       attachChunkPump();
       ws.onclose = () => {
