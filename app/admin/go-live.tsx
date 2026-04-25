@@ -5,13 +5,14 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useAuth } from '../../providers/AuthProvider';
 import { supabase } from '../../lib/supabase';
 import { useSafeBack } from '../../hooks/useSafeBack';
-import { broadcast, BroadcastLockedError } from '../../lib/broadcast';
+import { broadcast, BroadcastLockedError, MicPermissionDeniedError } from '../../lib/broadcast';
 import { useBroadcastState } from '../../hooks/useBroadcastState';
 
 export default function GoLiveScreen() {
@@ -26,6 +27,7 @@ export default function GoLiveScreen() {
   const [titleUr, setTitleUr] = useState('');
   const [starting, setStarting] = useState(false);
   const [stopping, setStopping] = useState(false);
+  const [showOpenSettings, setShowOpenSettings] = useState(false);
 
   const [foreignRow, setForeignRow] = useState<
     { id: string; started_by: string; title_en: string | null; title_ur: string | null } | null
@@ -75,6 +77,7 @@ export default function GoLiveScreen() {
     if (starting || active) return;
     setStarting(true);
     setBroadcastError(null);
+    setShowOpenSettings(false);
     try {
       await broadcast.start({
         title_en: titleEn.trim(),
@@ -84,6 +87,13 @@ export default function GoLiveScreen() {
       setTitleEn('');
       setTitleUr('');
     } catch (err) {
+      if (err instanceof MicPermissionDeniedError) {
+        setBroadcastError(
+          'Microphone access is blocked. Tap "Open Settings" and grant mic access, then try again.',
+        );
+        setShowOpenSettings(true);
+        return;
+      }
       if (err instanceof BroadcastLockedError) {
         await refresh();
         return;
@@ -109,6 +119,7 @@ export default function GoLiveScreen() {
     if (!user || !ownStaleRow) return;
     setStarting(true);
     setBroadcastError(null);
+    setShowOpenSettings(false);
     try {
       await broadcast.start({
         title_en: ownStaleRow.title_en ?? '',
@@ -289,6 +300,18 @@ export default function GoLiveScreen() {
           {broadcastError}
         </Text>
       ) : null}
+      {showOpenSettings && (
+        <TouchableOpacity
+          onPress={() => {
+            setShowOpenSettings(false);
+            Linking.openSettings().catch(() => {});
+          }}
+          style={{ marginTop: 8, alignSelf: 'flex-start' }}
+          accessibilityLabel="Open app settings"
+        >
+          <Text style={{ color: c.primary, fontWeight: '600' }}>Open Settings</Text>
+        </TouchableOpacity>
+      )}
 
       <TouchableOpacity
         onPress={onStart}
