@@ -10,6 +10,7 @@ import { useRouter } from 'expo-router';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useI18n } from '../../providers/I18nProvider';
 import { useAuth } from '../../providers/AuthProvider';
+import { useLanguageToggle } from '../../hooks/useLanguageToggle';
 import { confirmDestructive } from '../../lib/alert';
 
 // ── ProfileItem ────────────────────────────────────────────────────────────
@@ -135,9 +136,10 @@ export default function ProfileScreen() {
     setThemePref(cycle[themePref] ?? 'system');
   }
 
-  // Toggle English ↔ Urdu
-  function handleLanguageToggle() {
-    setLanguage(language === 'en' ? 'ur' : 'en');
+  // Toggle English ↔ Urdu (persists + DB-syncs + prompts restart)
+  const toggleLanguage = useLanguageToggle();
+  async function handleLanguageToggle() {
+    await toggleLanguage(language === 'en' ? 'ur' : 'en');
   }
 
   async function handleSignOut() {
