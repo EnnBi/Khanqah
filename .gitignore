@@ -53,3 +53,8 @@ ghurfa_extracted/
 # server sub-package
 server/package-lock.json
 .claude/
+
+# Local Expo module build artifacts
+modules/*/android/build/
+modules/*/android/.gradle/
+modules/*/ios/build/
