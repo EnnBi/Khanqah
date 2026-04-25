@@ -305,7 +305,7 @@ export default function LivePlayerScreen() {
             style={[
               styles.trackTitle,
               { color: c.text },
-              language === 'ur' && { fontFamily: 'NastaleeqUrdu', writingDirection: 'rtl', textAlign: 'center', lineHeight: 40 },
+              language === 'ur' && { fontFamily: 'NastaleeqUrdu', textAlign: 'center', lineHeight: 40 },
             ]}
             numberOfLines={2}
           >
@@ -372,7 +372,7 @@ export default function LivePlayerScreen() {
             style={[
               styles.sessionTitle,
               { color: c.text },
-              language === 'ur' && { fontFamily: 'NastaleeqUrdu', writingDirection: 'rtl', textAlign: 'center', lineHeight: 32 },
+              language === 'ur' && { fontFamily: 'NastaleeqUrdu', textAlign: 'center', lineHeight: 32 },
             ]}
           >
             {title}

@@ -83,7 +83,7 @@ export function TopicsList({ contentId, currentPosition }: TopicsListProps) {
               style={[
                 styles.topicTitle,
                 { color: isActive ? c.gold : c.text },
-                isUrdu && { fontFamily: 'NastaleeqUrdu', writingDirection: 'rtl', textAlign: 'right', lineHeight: 32 },
+                isUrdu && { fontFamily: 'NastaleeqUrdu', lineHeight: 32 },
               ]}
               numberOfLines={2}
             >

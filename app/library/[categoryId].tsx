@@ -239,7 +239,7 @@ export default function CategoryListingScreen() {
           style={[
             styles.heroTitle,
             { color: '#f7f5f0' },
-            language === 'ur' && { fontFamily: 'NastaleeqUrdu', writingDirection: 'rtl', textAlign: 'right', lineHeight: 52 },
+            language === 'ur' && { fontFamily: 'NastaleeqUrdu', lineHeight: 52 },
           ]}
           numberOfLines={2}
         >

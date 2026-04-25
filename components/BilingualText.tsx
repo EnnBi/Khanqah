@@ -10,10 +10,10 @@ interface BilingualTextProps {
 }
 
 // Shared Urdu (Nastaleeq) text style — reuse anywhere Urdu text is rendered.
+// Layout direction (writingDirection, textAlign) is now driven globally by
+// I18nManager.forceRTL(); this style keeps only the font and line-height.
 export const urduTextStyle: TextStyle = {
   fontFamily: 'NastaleeqUrdu',
-  writingDirection: 'rtl',
-  textAlign: 'right',
   lineHeight: 32,
 };
 

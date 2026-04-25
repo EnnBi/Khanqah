@@ -479,7 +479,7 @@ export default function PlayerScreen() {
             style={[
               styles.trackTitle,
               { color: c.text },
-              language === 'ur' && { fontFamily: 'NastaleeqUrdu', writingDirection: 'rtl', textAlign: 'center', lineHeight: 40 },
+              language === 'ur' && { fontFamily: 'NastaleeqUrdu', textAlign: 'center', lineHeight: 40 },
             ]}
             numberOfLines={2}
           >
