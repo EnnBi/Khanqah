@@ -11,7 +11,7 @@ import {
   MicSource,
   MicConfigFrame,
   MicPermissionDeniedError,
-} from './mic';
+} from './mic-types';
 import { createMicSource } from './mic-source';
 export { MicPermissionDeniedError };
 

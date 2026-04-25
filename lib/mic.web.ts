@@ -1,5 +1,5 @@
 // lib/mic.web.ts
-import { MicSource, MicConfigFrame, MicPermissionDeniedError } from './mic';
+import { MicSource, MicConfigFrame, MicPermissionDeniedError } from './mic-types';
 
 type ChunkCb = (chunk: Uint8Array) => void;
 type ErrCb = (err: Error) => void;

@@ -1,8 +1,14 @@
-import { broadcast, BroadcastLockedError } from '../../lib/broadcast';
-// Explicitly import from the .ts extension to bypass jest-expo's native platform
-// resolution, which would resolve `lib/mic` → `lib/mic.native.ts` (stub only).
-// The base mic.ts file contains MicPermissionDeniedError and the MicSource interface.
-import { MicSource, MicConfigFrame, MicPermissionDeniedError } from '../../lib/mic.ts';
+// MicPermissionDeniedError is re-exported from lib/broadcast, so we don't
+// need to import it from lib/mic directly (which would resolve to
+// mic.native.ts under jest-expo's native preset and miss the type/class
+// definitions). Type imports (MicSource, MicConfigFrame) are erased at
+// runtime so resolution doesn't matter for them.
+import {
+  broadcast,
+  BroadcastLockedError,
+  MicPermissionDeniedError,
+} from '../../lib/broadcast';
+import type { MicSource, MicConfigFrame } from '../../lib/mic-types';
 
 // Jest hoists jest.mock() calls before imports and forbids references to
 // out-of-scope variables — *unless* the variable name starts with "mock"

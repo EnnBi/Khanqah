@@ -3,7 +3,7 @@
 // Native MicSource — real implementation lands in Task 11. This stub
 // keeps the build green while we refactor broadcast.ts off the
 // MediaRecorder path in Task 5.
-import { MicSource, MicConfigFrame } from './mic';
+import { MicSource, MicConfigFrame } from './mic-types';
 
 class NativeMicStub implements MicSource {
   async start(): Promise<MicConfigFrame> {
