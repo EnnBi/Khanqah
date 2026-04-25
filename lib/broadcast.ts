@@ -5,6 +5,7 @@
 // Survives React navigation. Idempotent start/stop. Heartbeats every 15s.
 // Uses the web MediaRecorder API — native unsupported for now.
 
+import { Platform } from 'react-native';
 import { supabase } from './supabase';
 import { getConfig } from './remote-config';
 
@@ -100,6 +101,12 @@ export const broadcast = {
   }): Promise<ActiveSession> {
     if (state.active) return state.active;
     if (state.starting) throw new Error('Broadcast start already in progress');
+    // MediaRecorder + getUserMedia are web-only APIs. Going live from the
+    // installed Android/iOS app isn't wired up yet — admin must open the
+    // site in a browser to start a session.
+    if (Platform.OS !== 'web') {
+      throw new Error('Going live is only supported in a web browser for now.');
+    }
     state.starting = true;
 
     try {
