@@ -62,6 +62,10 @@ class BroadcastServiceModule : Module() {
       } else {
         ctx.startService(intent)
       }
+      // Explicit null return — startForegroundService/startService return
+      // ComponentName?, which Expo Modules' runtime marshaller doesn't know
+      // how to serialize back to JS. Discard the return value here.
+      null
     }
 
     AsyncFunction("stopSession") {
@@ -75,6 +79,8 @@ class BroadcastServiceModule : Module() {
       }
       focusRequest = null
       audioManager = null
+      // Same reason as startSession — return Any? explicitly.
+      null
     }
   }
 }
