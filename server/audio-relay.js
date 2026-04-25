@@ -22,11 +22,12 @@ const RTMP_URL = 'rtmp://127.0.0.1:1935/live/stream';
 // (tab crash behind nginx's hour-long proxy_read_timeout) jams the relay
 // until the process is restarted.
 const PING_MS = 15_000;
-const PONG_GRACE_MS = 10_000;
 
 // If a connected client hasn't sent any data within this window, assume
 // it's dead and tear it down so a new broadcaster can claim the slot.
 const IDLE_MS = 45_000;
+
+const ALLOWED_SAMPLE_RATES = [8000, 16000, 22050, 44100, 48000];
 
 const wss = new WebSocket.Server({ port: PORT });
 
@@ -50,8 +51,6 @@ wss.on('connection', (ws, req) => {
   let pongReceived = true;
   let pingInterval = null;
   let idleInterval = null;
-
-  const ALLOWED_SAMPLE_RATES = [8000, 16000, 22050, 44100, 48000];
 
   function startFfmpeg(format, sampleRate) {
     const lowLatencyInput = ['-fflags', 'nobuffer', '-flags', 'low_delay'];
@@ -167,7 +166,11 @@ wss.on('connection', (ws, req) => {
         console.log('[relay] No config message, defaulting to webm');
       }
       inputFormat = format;
-      console.log(`[relay] Input format: ${inputFormat}, sample rate: ${sampleRate}`);
+      if (inputFormat === 'pcm') {
+        console.log(`[relay] Input format: pcm, sample rate: ${sampleRate}`);
+      } else {
+        console.log(`[relay] Input format: ${inputFormat}`);
+      }
       ffmpeg = startFfmpeg(inputFormat, sampleRate);
       configured = true;
       ws.send(JSON.stringify({ status: 'ok', message: 'Streaming started' }));
