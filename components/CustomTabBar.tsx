@@ -4,6 +4,7 @@ import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../providers/ThemeProvider';
+import { useI18n } from '../providers/I18nProvider';
 
 const ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   index: 'home-outline',
@@ -13,16 +14,17 @@ const ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   books: 'book-outline',
 };
 
-const LABELS: Record<string, string> = {
-  index: 'Home',
-  bayanaat: 'Bayanaat',
-  clips: 'Clips',
-  ashaar: 'Ashaar',
-  books: 'Books',
+const LABEL_KEYS: Record<string, string> = {
+  index: 'tabs.home',
+  bayanaat: 'tabs.bayanaat',
+  clips: 'tabs.clips',
+  ashaar: 'tabs.ashaar',
+  books: 'tabs.books',
 };
 
 export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const { theme } = useTheme();
+  const { t } = useI18n();
   const c = theme.colors;
   const insets = useSafeAreaInsets();
 
@@ -43,7 +45,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
           // the dark-mode gold pill.
           const color = focused ? c.onPrimary : `${c.onPrimary}8c`;
           const icon = ICONS[route.name] || 'ellipse-outline';
-          const label = LABELS[route.name] || route.name;
+          const label = t(LABEL_KEYS[route.name] ?? 'tabs.home');
           return (
             <TouchableOpacity
               key={route.key}
