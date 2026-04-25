@@ -36,7 +36,7 @@ function ProfileItem({ icon, label, value, onPress }: ProfileItemProps) {
       <Text style={[itemStyles.label, { color: c.text }]}>{label}</Text>
       <View style={itemStyles.right}>
         {value ? (
-          <Text style={[itemStyles.value, { color: c.accent }]}>{value.toUpperCase()}</Text>
+          <Text style={[itemStyles.value, { color: c.accent }]}>{value}</Text>
         ) : null}
         <Ionicons name="chevron-forward" size={20} color={c.textMuted} />
       </View>
@@ -152,9 +152,12 @@ export default function ProfileScreen() {
     if (ok) signOut();
   }
 
-  const themeLabel =
-    themePref === 'system' ? 'System' : themePref === 'light' ? 'Light' : 'Dark';
-  const languageLabel = language === 'en' ? 'English' : 'Urdu';
+  const themeLabel = t(
+    themePref === 'light' ? 'themeValue.light' :
+    themePref === 'dark' ? 'themeValue.dark' :
+    'themeValue.system',
+  );
+  const languageLabel = t(language === 'ur' ? 'languageValue.ur' : 'languageValue.en');
 
   // Derive user initial for avatar
   const initial = user?.display_name
@@ -176,11 +179,11 @@ export default function ProfileScreen() {
           <View style={[styles.circleB, { borderColor: 'rgba(212, 168, 83, 0.15)' }]} />
           <View style={[styles.circleC, { borderColor: 'rgba(212, 168, 83, 0.08)' }]} />
 
-          <Text style={[styles.kicker, { color: c.accent }]}>YOUR ACCOUNT</Text>
+          <Text style={[styles.kicker, { color: c.accent }]}>{t('profileHero.kicker')}</Text>
 
           <Text style={styles.heroTitle}>
-            Profile{' '}
-            <Text style={[styles.heroTitleItalic, { color: c.accent }]}>{'& settings'}</Text>
+            {t('profileHero.title')}{' '}
+            <Text style={[styles.heroTitleItalic, { color: c.accent }]}>{t('profileHero.titleSuffix')}</Text>
           </Text>
         </View>
 
@@ -207,7 +210,7 @@ export default function ProfileScreen() {
                 {t('profile.guest') || 'Guest'}
               </Text>
               <Text style={[styles.email, { color: c.textMuted }]}>
-                Sign in to sync playlists, downloads, and progress
+                {t('profileHero.guestSubtitle')}
               </Text>
               <TouchableOpacity
                 style={[styles.signInBtn, { backgroundColor: c.accent }]}
@@ -226,7 +229,7 @@ export default function ProfileScreen() {
         )}
 
         {/* Preferences group */}
-        <SettingsSection counter="01" tag="PREFERENCES" subtitle="Personalise your experience" />
+        <SettingsSection counter="01" tag={t('profileSections.preferencesTag')} subtitle={t('profileSections.preferencesSubtitle')} />
         <View style={[styles.group, { backgroundColor: c.surface, borderColor: c.border }]}>
           <ProfileItem
             icon="✦"
@@ -258,7 +261,7 @@ export default function ProfileScreen() {
         </View>
 
         {/* About group */}
-        <SettingsSection counter="02" tag="ABOUT" subtitle="The khanqah & its teacher" />
+        <SettingsSection counter="02" tag={t('profileSections.aboutTag')} subtitle={t('profileSections.aboutSubtitle')} />
         <View style={[styles.group, { backgroundColor: c.surface, borderColor: c.border }]}>
           <ProfileItem
             icon="⌘"

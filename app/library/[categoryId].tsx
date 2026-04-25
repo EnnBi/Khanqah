@@ -25,15 +25,15 @@ const PAGE_SIZE = 20;
 // would break out of a PostgREST filter expression.
 const SANITIZE_RE = /[,%()\\]/g;
 
-// Map content type to a display kicker label
-const TYPE_KICKER: Record<string, string> = {
-  bayan: 'BAYANS · DISCOURSES',
-  clip: 'CLIPS · HIGHLIGHTS',
-  nazam: 'NAZAMS · POETRY',
-  quran: 'QURAN · RECITATION',
-  hamd_naat: 'HAMD & NAAT',
-  book: 'BOOKS · TEXTS',
-  mamulat: 'MAMULAT · DAILY PRACTICES',
+// Map content type to a libraryHero.kickers.* translation key.
+const TYPE_KICKER_KEY: Record<string, string> = {
+  bayan: 'libraryHero.kickers.bayan',
+  clip: 'libraryHero.kickers.clip',
+  nazam: 'libraryHero.kickers.nazam',
+  quran: 'libraryHero.kickers.quran',
+  hamd_naat: 'libraryHero.kickers.hamd_naat',
+  book: 'libraryHero.kickers.book',
+  mamulat: 'libraryHero.kickers.mamulat',
 };
 
 export default function CategoryListingScreen() {
@@ -41,7 +41,7 @@ export default function CategoryListingScreen() {
   const router = useRouter();
   const goBack = useSafeBack("/(tabs)/library");
   const { theme } = useTheme();
-  const { language } = useI18n();
+  const { language, t } = useI18n();
   const insets = useSafeAreaInsets();
 
   const [category, setCategory] = useState<Category | null>(null);
@@ -183,7 +183,9 @@ export default function CategoryListingScreen() {
     : '';
 
   const categoryNameArabic = category ? category.name_ur : '';
-  const kicker = category ? (TYPE_KICKER[category.type] ?? 'CONTENT') : '';
+  const kicker = category
+    ? t(TYPE_KICKER_KEY[category.type] ?? 'libraryHero.kickers.content')
+    : '';
   const contentCount = content.length;
 
   const renderItem = ({ item }: { item: Content }) => (
@@ -199,7 +201,7 @@ export default function CategoryListingScreen() {
     return (
       <View style={styles.emptyContainer}>
         <Text style={[styles.emptyText, { color: c.textMuted }]}>
-          No content available
+          {t('libraryHero.noContent')}
         </Text>
       </View>
     );
@@ -260,8 +262,8 @@ export default function CategoryListingScreen() {
         {/* Count */}
         {!loading && (
           <Text style={[styles.heroCount, { color: 'rgba(247,245,240,0.55)' }]}>
-            {contentCount} {contentCount === 1 ? 'ITEM' : 'ITEMS'}
-            {debouncedQuery ? ' MATCHING' : ''}
+            {contentCount} {t(contentCount === 1 ? 'libraryHero.item' : 'libraryHero.items')}
+            {debouncedQuery ? ' ' + t('libraryHero.matching') : ''}
           </Text>
         )}
 
@@ -274,7 +276,7 @@ export default function CategoryListingScreen() {
               color: c.onPrimary,
             },
           ]}
-          placeholder="Search title or credit…"
+          placeholder={t('libraryHero.searchPlaceholder')}
           placeholderTextColor={c.onPrimary + '8c'}
           value={query}
           onChangeText={setQuery}
