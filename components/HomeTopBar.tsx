@@ -5,16 +5,22 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../providers/ThemeProvider';
 import { useI18n } from '../providers/I18nProvider';
 import { useAuth } from '../providers/AuthProvider';
+import { useLanguageToggle } from '../hooks/useLanguageToggle';
 
 export function HomeTopBar() {
   const { theme } = useTheme();
   const c = theme.colors;
   const router = useRouter();
-  const { language, setLanguage } = useI18n();
+  const { language } = useI18n();
   const { user, isAdmin, isEditor } = useAuth();
   const showAdmin = !!user && (isAdmin || isEditor);
 
-  const toggleLanguage = () => setLanguage(language === 'ur' ? 'en' : 'ur');
+  // Use the same restart-prompt + persist + DB-sync flow as the profile
+  // toggle so both entry points behave identically.
+  const switchLanguage = useLanguageToggle();
+  const toggleLanguage = () => {
+    switchLanguage(language === 'ur' ? 'en' : 'ur');
+  };
 
   return (
     <View style={styles.bar}>

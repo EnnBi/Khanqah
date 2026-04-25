@@ -12,7 +12,11 @@ import { loadStoredLanguage } from './language-pref';
  */
 export async function applyTextDefaults(): Promise<void> {
   const stored = await loadStoredLanguage();
-  const fontFamily = stored === 'ur' ? 'NastaleeqUrdu' : undefined;
+  // Use the file basename — that's the name expo-font's plugin registers
+  // when the .ttf is bundled at native build time. The runtime alias
+  // 'NastaleeqUrdu' from useFonts() also resolves but only after the
+  // font finishes loading; the plugin-bundled name works on first paint.
+  const fontFamily = stored === 'ur' ? 'JameelNooriNastaleeq' : undefined;
 
   // RN's `defaultProps` API is technically private but is the standard
   // mechanism for setting cross-app text defaults; it's how reanimated,

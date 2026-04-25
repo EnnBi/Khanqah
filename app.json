@@ -46,6 +46,12 @@
       [
         "onesignal-expo-plugin",
         { "mode": "production" }
+      ],
+      [
+        "expo-font",
+        {
+          "fonts": ["./assets/fonts/JameelNooriNastaleeq.ttf"]
+        }
       ]
     ],
     "experiments": {
