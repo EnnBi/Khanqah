@@ -10,7 +10,6 @@ import {
   Animated,
   ActivityIndicator,
   Platform,
-  Share,
   Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -25,6 +24,7 @@ import { useTheme } from '../../providers/ThemeProvider';
 import { useI18n } from '../../providers/I18nProvider';
 import { YouTubeEmbed, isYouTubeUrl, isDirectVideoUrl } from '../../components/YouTubeEmbed';
 import { downloadContent, deleteDownload, getLocalPath } from '../../hooks/useDownloads';
+import * as Sharing from 'expo-sharing';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const ARTWORK_SIZE = 240;
@@ -85,6 +85,7 @@ export default function PlayerScreen() {
   const [seekPosition, setSeekPosition] = useState(0);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
   // Animated scale for play button press
   const playBtnScale = useRef(new Animated.Value(1)).current;
@@ -233,16 +234,41 @@ export default function PlayerScreen() {
   };
 
   const handleShare = async () => {
-    if (!content) return;
+    if (!content || sharing) return;
+    setSharing(true);
     try {
-      const title = content.title_en || 'Khanqah audio';
-      await Share.share({
-        title,
-        message: `${title}\n${content.media_url}`,
-        url: content.media_url,
+      if (!(await Sharing.isAvailableAsync())) {
+        Alert.alert('Sharing unavailable', 'This device does not support sharing.');
+        return;
+      }
+      // Use the local copy if already saved offline; otherwise download
+      // first so we can share the actual file (mp3/mp4/pdf) instead of a URL.
+      let localUri = getLocalPath(content.id);
+      if (!localUri) {
+        await downloadContent(content);
+        localUri = getLocalPath(content.id);
+        setSaved(true);
+      }
+      if (!localUri) throw new Error('Could not prepare file for sharing');
+
+      const ext = (content.media_url.match(/\.([a-z0-9]+)(?:\?|$)/i)?.[1] ?? '').toLowerCase();
+      const mimeType =
+        ext === 'mp3' ? 'audio/mpeg' :
+        ext === 'mp4' || ext === 'm4v' ? 'video/mp4' :
+        ext === 'pdf' ? 'application/pdf' :
+        ext === 'm4a' || ext === 'aac' ? 'audio/mp4' :
+        ext === 'wav' ? 'audio/wav' :
+        undefined;
+
+      await Sharing.shareAsync(localUri, {
+        mimeType,
+        dialogTitle: content.title_en || 'Share',
+        UTI: ext === 'pdf' ? 'com.adobe.pdf' : undefined,
       });
     } catch (err: any) {
       Alert.alert('Share failed', err?.message ?? 'Unknown error');
+    } finally {
+      setSharing(false);
     }
   };
 
@@ -615,10 +641,14 @@ export default function PlayerScreen() {
           <TouchableOpacity
             style={styles.actionBtn}
             onPress={handleShare}
-            disabled={!content?.media_url}
+            disabled={sharing || !content?.media_url}
             accessibilityLabel="Share"
           >
-            <Text style={[styles.actionIcon, { color: c.primary }]}>↗</Text>
+            {sharing ? (
+              <ActivityIndicator size="small" color={c.primary} />
+            ) : (
+              <Text style={[styles.actionIcon, { color: c.primary }]}>↗</Text>
+            )}
             <Text style={[styles.actionLabel, { color: c.textMuted }]}>SHARE</Text>
           </TouchableOpacity>
 
