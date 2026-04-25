@@ -6,6 +6,7 @@ import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.os.Build
+import android.util.Log
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 
@@ -14,15 +15,27 @@ class BroadcastServiceModule : Module() {
   private var focusRequest: AudioFocusRequest? = null
 
   private val focusListener = AudioManager.OnAudioFocusChangeListener { change ->
+    val name = when (change) {
+      AudioManager.AUDIOFOCUS_GAIN -> "GAIN"
+      AudioManager.AUDIOFOCUS_GAIN_TRANSIENT -> "GAIN_TRANSIENT"
+      AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK -> "GAIN_TRANSIENT_MAY_DUCK"
+      AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE -> "GAIN_TRANSIENT_EXCLUSIVE"
+      AudioManager.AUDIOFOCUS_LOSS -> "LOSS"
+      AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> "LOSS_TRANSIENT"
+      AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> "LOSS_TRANSIENT_CAN_DUCK"
+      else -> "UNKNOWN($change)"
+    }
+    Log.d("BroadcastService", "audio focus change: $name")
     when (change) {
       AudioManager.AUDIOFOCUS_LOSS_TRANSIENT,
-      AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK ->
+      AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK,
+      AudioManager.AUDIOFOCUS_LOSS ->
         sendEvent("interruption", mapOf("state" to "began"))
-      AudioManager.AUDIOFOCUS_GAIN ->
+      AudioManager.AUDIOFOCUS_GAIN,
+      AudioManager.AUDIOFOCUS_GAIN_TRANSIENT,
+      AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK,
+      AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE ->
         sendEvent("interruption", mapOf("state" to "ended"))
-      // AUDIOFOCUS_LOSS (permanent) is intentionally not emitted.
-      // Admin manually taps Stop in this rare case; auto-stopping
-      // would race with the WebSocket close path in broadcast.ts.
       else -> { /* ignore */ }
     }
   }
