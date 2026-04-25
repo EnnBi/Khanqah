@@ -51,7 +51,9 @@ wss.on('connection', (ws, req) => {
   let pingInterval = null;
   let idleInterval = null;
 
-  function startFfmpeg(format) {
+  const ALLOWED_SAMPLE_RATES = [8000, 16000, 22050, 44100, 48000];
+
+  function startFfmpeg(format, sampleRate) {
     const lowLatencyInput = ['-fflags', 'nobuffer', '-flags', 'low_delay'];
     const lowLatencyOutput = ['-flush_packets', '1'];
 
@@ -59,7 +61,7 @@ wss.on('connection', (ws, req) => {
       ? [
           ...lowLatencyInput,
           '-f', 's16le',
-          '-ar', '44100',
+          '-ar', String(sampleRate),
           '-ac', '1',
           '-i', 'pipe:0',
           '-c:a', 'aac',
@@ -93,6 +95,11 @@ wss.on('connection', (ws, req) => {
 
     proc.on('close', (code) => {
       console.log(`[ffmpeg] exited with code ${code}`);
+      if (code !== 0 && ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(JSON.stringify({ status: 'error', message: `ffmpeg exited (code ${code})` }));
+        } catch (_) {}
+      }
       cleanup();
     });
 
@@ -143,20 +150,28 @@ wss.on('connection', (ws, req) => {
     lastDataAt = Date.now();
 
     if (!configured) {
+      let format = 'webm';
+      let sampleRate = 44100;
       try {
         const config = JSON.parse(data.toString());
-        inputFormat = config.format || 'webm';
-        console.log(`[relay] Input format: ${inputFormat}`);
-        ffmpeg = startFfmpeg(inputFormat);
-        configured = true;
-        ws.send(JSON.stringify({ status: 'ok', message: 'Streaming started' }));
-        return;
+        if (config.format === 'pcm' || config.format === 'webm') {
+          format = config.format;
+        }
+        if (
+          typeof config.sampleRate === 'number' &&
+          ALLOWED_SAMPLE_RATES.includes(config.sampleRate)
+        ) {
+          sampleRate = config.sampleRate;
+        }
       } catch (_) {
-        inputFormat = 'webm';
-        ffmpeg = startFfmpeg(inputFormat);
-        configured = true;
         console.log('[relay] No config message, defaulting to webm');
       }
+      inputFormat = format;
+      console.log(`[relay] Input format: ${inputFormat}, sample rate: ${sampleRate}`);
+      ffmpeg = startFfmpeg(inputFormat, sampleRate);
+      configured = true;
+      ws.send(JSON.stringify({ status: 'ok', message: 'Streaming started' }));
+      return;
     }
 
     if (ffmpeg && ffmpeg.stdin.writable) {
