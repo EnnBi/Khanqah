@@ -12,6 +12,7 @@ import * as SplashScreen from 'expo-splash-screen';
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 import { rtlBootstrap } from '../lib/rtl-bootstrap';
+import { applyTextDefaults } from '../lib/text-defaults';
 
 // Reapply persisted RTL state on every launch BEFORE any UI renders.
 // If a previous toggle saved Urdu but the current process started LTR,
@@ -19,6 +20,13 @@ import { rtlBootstrap } from '../lib/rtl-bootstrap';
 // a consistent direction. Subsequent boots are no-ops.
 rtlBootstrap().catch((err) => {
   console.warn('[rtl-bootstrap] failed:', err);
+});
+
+// Set the default Text font to NastaleeqUrdu when the stored language
+// is Urdu, so every <Text> renders in Jameel Noori without per-component
+// changes. Components that explicitly set their own fontFamily still win.
+applyTextDefaults().catch((err) => {
+  console.warn('[text-defaults] failed:', err);
 });
 
 import { loadConfig, getConfig } from '../lib/remote-config';
