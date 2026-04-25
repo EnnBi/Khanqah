@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, FlatList, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../lib/supabase';
 import { ScheduledSession } from '../lib/types';
 import { useTheme } from '../providers/ThemeProvider';
 import { useSafeBack } from '../hooks/useSafeBack';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function ScheduleScreen() {
   const { theme } = useTheme();
@@ -29,7 +30,10 @@ export default function ScheduleScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: c.background, paddingTop: insets.top + 12 }]}>
-      <Text style={[styles.back, { color: c.primary }]} onPress={goBack}>‹ Back</Text>
+      <TouchableOpacity onPress={goBack} style={styles.back}>
+        <Ionicons name="chevron-back" size={18} color={c.primary} />
+        <Text style={{ color: c.primary, fontFamily: 'CrimsonPro-Medium', fontSize: 14 }}> Back</Text>
+      </TouchableOpacity>
       <Text style={[styles.title, { color: c.text }]}>Upcoming majlis</Text>
       {loading ? (
         <ActivityIndicator color={c.primary} style={{ marginTop: 24 }} />
@@ -66,7 +70,7 @@ export default function ScheduleScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  back: { paddingHorizontal: 16, paddingVertical: 8, fontFamily: 'CrimsonPro-Medium', fontSize: 18 },
+  back: { paddingHorizontal: 16, paddingVertical: 8, flexDirection: 'row', alignItems: 'center' },
   title: { fontFamily: 'CrimsonPro-SemiBold', fontSize: 28, marginHorizontal: 16, marginBottom: 8 },
   empty: { fontFamily: 'CrimsonPro-Italic', fontSize: 16, textAlign: 'center', marginTop: 48 },
   row: { padding: 14, borderRadius: 12, borderWidth: 1, marginBottom: 10 },

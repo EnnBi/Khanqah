@@ -17,6 +17,7 @@ import { Content, Category, isBookContent } from '../../lib/types';
 import { ContentCard } from '../../components/ContentCard';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useI18n } from '../../providers/I18nProvider';
+import { Ionicons } from '@expo/vector-icons';
 
 const PAGE_SIZE = 20;
 
@@ -226,7 +227,10 @@ export default function CategoryListingScreen() {
 
         {/* Back button */}
         <TouchableOpacity style={styles.backBtn} onPress={goBack} activeOpacity={0.7}>
-          <Text style={[styles.backText, { color: c.onPrimary }]}>{'‹ BACK'}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Ionicons name="chevron-back" size={18} color={c.onPrimary} />
+            <Text style={[styles.backText, { color: c.onPrimary }]}> BACK</Text>
+          </View>
         </TouchableOpacity>
 
         {/* Kicker */}

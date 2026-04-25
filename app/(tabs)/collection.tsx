@@ -12,6 +12,7 @@ import { useDownloads } from '../../hooks/useDownloads';
 import { ContentCard } from '../../components/ContentCard';
 import { useContinueListening, useHistory } from '../../hooks/useListeningProgress';
 import { isBookContent } from '../../lib/types';
+import { Ionicons } from '@expo/vector-icons';
 import { showMessage } from '../../lib/alert';
 
 // ── Section header (Calm Architecture style) ──────────────────────────────
@@ -141,7 +142,7 @@ function PlaylistCard({ name, itemCount }: PlaylistCardProps) {
           {itemCount} {itemCount === 1 ? 'ITEM' : 'ITEMS'}
         </Text>
       </View>
-      <Text style={[playlistCardStyles.chevron, { color: c.textMuted }]}>›</Text>
+      <Ionicons name="chevron-forward" size={20} color={c.textMuted} />
     </View>
   );
 }

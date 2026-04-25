@@ -19,6 +19,7 @@ import { usePlayer } from '../../hooks/usePlayer';
 import { useSafeBack } from '../../hooks/useSafeBack';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useI18n } from '../../providers/I18nProvider';
+import { Ionicons } from '@expo/vector-icons';
 
 const ARTWORK_SIZE = 240;
 
@@ -206,7 +207,10 @@ export default function LivePlayerScreen() {
       <View style={[styles.screen, { backgroundColor: c.background }]}>
         <View style={[styles.emptyContainer, { paddingTop: insets.top + 16 }]}>
           <TouchableOpacity onPress={safeBack} style={styles.emptyBack}>
-            <Text style={[styles.backBtnText, { color: c.primary }]}>‹ Back</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="chevron-back" size={18} color={c.primary} />
+              <Text style={[styles.backBtnText, { color: c.primary }]}> Back</Text>
+            </View>
           </TouchableOpacity>
           <View style={styles.emptyBody}>
             <Text style={[styles.emptySymbol, { color: c.liveRed }]}>◉</Text>
@@ -238,7 +242,10 @@ export default function LivePlayerScreen() {
             style={styles.headerBtn}
             accessibilityLabel="Back"
           >
-            <Text style={[styles.backBtnText, { color: c.primary }]}>‹ Back</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="chevron-back" size={18} color={c.primary} />
+              <Text style={[styles.backBtnText, { color: c.primary }]}> Back</Text>
+            </View>
           </TouchableOpacity>
 
           {/* LIVE badge */}

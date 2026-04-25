@@ -18,6 +18,7 @@ import { Content, isBookContent } from '../../lib/types';
 import { ContentCard } from '../../components/ContentCard';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useI18n } from '../../providers/I18nProvider';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function SearchScreen() {
   const router = useRouter();
@@ -115,7 +116,10 @@ export default function SearchScreen() {
       {/* Top bar */}
       <View style={[styles.topBar, { paddingTop: insets.top + 12, backgroundColor: c.background }]}>
         <TouchableOpacity style={styles.backBtn} onPress={goBack} activeOpacity={0.7}>
-          <Text style={[styles.backText, { color: c.gold }]}>{'‹ BACK'}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Ionicons name="chevron-back" size={18} color={c.gold} />
+            <Text style={[styles.backText, { color: c.gold }]}> BACK</Text>
+          </View>
         </TouchableOpacity>
         <Text style={[styles.screenLabel, { color: c.gold }]}>SEARCH</Text>
         <View style={styles.backBtn} />

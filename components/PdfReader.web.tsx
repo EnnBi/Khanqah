@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { useTheme } from '../providers/ThemeProvider';
+import { Ionicons } from '@expo/vector-icons';
 import { API_BASE_URL } from '../lib/remote-config';
 
 // pdfjs-dist 4.10+ only ships .mjs workers on npm/unpkg. Browsers
@@ -377,7 +378,7 @@ export function PdfReader({ url }: PdfReaderProps) {
           activeOpacity={0.7}
           accessibilityLabel="Previous page"
         >
-          <Text style={[styles.navArrow, { color: c.primary }]}>‹</Text>
+          <Ionicons name="chevron-back" size={26} color={c.primary} />
         </TouchableOpacity>
 
         <Text style={[styles.pageLabel, { color: c.text }]}>
@@ -391,7 +392,7 @@ export function PdfReader({ url }: PdfReaderProps) {
           activeOpacity={0.7}
           accessibilityLabel="Next page"
         >
-          <Text style={[styles.navArrow, { color: c.primary }]}>›</Text>
+          <Ionicons name="chevron-forward" size={26} color={c.primary} />
         </TouchableOpacity>
 
         <View style={styles.spacer} />

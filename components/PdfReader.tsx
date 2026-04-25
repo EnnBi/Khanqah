@@ -3,6 +3,7 @@ import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'rea
 import Pdf from 'react-native-pdf';
 import { Directory, File, Paths } from 'expo-file-system';
 import { useTheme } from '../providers/ThemeProvider';
+import { Ionicons } from '@expo/vector-icons';
 
 interface PdfReaderProps {
   url: string;
@@ -163,7 +164,7 @@ export function PdfReader({ url }: PdfReaderProps) {
           activeOpacity={0.7}
           accessibilityLabel="Previous page"
         >
-          <Text style={[styles.navArrow, { color: c.primary }]}>‹</Text>
+          <Ionicons name="chevron-back" size={26} color={c.primary} />
         </TouchableOpacity>
 
         <Text style={[styles.pageLabel, { color: c.text }]}>
@@ -177,7 +178,7 @@ export function PdfReader({ url }: PdfReaderProps) {
           activeOpacity={0.7}
           accessibilityLabel="Next page"
         >
-          <Text style={[styles.navArrow, { color: c.primary }]}>›</Text>
+          <Ionicons name="chevron-forward" size={26} color={c.primary} />
         </TouchableOpacity>
 
         <View style={styles.spacer} />

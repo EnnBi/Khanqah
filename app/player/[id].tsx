@@ -23,6 +23,7 @@ import { useSafeBack } from '../../hooks/useSafeBack';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useI18n } from '../../providers/I18nProvider';
 import { YouTubeEmbed, isYouTubeUrl, isDirectVideoUrl } from '../../components/YouTubeEmbed';
+import { Ionicons } from '@expo/vector-icons';
 import { downloadContent, deleteDownload, getLocalPath } from '../../hooks/useDownloads';
 import * as Sharing from 'expo-sharing';
 
@@ -397,7 +398,10 @@ export default function PlayerScreen() {
             style={styles.headerBtn}
             accessibilityLabel="Back"
           >
-            <Text style={[styles.backBtnText, { color: c.primary }]}>‹ Back</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="chevron-back" size={18} color={c.primary} />
+              <Text style={[styles.backBtnText, { color: c.primary }]}> Back</Text>
+            </View>
           </TouchableOpacity>
 
           <Text style={[styles.nowPlayingLabel, { color: c.textMuted }]}>

@@ -12,6 +12,7 @@ import { useI18n } from '../../providers/I18nProvider';
 import { useAuth } from '../../providers/AuthProvider';
 import { useLanguageToggle } from '../../hooks/useLanguageToggle';
 import { confirmDestructive } from '../../lib/alert';
+import { Ionicons } from '@expo/vector-icons';
 
 // ── ProfileItem ────────────────────────────────────────────────────────────
 
@@ -37,7 +38,7 @@ function ProfileItem({ icon, label, value, onPress }: ProfileItemProps) {
         {value ? (
           <Text style={[itemStyles.value, { color: c.accent }]}>{value.toUpperCase()}</Text>
         ) : null}
-        <Text style={[itemStyles.chevron, { color: c.textMuted }]}>›</Text>
+        <Ionicons name="chevron-forward" size={20} color={c.textMuted} />
       </View>
     </TouchableOpacity>
   );

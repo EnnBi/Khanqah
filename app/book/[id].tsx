@@ -19,6 +19,7 @@ import { supabase } from '../../lib/supabase';
 import { Content, pickCredit, isBookContent } from '../../lib/types';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useI18n } from '../../providers/I18nProvider';
+import { Ionicons } from '@expo/vector-icons';
 
 const BOOKMARK_KEY_PREFIX = 'book_scroll_';
 
@@ -142,7 +143,7 @@ export default function BookViewerScreen() {
             onPress={goBack}
             accessibilityLabel="Go back"
           >
-            <Text style={[styles.backArrow, { color: c.primary }]}>{'‹'}</Text>
+            <Ionicons name="chevron-back" size={34} color={c.primary} />
           </TouchableOpacity>
           <View style={styles.topBarTitleWrap}>
             <Text style={[styles.topBarTitle, { color: c.text }]} numberOfLines={1}>
@@ -183,7 +184,7 @@ export default function BookViewerScreen() {
           onPress={goBack}
           accessibilityLabel="Go back"
         >
-          <Text style={[styles.backArrow, { color: c.primary }]}>{'‹'}</Text>
+          <Ionicons name="chevron-back" size={34} color={c.primary} />
         </TouchableOpacity>
 
         {/* Title + credit */}

@@ -14,6 +14,7 @@ import { BrandBanner } from '../../components/BrandBanner';
 import { LiveStatusCard } from '../../components/LiveStatusCard';
 import { QuickActionTile } from '../../components/QuickActionTile';
 import { ContentCard } from '../../components/ContentCard';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function HomeScreen() {
   const { theme } = useTheme();
@@ -105,7 +106,7 @@ export default function HomeScreen() {
         <View style={styles.railHead}>
           <Text style={[styles.railTitle, { color: c.text }]}>{t('home.recents')}</Text>
           <TouchableOpacity onPress={() => router.push('/library')}>
-            <Text style={[styles.more, { color: c.primary }]}>›</Text>
+            <Ionicons name="chevron-forward" size={24} color={c.primary} />
           </TouchableOpacity>
         </View>
 

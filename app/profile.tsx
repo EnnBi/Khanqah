@@ -25,7 +25,10 @@ export default function ProfileScreen() {
       contentContainerStyle={{ paddingTop: insets.top + 12, paddingBottom: 120 }}
     >
       <TouchableOpacity style={styles.back} onPress={goBack} activeOpacity={0.7}>
-        <Text style={[styles.backText, { color: c.primary }]}>‹ Back</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Ionicons name="chevron-back" size={18} color={c.primary} />
+          <Text style={[styles.backText, { color: c.primary }]}> Back</Text>
+        </View>
       </TouchableOpacity>
 
       <View style={styles.hero}>
@@ -129,7 +132,7 @@ function Row({
       </View>
       <Text style={[styles.rowLabel, { color: danger ? c.liveRed : c.text }]}>{label}</Text>
       {value ? <Text style={[styles.rowValue, { color: c.textMuted }]}>{value}</Text> : null}
-      {onPress ? <Text style={[styles.chev, { color: c.textMuted }]}>›</Text> : null}
+      {onPress ? <Ionicons name="chevron-forward" size={18} color={c.textMuted} /> : null}
     </TouchableOpacity>
   );
 }
