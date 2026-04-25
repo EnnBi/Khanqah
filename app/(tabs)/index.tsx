@@ -17,7 +17,7 @@ import { ContentCard } from '../../components/ContentCard';
 
 export default function HomeScreen() {
   const { theme } = useTheme();
-  const { language } = useI18n();
+  const { language, t } = useI18n();
   const { user, isAdmin, isEditor } = useAuth();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -79,31 +79,31 @@ export default function HomeScreen() {
 
         <View style={styles.grid}>
           <View style={styles.gridRow}>
-            <QuickActionTile icon="star-outline" label="Mamulat" onPress={onMamulat} accent />
-            <QuickActionTile icon="radio-outline" label="Live Sessions" onPress={onLiveSessions} />
+            <QuickActionTile icon="star-outline" label={t('home.quickActions.mamulat')} onPress={onMamulat} accent />
+            <QuickActionTile icon="radio-outline" label={t('home.quickActions.liveSessions')} onPress={onLiveSessions} />
             <QuickActionTile
               icon="time-outline"
-              label="Salah Timings"
+              label={t('home.quickActions.salahTimings')}
               onPress={() => router.push('/coming-soon?feature=salah')}
             />
           </View>
           <View style={styles.gridRow}>
-            <QuickActionTile icon="people-outline" label="Majlis Timings" onPress={onMajlisTimings} />
+            <QuickActionTile icon="people-outline" label={t('home.quickActions.majlisTimings')} onPress={onMajlisTimings} />
             <QuickActionTile
               icon="grid-outline"
-              label="Explore Categories"
+              label={t('home.quickActions.exploreCategories')}
               onPress={() => router.push('/library')}
             />
             <QuickActionTile
               icon="chatbubble-ellipses-outline"
-              label="Ask Hazrat"
+              label={t('home.quickActions.askHazrat')}
               onPress={() => router.push('/coming-soon?feature=ask')}
             />
           </View>
         </View>
 
         <View style={styles.railHead}>
-          <Text style={[styles.railTitle, { color: c.text }]}>Recents</Text>
+          <Text style={[styles.railTitle, { color: c.text }]}>{t('home.recents')}</Text>
           <TouchableOpacity onPress={() => router.push('/library')}>
             <Text style={[styles.more, { color: c.primary }]}>›</Text>
           </TouchableOpacity>
@@ -131,7 +131,7 @@ export default function HomeScreen() {
           ListEmptyComponent={
             <View style={[styles.emptyCard, { borderColor: c.border }]}>
               <Text style={{ color: c.textMuted, fontFamily: 'CrimsonPro-Italic' }}>
-                No content yet.
+                {t('home.noContent')}
               </Text>
             </View>
           }
