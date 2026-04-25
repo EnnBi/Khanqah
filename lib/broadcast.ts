@@ -1,19 +1,26 @@
 // lib/broadcast.ts
 //
 // Module-level singleton that owns the live-broadcast lifecycle:
-// MediaRecorder + WebSocket to the relay + current live_sessions row id.
-// Survives React navigation. Idempotent start/stop. Heartbeats every 15s.
-// Uses the web MediaRecorder API — native unsupported for now.
+// MicSource (per-platform) + WebSocket to the relay + current
+// live_sessions row id. Survives React navigation. Idempotent
+// start/stop. Heartbeats every 15 s.
 
-import { Platform } from 'react-native';
 import { supabase } from './supabase';
 import { getConfig } from './remote-config';
+import {
+  MicSource,
+  MicConfigFrame,
+  MicPermissionDeniedError,
+} from './mic';
+import { createMicSource } from './mic.web'; // Metro replaces with mic.native on native
+export { MicPermissionDeniedError };
 
 export type ActiveSession = {
   id: string;
   titleEn: string;
   titleUr: string;
   startedAt: number;
+  paused: boolean;
 };
 
 export class BroadcastLockedError extends Error {
@@ -39,22 +46,28 @@ function emit<K extends keyof Listeners>(event: K, ...args: any[]) {
 
 type State = {
   active: ActiveSession | null;
-  mediaStream: MediaStream | null;
-  recorder: MediaRecorder | null;
+  mic: MicSource | null;
   ws: WebSocket | null;
   heartbeat: ReturnType<typeof setInterval> | null;
   starting: boolean;
   stopping: boolean;
+  micUnsubChunk: (() => void) | null;
+  micUnsubErr: (() => void) | null;
+  micUnsubInt: (() => void) | null;
+  configFrame: MicConfigFrame | null;
 };
 
 const state: State = {
   active: null,
-  mediaStream: null,
-  recorder: null,
+  mic: null,
   ws: null,
   heartbeat: null,
   starting: false,
   stopping: false,
+  micUnsubChunk: null,
+  micUnsubErr: null,
+  micUnsubInt: null,
+  configFrame: null,
 };
 
 function getRelayUrl(): string {
@@ -63,17 +76,60 @@ function getRelayUrl(): string {
   return 'wss://arrashid.ennbi.com/ws/';
 }
 
+async function openWebsocket(configFrame: MicConfigFrame): Promise<WebSocket> {
+  const ws = new WebSocket(getRelayUrl());
+  await new Promise<void>((resolve, reject) => {
+    const t = setTimeout(
+      () => reject(new Error('Relay handshake timed out after 20s')),
+      20_000,
+    );
+    ws.onopen = () => { clearTimeout(t); resolve(); };
+    ws.onerror = () => {
+      clearTimeout(t);
+      reject(new Error('Relay unreachable'));
+    };
+    ws.onclose = (ev) => {
+      if (ws.readyState !== WebSocket.OPEN) {
+        clearTimeout(t);
+        reject(new Error(`Relay closed before handshake (code ${ev.code})`));
+      }
+    };
+  });
+  ws.send(JSON.stringify(configFrame));
+  return ws;
+}
+
+function attachChunkPump() {
+  if (!state.mic || !state.ws) return;
+  state.micUnsubChunk = state.mic.onChunk((chunk) => {
+    if (state.ws && state.ws.readyState === WebSocket.OPEN) {
+      try { state.ws.send(chunk); } catch (err: any) {
+        emit('error', new Error(err?.message ?? 'WebSocket send failed'));
+      }
+    }
+  });
+  state.micUnsubErr = state.mic.onError((err) => emit('error', err));
+}
+
+function detachChunkPump() {
+  state.micUnsubChunk?.();
+  state.micUnsubErr?.();
+  state.micUnsubChunk = null;
+  state.micUnsubErr = null;
+}
+
 async function cleanupTransport() {
   if (state.heartbeat) {
     clearInterval(state.heartbeat);
     state.heartbeat = null;
   }
-  try { state.recorder?.stop(); } catch {}
-  state.recorder = null;
+  detachChunkPump();
+  if (state.mic) {
+    try { await state.mic.stop(); } catch {}
+    state.mic = null;
+  }
   try { state.ws?.close(); } catch {}
   state.ws = null;
-  state.mediaStream?.getTracks().forEach((t) => { try { t.stop(); } catch {} });
-  state.mediaStream = null;
 }
 
 export const broadcast = {
@@ -101,43 +157,18 @@ export const broadcast = {
   }): Promise<ActiveSession> {
     if (state.active) return state.active;
     if (state.starting) throw new Error('Broadcast start already in progress');
-    // MediaRecorder + getUserMedia are web-only APIs. Going live from the
-    // installed Android/iOS app isn't wired up yet — admin must open the
-    // site in a browser to start a session.
-    if (Platform.OS !== 'web') {
-      throw new Error('Going live is only supported in a web browser for now.');
-    }
     state.starting = true;
 
     try {
-      // 1. Acquire mic.
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      state.mediaStream = stream;
+      // 1. Acquire mic via the platform-specific MicSource.
+      const mic = createMicSource();
+      state.mic = mic;
+      const configFrame = await mic.start();
+      state.configFrame = configFrame;
 
-      // 2. Open WebSocket to relay. Mobile networks (5G with carrier
-      // middleboxes, spotty cell signal) can push the TLS + upgrade
-      // handshake past 10 s, so give it 20 s before giving up.
-      const ws = new WebSocket(getRelayUrl());
+      // 2. Open WebSocket and send config frame.
+      const ws = await openWebsocket(configFrame);
       state.ws = ws;
-      await new Promise<void>((resolve, reject) => {
-        const t = setTimeout(
-          () => reject(new Error('Relay handshake timed out after 20s')),
-          20_000,
-        );
-        ws.onopen = () => { clearTimeout(t); resolve(); };
-        ws.onerror = () => {
-          clearTimeout(t);
-          reject(new Error('Relay unreachable'));
-        };
-        ws.onclose = (ev) => {
-          // If the socket closes before onopen fires, surface the close
-          // code so the user (and logs) see something actionable.
-          if (ws.readyState !== WebSocket.OPEN) {
-            clearTimeout(t);
-            reject(new Error(`Relay closed before handshake (code ${ev.code})`));
-          }
-        };
-      });
 
       // 3. Insert (or reuse) the live_sessions row.
       const cfg = getConfig();
@@ -161,7 +192,6 @@ export const broadcast = {
           .single();
 
         if (error) {
-          // 23505 = unique_violation — someone else is live.
           if ((error as any).code === '23505') {
             const existing = await supabase
               .from('live_sessions')
@@ -183,22 +213,10 @@ export const broadcast = {
           .eq('id', rowId);
       }
 
-      // 4. Start the MediaRecorder, pipe chunks to the relay.
-      const mime =
-        typeof MediaRecorder !== 'undefined' &&
-        MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-          ? 'audio/webm;codecs=opus'
-          : 'audio/webm';
-      const recorder = new MediaRecorder(stream, { mimeType: mime });
-      state.recorder = recorder;
-      recorder.ondataavailable = (e) => {
-        if (e.data && e.data.size && state.ws && state.ws.readyState === WebSocket.OPEN) {
-          state.ws.send(e.data);
-        }
-      };
-      recorder.start(200);
+      // 4. Start chunk pump.
+      attachChunkPump();
 
-      // 5. Heartbeat every 15 s.
+      // 5. Heartbeat every 15 s — runs in BOTH active and paused states.
       state.heartbeat = setInterval(() => {
         if (!state.active) return;
         supabase
@@ -210,7 +228,7 @@ export const broadcast = {
 
       // 6. Socket death → treat as error and clean up.
       ws.onclose = () => {
-        if (!state.active) return;
+        if (!state.active || state.active.paused) return;
         emit('error', new Error('Relay connection closed'));
         broadcast.stop().catch(() => {});
       };
@@ -218,21 +236,67 @@ export const broadcast = {
         emit('error', new Error('Relay connection errored'));
       };
 
+      // 7. Wire interruption → pause/resume.
+      state.micUnsubInt = mic.onInterruption((evt) => {
+        if (evt === 'began') {
+          broadcast._pauseForInterruption().catch(() => {});
+        } else {
+          broadcast._resumeFromInterruption().catch((err) =>
+            emit('error', err instanceof Error ? err : new Error(String(err))),
+          );
+        }
+      });
+
       const active: ActiveSession = {
         id: rowId!,
         titleEn: opts.title_en,
         titleUr: opts.title_ur,
         startedAt: Date.now(),
+        paused: false,
       };
       state.active = active;
       emit('start', active);
       return active;
     } catch (err) {
       await cleanupTransport();
+      state.micUnsubInt?.();
+      state.micUnsubInt = null;
       throw err;
     } finally {
       state.starting = false;
     }
+  },
+
+  async _pauseForInterruption(): Promise<void> {
+    if (!state.active || state.active.paused) return;
+    state.active = { ...state.active, paused: true };
+    detachChunkPump();
+    try { state.ws?.close(); } catch {}
+    state.ws = null;
+    if (state.mic) {
+      try { await state.mic.stop(); } catch {}
+    }
+  },
+
+  async _resumeFromInterruption(): Promise<void> {
+    if (!state.active || !state.active.paused) return;
+    if (!state.configFrame) {
+      throw new Error('No config frame to resume with');
+    }
+    const mic = createMicSource();
+    state.mic = mic;
+    const newFrame = await mic.start();
+    state.configFrame = newFrame;
+    const ws = await openWebsocket(newFrame);
+    state.ws = ws;
+    attachChunkPump();
+    ws.onclose = () => {
+      if (!state.active || state.active.paused) return;
+      emit('error', new Error('Relay connection closed'));
+      broadcast.stop().catch(() => {});
+    };
+    ws.onerror = () => emit('error', new Error('Relay connection errored'));
+    state.active = { ...state.active, paused: false };
   },
 
   async stop(): Promise<void> {
@@ -242,6 +306,9 @@ export const broadcast = {
 
     const id = state.active.id;
     state.active = null;
+    state.micUnsubInt?.();
+    state.micUnsubInt = null;
+    state.configFrame = null;
     await cleanupTransport();
 
     try {
