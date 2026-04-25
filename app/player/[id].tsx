@@ -227,7 +227,7 @@ export default function PlayerScreen() {
         setSaved(true);
       }
     } catch (err: any) {
-      Alert.alert('Download failed', err?.message ?? 'Unknown error');
+      Alert.alert(t('player.downloadFailed'), err?.message ?? 'Unknown error');
     } finally {
       setSaving(false);
     }
@@ -266,7 +266,7 @@ export default function PlayerScreen() {
         UTI: ext === 'pdf' ? 'com.adobe.pdf' : undefined,
       });
     } catch (err: any) {
-      Alert.alert('Share failed', err?.message ?? 'Unknown error');
+      Alert.alert(t('player.shareFailed'), err?.message ?? 'Unknown error');
     } finally {
       setSharing(false);
     }
@@ -527,8 +527,8 @@ export default function PlayerScreen() {
             />
           </View>
           <View style={styles.timeRow}>
-            <Text style={[styles.timeText, { color: c.textMuted }]}>{elapsed}</Text>
-            <Text style={[styles.timeText, { color: c.textMuted }]}>{remaining}</Text>
+            <Text style={[styles.timeText, { color: c.textMuted, writingDirection: 'ltr' }]}>{elapsed}</Text>
+            <Text style={[styles.timeText, { color: c.textMuted, writingDirection: 'ltr' }]}>{remaining}</Text>
           </View>
         </View>
         )}
@@ -633,7 +633,7 @@ export default function PlayerScreen() {
               <Text style={[styles.actionIcon, { color: c.primary }]}>{saved ? '✓' : '↓'}</Text>
             )}
             <Text style={[styles.actionLabel, { color: c.textMuted }]}>
-              {saved ? 'SAVED' : 'SAVE'}
+              {saved ? t('player.saved') : t('player.save')}
             </Text>
           </TouchableOpacity>
 
@@ -649,13 +649,13 @@ export default function PlayerScreen() {
             ) : (
               <Text style={[styles.actionIcon, { color: c.primary }]}>↗</Text>
             )}
-            <Text style={[styles.actionLabel, { color: c.textMuted }]}>SHARE</Text>
+            <Text style={[styles.actionLabel, { color: c.textMuted }]}>{t('player.share')}</Text>
           </TouchableOpacity>
 
           {/* Queue */}
           <TouchableOpacity style={styles.actionBtn} accessibilityLabel="Queue">
             <Text style={[styles.actionIcon, { color: c.primary }]}>≡</Text>
-            <Text style={[styles.actionLabel, { color: c.textMuted }]}>QUEUE</Text>
+            <Text style={[styles.actionLabel, { color: c.textMuted }]}>{t('player.queue')}</Text>
           </TouchableOpacity>
 
           {/* Speed (repeat here for quick access) */}
@@ -665,7 +665,7 @@ export default function PlayerScreen() {
             accessibilityLabel="Playback speed"
           >
             <Text style={[styles.actionIcon, { color: c.primary }]}>⟳</Text>
-            <Text style={[styles.actionLabel, { color: c.textMuted }]}>SPEED</Text>
+            <Text style={[styles.actionLabel, { color: c.textMuted }]}>{t('player.speed')}</Text>
           </TouchableOpacity>
         </View>
 
