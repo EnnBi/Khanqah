@@ -21,7 +21,6 @@ import { usePlayer } from '../../hooks/usePlayer';
 import { useSafeBack } from '../../hooks/useSafeBack';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useI18n } from '../../providers/I18nProvider';
-import { TopicsList } from '../../components/TopicsList';
 import { YouTubeEmbed, isYouTubeUrl, isDirectVideoUrl } from '../../components/YouTubeEmbed';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -581,17 +580,6 @@ export default function PlayerScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* ── Topics Panel ── */}
-        {content && (
-          <View style={styles.topicsSection}>
-            {/* Section header */}
-            <View style={styles.topicsHeader}>
-              <Text style={[styles.topicsLabel, { color: c.textMuted }]}>TOPICS</Text>
-              <Text style={[styles.topicsHeading, { color: c.text }]}>Chapters</Text>
-            </View>
-            <TopicsList contentId={content.id} currentPosition={position} />
-          </View>
-        )}
       </ScrollView>
     </View>
   );
@@ -848,22 +836,4 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
 
-  // ── Topics ──
-  topicsSection: {
-    gap: 12,
-  },
-  topicsHeader: {
-    gap: 2,
-  },
-  topicsLabel: {
-    fontFamily: 'DMSans',
-    fontSize: 11,
-    letterSpacing: 2,
-    textTransform: 'uppercase',
-  },
-  topicsHeading: {
-    fontFamily: 'CrimsonPro-Italic',
-    fontSize: 22,
-    lineHeight: 28,
-  },
 });
