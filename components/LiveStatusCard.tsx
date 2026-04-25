@@ -3,47 +3,65 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../providers/ThemeProvider';
+import { useI18n } from '../providers/I18nProvider';
 import { useLiveSession } from '../hooks/useLiveSession';
 import { useNextScheduledSession } from '../hooks/useScheduledSessions';
 import { useAuth } from '../providers/AuthProvider';
 
-function relativeTime(iso: string): string {
+function relativeTime(
+  iso: string,
+  t: (key: string, opts?: Record<string, unknown>) => string,
+  locale: string,
+): string {
   const now = Date.now();
-  const t = new Date(iso).getTime();
-  const delta = Math.max(0, t - now);
+  const time = new Date(iso).getTime();
+  const delta = Math.max(0, time - now);
   const mins = Math.round(delta / 60000);
-  if (mins < 5) return 'Starting soon';
-  if (mins < 60) return `in ${mins} min`;
+  if (mins < 5) return t('liveStatus.startingSoon');
+  if (mins < 60) return t('liveStatus.inMinutes', { m: mins });
   const hrs = Math.round(mins / 60);
-  if (hrs < 24) return `in ${hrs} hr`;
+  if (hrs < 24) return t('liveStatus.inHours', { h: hrs });
   const d = new Date(iso);
-  return d.toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' });
+  // Use the platform locale for absolute date-time so weekday names and
+  // 12h/24h conventions follow the user's region settings.
+  return d.toLocaleString(locale === 'ur' ? 'ur-PK' : [], {
+    weekday: 'short',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
 }
 
 export function LiveStatusCard() {
   const { theme } = useTheme();
   const c = theme.colors;
   const router = useRouter();
+  const { t, language } = useI18n();
   const { isAdmin, isEditor } = useAuth();
   const { session: live } = useLiveSession();
   const { session: next } = useNextScheduledSession();
 
-  let kicker = 'OFF AIR';
-  let title = 'No sessions scheduled';
+  const pickTitle = (en?: string | null, ur?: string | null, fallbackKey?: string): string => {
+    const preferred = language === 'ur' ? ur || en : en || ur;
+    if (preferred) return preferred;
+    return fallbackKey ? t(fallbackKey) : '';
+  };
+
+  let kicker = t('liveStatus.offAir');
+  let title = t('liveStatus.noSessions');
   let subtitle = '';
   let dotColor: string = c.textMuted;
   let onPress: (() => void) | undefined;
 
   if (live) {
-    kicker = 'ON AIR';
-    title = live.title_en || live.title_ur || 'Live session';
-    subtitle = 'Tap to join';
+    kicker = t('liveStatus.onAir');
+    title = pickTitle(live.title_en, live.title_ur, 'liveStatus.liveSession');
+    subtitle = t('liveStatus.tapToJoin');
     dotColor = c.liveRed;
     onPress = () => router.push('/player/live');
   } else if (next) {
-    kicker = 'OFF AIR · NEXT MAJLIS';
-    title = next.title_en || next.title_ur || 'Majlis';
-    subtitle = relativeTime(next.scheduled_at);
+    kicker = t('liveStatus.offAirNext');
+    title = pickTitle(next.title_en, next.title_ur, 'liveStatus.majlis');
+    subtitle = relativeTime(next.scheduled_at, t, language);
     if (isAdmin || isEditor) onPress = () => router.push('/admin/schedule');
   }
 

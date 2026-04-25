@@ -145,6 +145,18 @@ const en = {
     body: "We're working on this.",
     back: 'Back',
   },
+  liveStatus: {
+    onAir: 'ON AIR',
+    offAir: 'OFF AIR',
+    offAirNext: 'OFF AIR · NEXT MAJLIS',
+    noSessions: 'No sessions scheduled',
+    liveSession: 'Live session',
+    majlis: 'Majlis',
+    tapToJoin: 'Tap to join',
+    startingSoon: 'Starting soon',
+    inMinutes: 'in {{m}} min',
+    inHours: 'in {{h}} hr',
+  },
   confirm: {
     cancel: 'Cancel',
     languageRestart: {

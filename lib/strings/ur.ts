@@ -145,6 +145,18 @@ const ur = {
     body: 'ہم اس پر کام کر رہے ہیں۔',
     back: 'واپس',
   },
+  liveStatus: {
+    onAir: 'لائیو',
+    offAir: 'بند',
+    offAirNext: 'بند · اگلی مجلس',
+    noSessions: 'کوئی سیشن طے نہیں',
+    liveSession: 'لائیو سیشن',
+    majlis: 'مجلس',
+    tapToJoin: 'شامل ہونے کے لیے ٹیپ کریں',
+    startingSoon: 'جلد شروع ہو رہا ہے',
+    inMinutes: '{{m}} منٹ میں',
+    inHours: '{{h}} گھنٹے میں',
+  },
   confirm: {
     cancel: 'منسوخ',
     languageRestart: {
