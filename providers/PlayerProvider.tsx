@@ -21,6 +21,7 @@ interface PlayerContextValue {
   currentContent: Content | null;
   isPlaying: boolean;
   isBuffering: boolean;
+  isLoading: boolean;
   position: number;
   duration: number;
   playbackSpeed: number;
@@ -40,6 +41,7 @@ const PlayerContext = createContext<PlayerContextValue>({
   currentContent: null,
   isPlaying: false,
   isBuffering: false,
+  isLoading: false,
   position: 0,
   duration: 0,
   playbackSpeed: 1.0,
@@ -63,6 +65,7 @@ function PlayerProviderInner({ children }: { children: React.ReactNode }) {
   const [currentContent, setCurrentContent] = useState<Content | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
   const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
@@ -75,6 +78,10 @@ function PlayerProviderInner({ children }: { children: React.ReactNode }) {
       setIsBuffering(false);
       return;
     }
+    // Sound is loaded — clear the "loading" spinner once playback has
+    // actually started. Staying true through buffering would also be
+    // acceptable but isBuffering already covers that state separately.
+    if (status.isPlaying) setIsLoading(false);
     setIsPlaying(status.isPlaying);
     setIsBuffering(status.isBuffering);
     setPosition((status.positionMillis ?? 0) / 1000);
@@ -92,17 +99,23 @@ function PlayerProviderInner({ children }: { children: React.ReactNode }) {
   const loadAndPlay = useCallback(
     async (content: Content) => {
       await unload();
-      const { sound } = await Audio.Sound.createAsync(
-        { uri: content.media_url },
-        {
-          shouldPlay: true,
-          rate: playbackSpeed,
-          shouldCorrectPitch: true,
-        },
-        onStatus,
-      );
-      soundRef.current = sound;
+      setIsLoading(true);
       setCurrentContent(content);
+      try {
+        const { sound } = await Audio.Sound.createAsync(
+          { uri: content.media_url },
+          {
+            shouldPlay: true,
+            rate: playbackSpeed,
+            shouldCorrectPitch: true,
+          },
+          onStatus,
+        );
+        soundRef.current = sound;
+      } catch (err) {
+        setIsLoading(false);
+        throw err;
+      }
     },
     [onStatus, playbackSpeed, unload],
   );
@@ -170,6 +183,7 @@ function PlayerProviderInner({ children }: { children: React.ReactNode }) {
     await unload();
     setCurrentContent(null);
     setIsPlaying(false);
+    setIsLoading(false);
     setPosition(0);
     setDuration(0);
     queueRef.current = [];
@@ -206,6 +220,7 @@ function PlayerProviderInner({ children }: { children: React.ReactNode }) {
         currentContent,
         isPlaying,
         isBuffering,
+        isLoading,
         position,
         duration,
         playbackSpeed,

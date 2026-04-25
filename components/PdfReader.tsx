@@ -1,23 +1,73 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Pdf from 'react-native-pdf';
+import { Directory, File, Paths } from 'expo-file-system';
 import { useTheme } from '../providers/ThemeProvider';
 
 interface PdfReaderProps {
   url: string;
 }
 
+// Stable, filesystem-safe filename derived from the remote URL.
+function filenameFor(url: string): string {
+  let h = 0;
+  for (let i = 0; i < url.length; i++) {
+    h = ((h << 5) - h) + url.charCodeAt(i);
+    h |= 0;
+  }
+  return `pdf-${Math.abs(h).toString(36)}.pdf`;
+}
+
 export function PdfReader({ url }: PdfReaderProps) {
   const { theme } = useTheme();
   const c = theme.colors;
 
-  const pdfRef = useRef<Pdf | null>(null);
+  const pdfRef = useRef<React.ComponentRef<typeof Pdf> | null>(null);
 
   const [numPages, setNumPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [scale, setScale] = useState(1);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [loadPercent, setLoadPercent] = useState(0);
+  // Local file:// URI after the PDF is fetched. Rendering from a local file
+  // avoids react-native-blob-util's custom trust-manager code path, which
+  // throws "Use of own trust manager but none defined" on some Android TLS
+  // stacks (Jio 4G/5G). expo-file-system uses Android's stock HttpURLConnection.
+  const [localUri, setLocalUri] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setDownloading(true);
+    setErrorMsg(null);
+    setNumPages(0);
+    setCurrentPage(1);
+    setLoadPercent(0);
+    setLocalUri(null);
+
+    (async () => {
+      try {
+        const dir = new Directory(Paths.cache, 'pdfs');
+        if (!dir.exists) dir.create({ intermediates: true });
+        const target = new File(dir, filenameFor(url));
+        if (!target.exists) {
+          await File.downloadFileAsync(url, target, { idempotent: true });
+        }
+        if (cancelled) return;
+        setLocalUri(target.uri);
+      } catch (err) {
+        if (cancelled) return;
+        const message = (err as { message?: string })?.message ?? 'Failed to download the PDF.';
+        setErrorMsg(message);
+      } finally {
+        if (!cancelled) setDownloading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [url]);
 
   const onLoadComplete = useCallback((n: number) => {
     setNumPages(n);
@@ -52,7 +102,7 @@ export function PdfReader({ url }: PdfReaderProps) {
     [numPages],
   );
 
-  const loading = !errorMsg && numPages === 0;
+  const loading = !errorMsg && (downloading || !localUri || numPages === 0);
 
   return (
     <View style={[styles.wrapper, { backgroundColor: c.background }]}>
@@ -75,31 +125,29 @@ export function PdfReader({ url }: PdfReaderProps) {
           </View>
         ) : (
           <>
-            <Pdf
-              ref={pdfRef}
-              source={{ uri: url, cache: true }}
-              // Top-level prop — react-native-pdf reads trustAllCerts here,
-              // not from source. Setting true bypasses react-native-blob-util's
-              // buggy custom-trust-manager slot that otherwise throws
-              // "Use of own trust manager but none defined" on some Android
-              // TLS stacks (Jio 4G/5G). archive.org serves valid Let's Encrypt
-              // / DigiCert chains; we're not loosening TLS, just avoiding a
-              // broken optional pinning slot.
-              trustAllCerts={true}
-              scale={scale}
-              minScale={0.5}
-              maxScale={3.0}
-              onLoadComplete={onLoadComplete}
-              onPageChanged={onPageChanged}
-              onError={onError}
-              onLoadProgress={onLoadProgress}
-              style={[styles.pdf, { backgroundColor: c.background }]}
-            />
+            {localUri && (
+              <Pdf
+                ref={pdfRef}
+                source={{ uri: localUri }}
+                scale={scale}
+                minScale={0.5}
+                maxScale={3.0}
+                onLoadComplete={onLoadComplete}
+                onPageChanged={onPageChanged}
+                onError={onError}
+                onLoadProgress={onLoadProgress}
+                style={[styles.pdf, { backgroundColor: c.background }]}
+              />
+            )}
             {loading && (
               <View style={[styles.loadingOverlay, { backgroundColor: c.background }]}>
                 <ActivityIndicator size="large" color={c.accent} />
                 <Text style={[styles.statusText, { color: c.textMuted, marginTop: 14 }]}>
-                  {loadPercent > 0 ? `Loading book… ${loadPercent}%` : 'Loading book…'}
+                  {downloading
+                    ? 'Downloading book…'
+                    : loadPercent > 0
+                    ? `Loading book… ${loadPercent}%`
+                    : 'Loading book…'}
                 </Text>
               </View>
             )}

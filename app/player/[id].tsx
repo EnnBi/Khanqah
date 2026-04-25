@@ -63,6 +63,7 @@ export default function PlayerScreen() {
     currentContent,
     isPlaying,
     isBuffering,
+    isLoading,
     position,
     duration,
     playbackSpeed,
@@ -106,6 +107,9 @@ export default function PlayerScreen() {
   const activeIsPlaying = isDirectVideo ? vidPlaying : isPlaying;
   const activeSpeed = isDirectVideo ? vidSpeed : playbackSpeed;
   const activeBuffering = isDirectVideo ? vidBuffering : isBuffering;
+  // Audio "spinning up" state — from playContent() until the sound
+  // actually starts playing. Direct video uses vidBuffering instead.
+  const activeLoading = isDirectVideo ? false : isLoading;
 
   // Fetch content from supabase
   useEffect(() => {
@@ -486,6 +490,7 @@ export default function PlayerScreen() {
           <Animated.View style={{ transform: [{ scale: playBtnScale }] }}>
             <TouchableOpacity
               onPress={handlePlayPause}
+              disabled={activeLoading}
               style={[
                 styles.playBtn,
                 {
@@ -494,11 +499,17 @@ export default function PlayerScreen() {
                   shadowColor: c.gold,
                 },
               ]}
-              accessibilityLabel={activeIsPlaying ? "Pause" : "Play"}
+              accessibilityLabel={
+                activeLoading ? "Loading" : activeIsPlaying ? "Pause" : "Play"
+              }
             >
-              <Text style={[styles.playBtnIcon, { color: c.onPrimary }]}>
-                {activeIsPlaying ? "▌▌" : "▶"}
-              </Text>
+              {activeLoading ? (
+                <ActivityIndicator size="small" color={c.onPrimary} />
+              ) : (
+                <Text style={[styles.playBtnIcon, { color: c.onPrimary }]}>
+                  {activeIsPlaying ? "▌▌" : "▶"}
+                </Text>
+              )}
             </TouchableOpacity>
           </Animated.View>
 

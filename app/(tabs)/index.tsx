@@ -23,7 +23,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const c = theme.colors;
 
-  const { content: latest } = useLatestContent('bayan', 10);
+  const { content: latest } = useLatestContent(undefined, 10);
   const { session: live } = useLiveSession();
   const [categories, setCategories] = useState<Category[]>([]);
 
@@ -103,8 +103,8 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.railHead}>
-          <Text style={[styles.railTitle, { color: c.text }]}>Latest Bayanaat</Text>
-          <TouchableOpacity onPress={() => router.push('/bayanaat')}>
+          <Text style={[styles.railTitle, { color: c.text }]}>Recents</Text>
+          <TouchableOpacity onPress={() => router.push('/library')}>
             <Text style={[styles.more, { color: c.primary }]}>›</Text>
           </TouchableOpacity>
         </View>
@@ -131,7 +131,7 @@ export default function HomeScreen() {
           ListEmptyComponent={
             <View style={[styles.emptyCard, { borderColor: c.border }]}>
               <Text style={{ color: c.textMuted, fontFamily: 'CrimsonPro-Italic' }}>
-                No bayanaat yet.
+                No content yet.
               </Text>
             </View>
           }
