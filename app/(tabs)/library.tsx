@@ -54,19 +54,19 @@ export default function LibraryScreen() {
     <View style={[styles.container, { backgroundColor: c.background }]}>
       {/* Hero header */}
       <View style={[styles.header, { backgroundColor: c.headerBg }]}>
-        <Text style={[styles.kicker, { color: c.accent }]}>THE COLLECTION</Text>
+        <Text style={[styles.kicker, { color: c.accent }]}>{t('libraryIndex.kicker')}</Text>
         <Text style={styles.title}>
-          Browse <Text style={styles.titleItalic}>everything</Text>
+          {t('libraryIndex.titleA')} <Text style={styles.titleItalic}>{t('libraryIndex.titleB')}</Text>
         </Text>
       </View>
 
       <SearchBar
-        placeholder={t('search_placeholder') || 'Search bayans, clips, books…'}
+        placeholder={t('library.search')}
         onPress={() => router.push('/library/search' as any)}
       />
 
       <Text style={[styles.sectionLabel, { color: c.textMuted }]}>
-        {String(categories.length).padStart(2, '0')} · CATEGORIES
+        {String(categories.length).padStart(2, '0')} · {t('libraryIndex.categories')}
       </Text>
 
       {loading ? (

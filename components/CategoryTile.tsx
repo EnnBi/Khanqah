@@ -1,17 +1,18 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
 import { useTheme } from '../providers/ThemeProvider';
+import { useI18n } from '../providers/I18nProvider';
 import { ContentType } from '../lib/types';
 import { useBilingual, urduTextStyle } from './BilingualText';
 
-const TYPE_LABEL: Record<ContentType, string> = {
-  bayan:     'Discourses',
-  clip:      'Moments',
-  nazam:     'Nazams',
-  quran:     'Recitations',
-  hamd_naat: 'Hamd & Naat',
-  book:      'Volumes',
-  mamulat:   'Daily Practices',
+const TYPE_LABEL_KEY: Record<ContentType, string> = {
+  bayan:     'libraryIndex.tileLabels.bayan',
+  clip:      'libraryIndex.tileLabels.clip',
+  nazam:     'libraryIndex.tileLabels.nazam',
+  quran:     'libraryIndex.tileLabels.quran',
+  hamd_naat: 'libraryIndex.tileLabels.hamd_naat',
+  book:      'libraryIndex.tileLabels.book',
+  mamulat:   'libraryIndex.tileLabels.mamulat',
 };
 
 interface CategoryTileProps {
@@ -27,8 +28,9 @@ interface CategoryTileProps {
 export function CategoryTile({ icon, name, nameEn, nameUr, count, type, onPress }: CategoryTileProps) {
   const { theme } = useTheme();
   const c = theme.colors;
+  const { t } = useI18n();
   const { isUrdu } = useBilingual();
-  const subtitle = TYPE_LABEL[type] ?? 'Collection';
+  const subtitle = TYPE_LABEL_KEY[type] ? t(TYPE_LABEL_KEY[type]) : '';
 
   // Prefer bilingual props if provided, otherwise fall back to `name`
   const displayName = nameEn && nameUr ? (isUrdu ? nameUr : nameEn) : name;

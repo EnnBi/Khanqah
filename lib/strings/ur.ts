@@ -166,6 +166,21 @@ const ur = {
     en: 'انگریزی',
     ur: 'اردو',
   },
+  libraryIndex: {
+    kicker: 'مجموعہ',
+    titleA: 'سب کچھ',
+    titleB: 'دیکھیں',
+    categories: 'زمرے',
+    tileLabels: {
+      bayan: 'بیانات',
+      clip: 'لمحات',
+      nazam: 'نظمیں',
+      quran: 'تلاوت',
+      hamd_naat: 'حمد و نعت',
+      book: 'کتابیں',
+      mamulat: 'معمولات',
+    },
+  },
   libraryHero: {
     item: 'آئٹم',
     items: 'آئٹمز',

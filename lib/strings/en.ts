@@ -166,6 +166,21 @@ const en = {
     en: 'ENGLISH',
     ur: 'URDU',
   },
+  libraryIndex: {
+    kicker: 'THE COLLECTION',
+    titleA: 'Browse',
+    titleB: 'everything',
+    categories: 'CATEGORIES',
+    tileLabels: {
+      bayan: 'Discourses',
+      clip: 'Moments',
+      nazam: 'Nazams',
+      quran: 'Recitations',
+      hamd_naat: 'Hamd & Naat',
+      book: 'Volumes',
+      mamulat: 'Daily Practices',
+    },
+  },
   libraryHero: {
     item: 'ITEM',
     items: 'ITEMS',
