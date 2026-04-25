@@ -10,6 +10,8 @@ import {
   Animated,
   ActivityIndicator,
   Platform,
+  Share,
+  Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -22,6 +24,7 @@ import { useSafeBack } from '../../hooks/useSafeBack';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useI18n } from '../../providers/I18nProvider';
 import { YouTubeEmbed, isYouTubeUrl, isDirectVideoUrl } from '../../components/YouTubeEmbed';
+import { downloadContent, deleteDownload, getLocalPath } from '../../hooks/useDownloads';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const ARTWORK_SIZE = 240;
@@ -80,6 +83,8 @@ export default function PlayerScreen() {
   const [loading, setLoading] = useState(true);
   const [isSeeking, setIsSeeking] = useState(false);
   const [seekPosition, setSeekPosition] = useState(0);
+  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   // Animated scale for play button press
   const playBtnScale = useRef(new Animated.Value(1)).current;
@@ -201,6 +206,44 @@ export default function PlayerScreen() {
       return;
     }
     seekTo(seconds);
+  };
+
+  // Reflect already-downloaded state when content loads.
+  useEffect(() => {
+    if (!content) return;
+    setSaved(getLocalPath(content.id) !== null);
+  }, [content]);
+
+  const handleSave = async () => {
+    if (!content || saving) return;
+    setSaving(true);
+    try {
+      if (saved) {
+        await deleteDownload(content.id);
+        setSaved(false);
+      } else {
+        await downloadContent(content);
+        setSaved(true);
+      }
+    } catch (err: any) {
+      Alert.alert('Download failed', err?.message ?? 'Unknown error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleShare = async () => {
+    if (!content) return;
+    try {
+      const title = content.title_en || 'Khanqah audio';
+      await Share.share({
+        title,
+        message: `${title}\n${content.media_url}`,
+        url: content.media_url,
+      });
+    } catch (err: any) {
+      Alert.alert('Share failed', err?.message ?? 'Unknown error');
+    }
   };
 
   const handleSeekBy = (delta: number) => {
@@ -552,13 +595,29 @@ export default function PlayerScreen() {
         {/* ── Actions Row ── */}
         <View style={[styles.actionsRow, { borderTopColor: c.hairline, borderBottomColor: c.hairline }]}>
           {/* Save */}
-          <TouchableOpacity style={styles.actionBtn} accessibilityLabel="Save offline">
-            <Text style={[styles.actionIcon, { color: c.primary }]}>↓</Text>
-            <Text style={[styles.actionLabel, { color: c.textMuted }]}>SAVE</Text>
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={handleSave}
+            disabled={saving || !content?.media_url}
+            accessibilityLabel={saved ? 'Remove download' : 'Save offline'}
+          >
+            {saving ? (
+              <ActivityIndicator size="small" color={c.primary} />
+            ) : (
+              <Text style={[styles.actionIcon, { color: c.primary }]}>{saved ? '✓' : '↓'}</Text>
+            )}
+            <Text style={[styles.actionLabel, { color: c.textMuted }]}>
+              {saved ? 'SAVED' : 'SAVE'}
+            </Text>
           </TouchableOpacity>
 
           {/* Share */}
-          <TouchableOpacity style={styles.actionBtn} accessibilityLabel="Share">
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={handleShare}
+            disabled={!content?.media_url}
+            accessibilityLabel="Share"
+          >
             <Text style={[styles.actionIcon, { color: c.primary }]}>↗</Text>
             <Text style={[styles.actionLabel, { color: c.textMuted }]}>SHARE</Text>
           </TouchableOpacity>
