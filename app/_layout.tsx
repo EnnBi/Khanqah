@@ -18,14 +18,18 @@ import { applyTextDefaults } from '../lib/text-defaults';
 // If a previous toggle saved Urdu but the current process started LTR,
 // this triggers Updates.reloadAsync() once so the rest of the app sees
 // a consistent direction. Subsequent boots are no-ops.
-rtlBootstrap().catch((err) => {
-  console.warn('[rtl-bootstrap] failed:', err);
-});
-
-// Set the default Text font to JameelNooriNastaleeq when current
-// layout is RTL (Urdu), so every <Text> renders in Nastaleeq without
-// per-component changes. Synchronous so it runs BEFORE the first render.
-applyTextDefaults();
+//
+// applyTextDefaults() must run AFTER rtlBootstrap so it sees the right
+// I18nManager.isRTL value (especially on web, where rtlBootstrap is the
+// only thing that flips it for this process — there's no reload).
+rtlBootstrap()
+  .then(() => {
+    applyTextDefaults();
+  })
+  .catch((err) => {
+    console.warn('[rtl-bootstrap] failed:', err);
+    applyTextDefaults();
+  });
 
 import { loadConfig, getConfig } from '../lib/remote-config';
 import { initSupabase } from '../lib/supabase';
