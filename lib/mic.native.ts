@@ -28,6 +28,10 @@ class NativeMic implements MicSource {
   private chunkCbs: ChunkCb[] = [];
   private errCbs: ErrCb[] = [];
   private intCbs: IntCb[] = [];
+  // Buffer chunks emitted before any subscriber attaches. PCM doesn't
+  // have a header so a missing first chunk is just 200 ms of silence,
+  // but buffering keeps the stream tight and matches mic.web.ts.
+  private pendingChunks: Uint8Array[] = [];
   // AudioRecord.on actually returns { remove() } at runtime even though
   // the bundled .d.ts says void — cast to keep TypeScript happy.
   private dataSub: { remove: () => void } | null = null;
@@ -75,6 +79,10 @@ class NativeMic implements MicSource {
     // AudioRecord.on returns { remove() } at runtime; the .d.ts says void.
     this.dataSub = AudioRecord.on('data', (data: string) => {
       const buf = new Uint8Array(Buffer.from(data, 'base64'));
+      if (this.chunkCbs.length === 0) {
+        this.pendingChunks.push(buf);
+        return;
+      }
       for (const cb of this.chunkCbs) cb(buf);
     }) as unknown as { remove: () => void };
 
@@ -91,6 +99,7 @@ class NativeMic implements MicSource {
     this.dataSub = null;
     try { this.intSub?.remove(); } catch {}
     this.intSub = null;
+    this.pendingChunks = [];
     try { await BroadcastService.stopSession(); } catch {}
   }
 
@@ -114,6 +123,10 @@ class NativeMic implements MicSource {
     });
     this.dataSub = AudioRecord.on('data', (data: string) => {
       const buf = new Uint8Array(Buffer.from(data, 'base64'));
+      if (this.chunkCbs.length === 0) {
+        this.pendingChunks.push(buf);
+        return;
+      }
       for (const cb of this.chunkCbs) cb(buf);
     }) as unknown as { remove: () => void };
     AudioRecord.start();
@@ -121,6 +134,11 @@ class NativeMic implements MicSource {
 
   onChunk(cb: ChunkCb): () => void {
     this.chunkCbs.push(cb);
+    if (this.pendingChunks.length > 0) {
+      const flush = this.pendingChunks;
+      this.pendingChunks = [];
+      for (const buf of flush) cb(buf);
+    }
     return () => {
       const i = this.chunkCbs.indexOf(cb);
       if (i >= 0) this.chunkCbs.splice(i, 1);

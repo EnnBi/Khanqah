@@ -9,6 +9,13 @@ class WebMic implements MicSource {
   private recorder: MediaRecorder | null = null;
   private chunkCbs: ChunkCb[] = [];
   private errCbs: ErrCb[] = [];
+  // Chunks emitted before the first subscriber (e.g. between
+  // MediaRecorder.start() and broadcast.ts wiring up the chunk pump
+  // after the WebSocket handshake completes) get buffered here and
+  // flushed to the first subscriber. This is critical because the FIRST
+  // chunk MediaRecorder produces contains the WebM EBML header — without
+  // it ffmpeg can't parse anything that follows.
+  private pendingChunks: Uint8Array[] = [];
 
   async start(): Promise<MicConfigFrame> {
     let stream: MediaStream;
@@ -34,6 +41,11 @@ class WebMic implements MicSource {
     recorder.ondataavailable = async (e) => {
       if (!e.data || !e.data.size) return;
       const buf = new Uint8Array(await e.data.arrayBuffer());
+      if (this.chunkCbs.length === 0) {
+        // No subscribers yet — buffer so we don't lose the EBML header.
+        this.pendingChunks.push(buf);
+        return;
+      }
       for (const cb of this.chunkCbs) cb(buf);
     };
     recorder.onerror = (e: any) => {
@@ -50,10 +62,18 @@ class WebMic implements MicSource {
     this.recorder = null;
     this.stream?.getTracks().forEach((t) => { try { t.stop(); } catch {} });
     this.stream = null;
+    this.pendingChunks = [];
   }
 
   onChunk(cb: ChunkCb): () => void {
     this.chunkCbs.push(cb);
+    // Flush anything that arrived before this subscriber so the EBML
+    // header (always in the first chunk) is replayed in order.
+    if (this.pendingChunks.length > 0) {
+      const flush = this.pendingChunks;
+      this.pendingChunks = [];
+      for (const buf of flush) cb(buf);
+    }
     return () => {
       const i = this.chunkCbs.indexOf(cb);
       if (i >= 0) this.chunkCbs.splice(i, 1);
