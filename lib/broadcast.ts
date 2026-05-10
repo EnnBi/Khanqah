@@ -52,6 +52,8 @@ type State = {
   starting: boolean;
   stopping: boolean;
   resuming: boolean;
+  reconnecting: boolean;
+  reconnectAttempts: number;
   micUnsubChunk: (() => void) | null;
   micUnsubErr: (() => void) | null;
   micUnsubInt: (() => void) | null;
@@ -66,6 +68,8 @@ const state: State = {
   starting: false,
   stopping: false,
   resuming: false,
+  reconnecting: false,
+  reconnectAttempts: 0,
   micUnsubChunk: null,
   micUnsubErr: null,
   micUnsubInt: null,
@@ -104,6 +108,48 @@ async function openWebsocket(configFrame: MicConfigFrame): Promise<WebSocket> {
   // rejects an already-resolved Promise). Acceptable on stable
   // networks; revisit if we observe missed-disconnects in the wild.
   return ws;
+}
+
+const MAX_RECONNECT_ATTEMPTS = 3;
+
+// Called when ws closes unexpectedly while a session is live and unpaused.
+// Tries to reopen the WebSocket up to MAX_RECONNECT_ATTEMPTS times before
+// giving up and emitting an error. Each attempt is delayed by 1×/2×/3× seconds.
+function scheduleReconnect() {
+  if (!state.active || state.active.paused || !state.configFrame) return;
+  if (state.reconnecting || state.stopping) return;
+  if (state.reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+    state.reconnecting = false;
+    state.reconnectAttempts = 0;
+    emit('error', new Error('Relay connection closed'));
+    broadcast.stop().catch(() => {});
+    return;
+  }
+  state.reconnecting = true;
+  const attempt = ++state.reconnectAttempts;
+  setTimeout(async () => {
+    if (!state.active || state.active.paused || !state.configFrame || state.stopping) {
+      state.reconnecting = false;
+      state.reconnectAttempts = 0;
+      return;
+    }
+    try {
+      detachChunkPump();
+      const ws = await openWebsocket(state.configFrame);
+      state.ws = ws;
+      attachChunkPump();
+      state.reconnecting = false;
+      state.reconnectAttempts = 0;
+      ws.onclose = () => {
+        if (!state.active || state.active.paused) return;
+        scheduleReconnect();
+      };
+      ws.onerror = () => emit('error', new Error('Relay connection errored'));
+    } catch {
+      state.reconnecting = false;
+      scheduleReconnect();
+    }
+  }, attempt * 1_000);
 }
 
 function attachChunkPump() {
@@ -234,11 +280,10 @@ export const broadcast = {
           .then(() => {}, () => {});
       }, 15_000);
 
-      // 6. Socket death → treat as error and clean up.
+      // 6. Socket death → attempt reconnect before giving up.
       ws.onclose = () => {
         if (!state.active || state.active.paused) return;
-        emit('error', new Error('Relay connection closed'));
-        broadcast.stop().catch(() => {});
+        scheduleReconnect();
       };
       ws.onerror = () => {
         emit('error', new Error('Relay connection errored'));
@@ -323,8 +368,7 @@ export const broadcast = {
       attachChunkPump();
       ws.onclose = () => {
         if (!state.active || state.active.paused) return;
-        emit('error', new Error('Relay connection closed'));
-        broadcast.stop().catch(() => {});
+        scheduleReconnect();
       };
       ws.onerror = () => emit('error', new Error('Relay connection errored'));
       state.active = { ...state.active, paused: false };
@@ -340,6 +384,8 @@ export const broadcast = {
 
     const id = state.active.id;
     state.active = null;
+    state.reconnecting = false;
+    state.reconnectAttempts = 0;
     state.micUnsubInt?.();
     state.micUnsubInt = null;
     state.configFrame = null;

@@ -10,7 +10,8 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.ennbi.khanqah"
+      "bundleIdentifier": "com.ennbi.khanqah",
+      "backgroundModes": ["audio"]
     },
     "android": {
       "package": "com.ennbi.khanqah",

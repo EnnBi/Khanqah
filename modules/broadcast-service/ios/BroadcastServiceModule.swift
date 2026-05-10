@@ -52,11 +52,9 @@ public class BroadcastServiceModule: Module {
     case .began:
       sendEvent("interruption", ["state": "began"])
     case .ended:
-      let optsRaw = (info[AVAudioSessionInterruptionOptionKey] as? UInt) ?? 0
-      let opts = AVAudioSession.InterruptionOptions(rawValue: optsRaw)
-      if opts.contains(.shouldResume) {
-        sendEvent("interruption", ["state": "ended"])
-      }
+      // Always attempt to resume — shouldResume is advisory and is often
+      // absent after phone calls, which would leave the session paused forever.
+      sendEvent("interruption", ["state": "ended"])
     @unknown default: break
     }
   }

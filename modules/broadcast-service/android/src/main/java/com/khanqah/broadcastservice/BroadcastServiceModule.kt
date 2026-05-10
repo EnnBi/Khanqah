@@ -28,9 +28,10 @@ class BroadcastServiceModule : Module() {
     Log.d("BroadcastService", "audio focus change: $name")
     when (change) {
       AudioManager.AUDIOFOCUS_LOSS_TRANSIENT,
-      AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK,
       AudioManager.AUDIOFOCUS_LOSS ->
         sendEvent("interruption", mapOf("state" to "began"))
+      // CAN_DUCK: another app wants to mix (nav, notification). Keep recording,
+      // just don't pause — pausing closes the WS and risks losing the slot.
       AudioManager.AUDIOFOCUS_GAIN,
       AudioManager.AUDIOFOCUS_GAIN_TRANSIENT,
       AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK,

@@ -40,6 +40,9 @@ yarn-error.*
 /ios
 /android
 
+# Claude Code
+CLAUDE.md
+
 # Project-specific ignores
 .env.local
 .superpowers/
