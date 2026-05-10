@@ -1,5 +1,5 @@
 export type ContentType = 'bayan' | 'clip' | 'nazam' | 'quran' | 'hamd_naat' | 'book' | 'mamulat';
-export type UserRole = 'listener' | 'editor' | 'admin';
+export type UserRole = 'listener' | 'editor' | 'admin' | 'broadcaster';
 export type ThemePref = 'light' | 'dark' | 'system';
 export type LiveSessionStatus = 'live' | 'ended' | 'processing';
 

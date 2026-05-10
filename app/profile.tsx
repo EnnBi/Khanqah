@@ -10,7 +10,7 @@ import { useSafeBack } from '../hooks/useSafeBack';
 
 export default function ProfileScreen() {
   const { theme, themePref } = useTheme();
-  const { user, isAdmin, isEditor, signOut } = useAuth();
+  const { user, isAdmin, isEditor, isBroadcaster, signOut } = useAuth();
   const { language } = useI18n();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -39,12 +39,12 @@ export default function ProfileScreen() {
         <Text style={[styles.email, { color: c.textMuted }]}>{user?.email || 'Not signed in'}</Text>
       </View>
 
-      {(isAdmin || isEditor) && (
+      {(isAdmin || isEditor || isBroadcaster) && (
         <View style={[styles.group, { backgroundColor: c.surface, borderColor: c.border }]}>
           <Row
             icon="shield-checkmark-outline"
-            label="Admin console"
-            onPress={() => router.push('/admin')}
+            label={isBroadcaster && !isAdmin && !isEditor ? 'Go Live' : 'Admin console'}
+            onPress={() => router.push(isBroadcaster && !isAdmin && !isEditor ? '/admin/go-live' : '/admin')}
             c={c}
           />
         </View>

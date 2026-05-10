@@ -17,6 +17,7 @@ interface AuthContextValue {
   signOut: () => Promise<void>;
   isAdmin: boolean;
   isEditor: boolean;
+  isBroadcaster: boolean;
 }
 
 const AuthContext = createContext<AuthContextValue>({
@@ -31,6 +32,7 @@ const AuthContext = createContext<AuthContextValue>({
   signOut: async () => {},
   isAdmin: false,
   isEditor: false,
+  isBroadcaster: false,
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -143,6 +145,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const isAdmin = user?.role === 'admin';
   const isEditor = user?.role === 'editor' || isAdmin;
+  const isBroadcaster = user?.role === 'broadcaster';
 
   return (
     <AuthContext.Provider
@@ -151,7 +154,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signInWithEmail, signUpWithEmail,
         signInWithPhone, verifyOtp,
         signInWithGoogle,
-        signOut, isAdmin, isEditor,
+        signOut, isAdmin, isEditor, isBroadcaster,
       }}
     >
       {children}
