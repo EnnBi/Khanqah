@@ -12,8 +12,8 @@ export function HomeTopBar() {
   const c = theme.colors;
   const router = useRouter();
   const { language } = useI18n();
-  const { user, isAdmin, isEditor } = useAuth();
-  const showAdmin = !!user && (isAdmin || isEditor);
+  const { user, isAdmin, isEditor, isBroadcaster } = useAuth();
+  const showAdmin = !!user && (isAdmin || isEditor || isBroadcaster);
 
   // Use the same restart-prompt + persist + DB-sync flow as the profile
   // toggle so both entry points behave identically.
@@ -34,7 +34,7 @@ export function HomeTopBar() {
         {showAdmin && (
           <TouchableOpacity
             style={[styles.iconBtn, { backgroundColor: c.surface, borderColor: c.border }]}
-            onPress={() => router.push('/admin')}
+            onPress={() => router.push(isBroadcaster && !isAdmin && !isEditor ? '/admin/go-live' : '/admin')}
             activeOpacity={0.7}
             accessibilityLabel="Admin"
           >
