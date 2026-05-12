@@ -14,6 +14,8 @@ import { supabase } from '../../lib/supabase';
 import { useSafeBack } from '../../hooks/useSafeBack';
 import { broadcast, BroadcastLockedError, MicPermissionDeniedError } from '../../lib/broadcast';
 import { useBroadcastState } from '../../hooks/useBroadcastState';
+import { ScheduledSession } from '../../lib/types';
+import { nextOccurrence, isUpcoming } from '../../lib/schedule';
 
 export default function GoLiveScreen() {
   const { theme } = useTheme();
@@ -28,6 +30,8 @@ export default function GoLiveScreen() {
   const [starting, setStarting] = useState(false);
   const [stopping, setStopping] = useState(false);
   const [showOpenSettings, setShowOpenSettings] = useState(false);
+
+  const [nextSession, setNextSession] = useState<ScheduledSession | null>(null);
 
   const [foreignRow, setForeignRow] = useState<
     { id: string; started_by: string; title_en: string | null; title_ur: string | null } | null
@@ -44,13 +48,27 @@ export default function GoLiveScreen() {
       .eq('status', 'live')
       .lt('last_heartbeat_at', cutoff);
 
-    const { data } = await supabase
-      .from('live_sessions')
-      .select('id, started_by, title_en, title_ur, last_heartbeat_at')
-      .eq('status', 'live')
-      .limit(1)
-      .maybeSingle();
+    const [liveRes, scheduledRes] = await Promise.all([
+      supabase
+        .from('live_sessions')
+        .select('id, started_by, title_en, title_ur, last_heartbeat_at')
+        .eq('status', 'live')
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from('scheduled_sessions')
+        .select('*')
+        .order('scheduled_at', { ascending: true }),
+    ]);
 
+    // Find the next upcoming scheduled session (handles recurring).
+    const all: ScheduledSession[] = (scheduledRes.data ?? []) as ScheduledSession[];
+    const upcoming = all
+      .filter((s) => isUpcoming(s))
+      .sort((a, b) => nextOccurrence(a).getTime() - nextOccurrence(b).getTime());
+    setNextSession(upcoming[0] ?? null);
+
+    const data = liveRes.data;
     if (!data) {
       setForeignRow(null);
       setOwnStaleRow(null);
@@ -263,6 +281,12 @@ export default function GoLiveScreen() {
     );
   }
 
+  const useNextSession = () => {
+    if (!nextSession) return;
+    setTitleEn(nextSession.title_en ?? '');
+    setTitleUr(nextSession.title_ur ?? '');
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: c.background, padding: 24, justifyContent: 'center' }}>
       <Text style={{ color: c.accent, fontFamily: 'CrimsonPro-Italic', fontSize: 22, textAlign: 'center', marginBottom: 8 }}>
@@ -271,6 +295,45 @@ export default function GoLiveScreen() {
       <Text style={{ color: c.textMuted, fontFamily: 'CrimsonPro', fontSize: 14, textAlign: 'center', marginBottom: 24 }}>
         Fill in the session details below, then tap the button to go live.
       </Text>
+
+      {nextSession && (
+        <TouchableOpacity
+          onPress={useNextSession}
+          activeOpacity={0.75}
+          style={{
+            backgroundColor: c.surface,
+            borderWidth: 1,
+            borderColor: c.accent,
+            borderRadius: 10,
+            padding: 14,
+            marginBottom: 20,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 12,
+          }}
+        >
+          <View style={{ width: 4, alignSelf: 'stretch', backgroundColor: c.accent, borderRadius: 2 }} />
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: c.accent, fontFamily: 'DMSans-Medium', fontSize: 10, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 4 }}>
+              NEXT SCHEDULED · TAP TO USE
+            </Text>
+            <Text style={{ color: c.text, fontFamily: 'CrimsonPro-Medium', fontSize: 16 }} numberOfLines={1}>
+              {nextSession.title_en}
+            </Text>
+            {!!nextSession.title_ur && (
+              <Text style={{ color: c.textMuted, fontFamily: 'NastaleeqUrdu', fontSize: 15, textAlign: 'right' }} numberOfLines={1}>
+                {nextSession.title_ur}
+              </Text>
+            )}
+            <Text style={{ color: c.textMuted, fontFamily: 'DMSans', fontSize: 11, marginTop: 4 }}>
+              {nextOccurrence(nextSession).toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' })}
+              {' · '}
+              {nextOccurrence(nextSession).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+              {nextSession.is_recurring ? '  ·  RECURRING' : ''}
+            </Text>
+          </View>
+        </TouchableOpacity>
+      )}
 
       <Text style={{ color: c.textMuted, fontFamily: 'DMSans-Medium', fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 6 }}>
         Session title (English)

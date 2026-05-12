@@ -22,12 +22,12 @@ import { ScheduledSession } from '../../lib/types';
 import { type as typeP, font } from '../../lib/typography';
 import { useSafeBack } from '../../hooks/useSafeBack';
 import { showMessage, confirmDestructive } from '../../lib/alert';
+import { nextOccurrence, isUpcoming } from '../../lib/schedule';
 
 const DAYS_SHORT = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-function formatSessionDate(isoString: string): { dayTime: string; recurrenceHint: string } {
-  const date = new Date(isoString);
+function formatSessionDate(date: Date): { dayTime: string; recurrenceHint: string } {
   const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
   const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
   const day = dayNames[date.getDay()];
@@ -230,7 +230,6 @@ export default function ScheduleScreen() {
   const fetchSessions = useCallback(async () => {
     const now = new Date().toISOString();
 
-    // Fetch upcoming one-time sessions and all recurring sessions
     const [upcomingRes, recurringRes] = await Promise.all([
       supabase
         .from('scheduled_sessions')
@@ -245,15 +244,17 @@ export default function ScheduleScreen() {
         .order('scheduled_at', { ascending: true }),
     ]);
 
-    const upcoming: ScheduledSession[] = upcomingRes.data ?? [];
-    const recurring: ScheduledSession[] = recurringRes.data ?? [];
+    const all: ScheduledSession[] = [
+      ...(upcomingRes.data ?? []),
+      ...(recurringRes.data ?? []),
+    ];
 
-    // Merge, deduplicate by id, keep sorted by scheduled_at
+    // Deduplicate, drop recurring sessions with no future occurrence, sort by next occurrence.
     const map = new Map<string, ScheduledSession>();
-    [...upcoming, ...recurring].forEach((s) => map.set(s.id, s));
-    const merged = Array.from(map.values()).sort(
-      (a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()
-    );
+    all.forEach((s) => map.set(s.id, s));
+    const merged = Array.from(map.values())
+      .filter((s) => isUpcoming(s))
+      .sort((a, b) => nextOccurrence(a).getTime() - nextOccurrence(b).getTime());
 
     setSessions(merged);
   }, []);
@@ -708,7 +709,7 @@ export default function ScheduleScreen() {
 
   const renderSession = ({ item }: { item: ScheduledSession }) => {
     const isDeleting = deletingId === item.id;
-    const { dayTime, recurrenceHint } = formatSessionDate(item.scheduled_at);
+    const { dayTime, recurrenceHint } = formatSessionDate(nextOccurrence(item));
 
     return (
       <View style={styles.card}>
