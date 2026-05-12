@@ -11,7 +11,9 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.ennbi.khanqah",
-      "backgroundModes": ["audio"]
+      "backgroundModes": [
+        "audio"
+      ]
     },
     "android": {
       "package": "com.ennbi.khanqah",
@@ -46,14 +48,19 @@
       "./plugins/with-broadcast-native",
       [
         "onesignal-expo-plugin",
-        { "mode": "production" }
+        {
+          "mode": "production"
+        }
       ],
       [
         "expo-font",
         {
-          "fonts": ["./assets/fonts/JameelNooriNastaleeq.ttf"]
+          "fonts": [
+            "./assets/fonts/JameelNooriNastaleeq.ttf"
+          ]
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true

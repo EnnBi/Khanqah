@@ -13,6 +13,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useAuth } from '../../providers/AuthProvider';
@@ -93,6 +94,120 @@ const EMPTY_FORM: FormState = {
   // Default is one-off: create-a-session is a single click away from saving.
   recurrence: 'once',
 };
+
+// Converts a YYYY-MM-DDTHH:MM string (or empty) to a Date, defaulting to now.
+function parsedDate(scheduled_at: string): Date {
+  if (!scheduled_at.trim()) return new Date();
+  const d = new Date(scheduled_at.trim());
+  return isNaN(d.getTime()) ? new Date() : d;
+}
+
+// Formats a Date to the YYYY-MM-DDTHH:MM value used by the form state.
+function toFormValue(d: Date): string {
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function DateTimeField({
+  form,
+  setForm,
+  c,
+  theme,
+}: {
+  form: FormState;
+  setForm: React.Dispatch<React.SetStateAction<FormState>>;
+  c: any;
+  theme: any;
+}) {
+  const [pickerMode, setPickerMode] = useState<'date' | 'time' | null>(null);
+
+  if (Platform.OS === 'web') {
+    return (
+      <View style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 11 }}>
+        {React.createElement('input', {
+          type: 'datetime-local',
+          value: form.scheduled_at,
+          onChange: (e: any) => setForm((f) => ({ ...f, scheduled_at: e.target.value })),
+          onClick: (e: any) => { try { e.currentTarget.showPicker?.(); } catch { /* noop */ } },
+          onFocus: (e: any) => { try { e.currentTarget.showPicker?.(); } catch { /* noop */ } },
+          style: {
+            width: '100%', border: 'none', outline: 'none', background: 'transparent',
+            color: c.text, fontFamily: 'CrimsonPro', fontSize: 15, cursor: 'pointer',
+            colorScheme: theme.dark ? 'dark' : 'light',
+          },
+        })}
+      </View>
+    );
+  }
+
+  // Android / iOS — two tappable buttons, one for date, one for time.
+  const displayDate = form.scheduled_at
+    ? parsedDate(form.scheduled_at).toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
+    : 'Tap to pick date';
+  const displayTime = form.scheduled_at
+    ? parsedDate(form.scheduled_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+    : 'Tap to pick time';
+
+  const handleChange = (_event: DateTimePickerEvent, selected?: Date) => {
+    // On Android the picker auto-dismisses after the user picks.
+    if (Platform.OS === 'android') setPickerMode(null);
+    if (!selected) return;
+    const base = parsedDate(form.scheduled_at);
+    if (pickerMode === 'date') {
+      base.setFullYear(selected.getFullYear(), selected.getMonth(), selected.getDate());
+      setForm((f) => ({ ...f, scheduled_at: toFormValue(base) }));
+      // After picking a date on Android, immediately open time picker.
+      if (Platform.OS === 'android') setTimeout(() => setPickerMode('time'), 50);
+    } else {
+      base.setHours(selected.getHours(), selected.getMinutes());
+      setForm((f) => ({ ...f, scheduled_at: toFormValue(base) }));
+    }
+  };
+
+  return (
+    <>
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        <TouchableOpacity
+          style={{ flex: 1, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 11 }}
+          onPress={() => setPickerMode('date')}
+          activeOpacity={0.7}
+        >
+          <Text style={{ fontFamily: 'CrimsonPro', fontSize: 15, color: form.scheduled_at ? c.text : c.textMuted }}>{displayDate}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={{ flex: 1, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 11 }}
+          onPress={() => setPickerMode('time')}
+          activeOpacity={0.7}
+        >
+          <Text style={{ fontFamily: 'CrimsonPro', fontSize: 15, color: form.scheduled_at ? c.text : c.textMuted }}>{displayTime}</Text>
+        </TouchableOpacity>
+      </View>
+
+      {pickerMode !== null && (
+        <DateTimePicker
+          value={parsedDate(form.scheduled_at)}
+          mode={pickerMode}
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={handleChange}
+          themeVariant={theme.dark ? 'dark' : 'light'}
+          {...(Platform.OS === 'ios' ? {
+            onTouchCancel: () => setPickerMode(null),
+          } : {})}
+        />
+      )}
+
+      {/* iOS needs an explicit Done button since the spinner stays inline */}
+      {Platform.OS === 'ios' && pickerMode !== null && (
+        <TouchableOpacity
+          onPress={() => setPickerMode(null)}
+          style={{ alignSelf: 'flex-end', paddingVertical: 6, paddingHorizontal: 14 }}
+        >
+          <Text style={{ fontFamily: 'CrimsonPro-Medium', fontSize: 16, color: c.primary }}>Done</Text>
+        </TouchableOpacity>
+      )}
+    </>
+  );
+}
 
 export default function ScheduleScreen() {
   const { theme } = useTheme();
@@ -781,49 +896,7 @@ export default function ScheduleScreen() {
 
               {/* Date & Time */}
               <Text style={styles.fieldLabel}>DATE & TIME *</Text>
-              {Platform.OS === 'web' ? (
-                <View style={styles.input}>
-                  {React.createElement('input', {
-                    type: 'datetime-local',
-                    value: form.scheduled_at,
-                    onChange: (e: any) =>
-                      setForm((f) => ({ ...f, scheduled_at: e.target.value })),
-                    // Open the native picker anywhere on the field, not
-                    // just on the tiny calendar icon. showPicker() is
-                    // Chrome 99+/Firefox 101+/Safari 16+; older browsers
-                    // silently fall back to icon-click behaviour.
-                    onClick: (e: any) => {
-                      try { e.currentTarget.showPicker?.(); } catch { /* noop */ }
-                    },
-                    onFocus: (e: any) => {
-                      try { e.currentTarget.showPicker?.(); } catch { /* noop */ }
-                    },
-                    style: {
-                      width: '100%',
-                      border: 'none',
-                      outline: 'none',
-                      background: 'transparent',
-                      color: c.text,
-                      fontFamily: font.serif,
-                      fontSize: 15,
-                      cursor: 'pointer',
-                      // Keep the browser's native picker icon but re-tint it
-                      // for dark mode so it's visible against the surface.
-                      colorScheme: theme.dark ? 'dark' : 'light',
-                    },
-                  })}
-                </View>
-              ) : (
-                <TextInput
-                  style={styles.input}
-                  placeholder="e.g. 2026-04-10 20:00"
-                  placeholderTextColor={c.textMuted}
-                  value={form.scheduled_at}
-                  onChangeText={(v) => setForm((f) => ({ ...f, scheduled_at: v }))}
-                  keyboardType="numbers-and-punctuation"
-                  autoCapitalize="none"
-                />
-              )}
+              <DateTimeField form={form} setForm={setForm} c={c} theme={theme} />
 
               {/* Recurrence */}
               <Text style={styles.fieldLabel}>REPEATS</Text>

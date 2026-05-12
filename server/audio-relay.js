@@ -11,10 +11,14 @@
  */
 
 const WebSocket = require('ws');
-const { spawn } = require('child_process');
+const { spawn, execSync } = require("child_process");
+
+// Ensure HLS output directory exists (survives reboots that wipe /tmp)
+try { execSync("mkdir -p /tmp/hls"); } catch (_) {}
 
 const PORT = 3001;
-const RTMP_URL = 'rtmp://127.0.0.1:1935/live/stream';
+const HLS_URL = "/tmp/hls/stream.m3u8";
+const RTMP_URL = "rtmp://127.0.0.1:1935/live/stream";
 
 // How often to ping clients so we can detect dead connections that the OS
 // hasn't closed for us. If a client misses a pong we treat the socket as
@@ -66,8 +70,16 @@ wss.on('connection', (ws, req) => {
           '-c:a', 'aac',
           '-b:a', '128k',
           ...lowLatencyOutput,
-          '-f', 'flv',
-          RTMP_URL,
+          // Audio-only HLS direct. Bypasses nginx-rtmp's HLS muxer
+          // which adds a phantom 0x0 h264 video track on audio-only
+          // RTMP input — that phantom track stalls Android playback.
+          '-vn',
+          '-f', 'hls',
+          '-hls_time', '2',
+          '-hls_list_size', '15',
+          '-hls_flags', 'delete_segments+append_list+omit_endlist',
+          '-hls_segment_filename', '/tmp/hls/stream-%d.ts',
+          HLS_URL,
         ]
       : [
           ...lowLatencyInput,
@@ -76,8 +88,13 @@ wss.on('connection', (ws, req) => {
           '-c:a', 'aac',
           '-b:a', '128k',
           ...lowLatencyOutput,
-          '-f', 'flv',
-          RTMP_URL,
+          '-vn',
+          '-f', 'hls',
+          '-hls_time', '2',
+          '-hls_list_size', '15',
+          '-hls_flags', 'delete_segments+append_list+omit_endlist',
+          '-hls_segment_filename', '/tmp/hls/stream-%d.ts',
+          HLS_URL,
         ];
 
     const proc = spawn('ffmpeg', args, { stdio: ['pipe', 'ignore', 'pipe'] });
