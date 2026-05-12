@@ -7,6 +7,7 @@ import { useI18n } from '../providers/I18nProvider';
 import { useLiveSession } from '../hooks/useLiveSession';
 import { useNextScheduledSession } from '../hooks/useScheduledSessions';
 import { useAuth } from '../providers/AuthProvider';
+import { nextOccurrence } from '../lib/schedule';
 
 function relativeTime(
   iso: string,
@@ -61,7 +62,7 @@ export function LiveStatusCard() {
   } else if (next) {
     kicker = t('liveStatus.offAirNext');
     title = pickTitle(next.title_en, next.title_ur, 'liveStatus.majlis');
-    subtitle = relativeTime(next.scheduled_at, t, language);
+    subtitle = relativeTime(nextOccurrence(next).toISOString(), t, language);
     if (isAdmin || isEditor) onPress = () => router.push('/admin/schedule');
   }
 
