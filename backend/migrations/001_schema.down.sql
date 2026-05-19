@@ -1,0 +1,15 @@
+DROP TABLE IF EXISTS bug_reports;
+DROP TABLE IF EXISTS scheduled_sessions;
+DROP TABLE IF EXISTS live_sessions;
+DROP TABLE IF EXISTS listening_progress;
+DROP TABLE IF EXISTS downloads;
+DROP TABLE IF EXISTS playlist_items;
+DROP TABLE IF EXISTS playlists;
+DROP TABLE IF EXISTS topics;
+DROP TABLE IF EXISTS content;
+DROP TABLE IF EXISTS categories;
+DROP TABLE IF EXISTS users;
+DROP TYPE IF EXISTS bug_report_status;
+DROP TYPE IF EXISTS live_session_status;
+DROP TYPE IF EXISTS user_role;
+DROP TYPE IF EXISTS content_type;
