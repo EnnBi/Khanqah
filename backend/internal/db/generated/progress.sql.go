@@ -11,12 +11,36 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const getProgress = `-- name: GetProgress :many
+const getProgress = `-- name: GetProgress :one
+SELECT id, user_id, content_id, position_seconds, completed, updated_at FROM listening_progress
+WHERE user_id = $1 AND content_id = $2
+`
+
+type GetProgressParams struct {
+	UserID    pgtype.UUID `json:"user_id"`
+	ContentID pgtype.UUID `json:"content_id"`
+}
+
+func (q *Queries) GetProgress(ctx context.Context, arg GetProgressParams) (ListeningProgress, error) {
+	row := q.db.QueryRow(ctx, getProgress, arg.UserID, arg.ContentID)
+	var i ListeningProgress
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.ContentID,
+		&i.PositionSeconds,
+		&i.Completed,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const listProgressByUser = `-- name: ListProgressByUser :many
 SELECT id, user_id, content_id, position_seconds, completed, updated_at FROM listening_progress WHERE user_id = $1
 `
 
-func (q *Queries) GetProgress(ctx context.Context, userID pgtype.UUID) ([]ListeningProgress, error) {
-	rows, err := q.db.Query(ctx, getProgress, userID)
+func (q *Queries) ListProgressByUser(ctx context.Context, userID pgtype.UUID) ([]ListeningProgress, error) {
+	rows, err := q.db.Query(ctx, listProgressByUser, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -43,10 +67,12 @@ func (q *Queries) GetProgress(ctx context.Context, userID pgtype.UUID) ([]Listen
 }
 
 const upsertProgress = `-- name: UpsertProgress :one
-INSERT INTO listening_progress (user_id, content_id, position_seconds, completed)
-VALUES ($1, $2, $3, $4)
+INSERT INTO listening_progress (user_id, content_id, position_seconds, completed, updated_at)
+VALUES ($1, $2, $3, $4, NOW())
 ON CONFLICT (user_id, content_id) DO UPDATE
-  SET position_seconds = $3, completed = $4, updated_at = NOW()
+SET position_seconds = EXCLUDED.position_seconds,
+    completed = EXCLUDED.completed,
+    updated_at = NOW()
 RETURNING id, user_id, content_id, position_seconds, completed, updated_at
 `
 

@@ -11,41 +11,119 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const getDownloads = `-- name: GetDownloads :many
-SELECT d.id, d.user_id, d.content_id, d.downloaded_at, c.title_en, c.title_ur, c.media_url, c.type
-FROM downloads d JOIN content c ON c.id = d.content_id
-WHERE d.user_id = $1 ORDER BY d.downloaded_at DESC
+const addPlaylistItem = `-- name: AddPlaylistItem :one
+INSERT INTO playlist_items (playlist_id, content_id, sort_order)
+VALUES ($1, $2, $3) RETURNING id, playlist_id, content_id, sort_order, added_at
 `
 
-type GetDownloadsRow struct {
-	ID           pgtype.UUID        `json:"id"`
-	UserID       pgtype.UUID        `json:"user_id"`
-	ContentID    pgtype.UUID        `json:"content_id"`
-	DownloadedAt pgtype.Timestamptz `json:"downloaded_at"`
-	TitleEn      string             `json:"title_en"`
-	TitleUr      string             `json:"title_ur"`
-	MediaUrl     string             `json:"media_url"`
-	Type         ContentType        `json:"type"`
+type AddPlaylistItemParams struct {
+	PlaylistID pgtype.UUID `json:"playlist_id"`
+	ContentID  pgtype.UUID `json:"content_id"`
+	SortOrder  int32       `json:"sort_order"`
 }
 
-func (q *Queries) GetDownloads(ctx context.Context, userID pgtype.UUID) ([]GetDownloadsRow, error) {
-	rows, err := q.db.Query(ctx, getDownloads, userID)
+func (q *Queries) AddPlaylistItem(ctx context.Context, arg AddPlaylistItemParams) (PlaylistItem, error) {
+	row := q.db.QueryRow(ctx, addPlaylistItem, arg.PlaylistID, arg.ContentID, arg.SortOrder)
+	var i PlaylistItem
+	err := row.Scan(
+		&i.ID,
+		&i.PlaylistID,
+		&i.ContentID,
+		&i.SortOrder,
+		&i.AddedAt,
+	)
+	return i, err
+}
+
+const createPlaylist = `-- name: CreatePlaylist :one
+INSERT INTO playlists (user_id, name, is_public)
+VALUES ($1, $2, $3) RETURNING id, user_id, name, is_public, created_at
+`
+
+type CreatePlaylistParams struct {
+	UserID   pgtype.UUID `json:"user_id"`
+	Name     string      `json:"name"`
+	IsPublic bool        `json:"is_public"`
+}
+
+func (q *Queries) CreatePlaylist(ctx context.Context, arg CreatePlaylistParams) (Playlist, error) {
+	row := q.db.QueryRow(ctx, createPlaylist, arg.UserID, arg.Name, arg.IsPublic)
+	var i Playlist
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.IsPublic,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getPlaylist = `-- name: GetPlaylist :one
+SELECT id, user_id, name, is_public, created_at FROM playlists WHERE id = $1 AND user_id = $2
+`
+
+type GetPlaylistParams struct {
+	ID     pgtype.UUID `json:"id"`
+	UserID pgtype.UUID `json:"user_id"`
+}
+
+func (q *Queries) GetPlaylist(ctx context.Context, arg GetPlaylistParams) (Playlist, error) {
+	row := q.db.QueryRow(ctx, getPlaylist, arg.ID, arg.UserID)
+	var i Playlist
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.IsPublic,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const listPlaylistItems = `-- name: ListPlaylistItems :many
+SELECT pi.id, pi.playlist_id, pi.content_id, pi.sort_order, pi.added_at, c.title_en, c.title_ur, c.type, c.media_url, c.thumbnail_url, c.duration
+FROM playlist_items pi
+JOIN content c ON c.id = pi.content_id
+WHERE pi.playlist_id = $1
+ORDER BY pi.sort_order ASC
+`
+
+type ListPlaylistItemsRow struct {
+	ID           pgtype.UUID        `json:"id"`
+	PlaylistID   pgtype.UUID        `json:"playlist_id"`
+	ContentID    pgtype.UUID        `json:"content_id"`
+	SortOrder    int32              `json:"sort_order"`
+	AddedAt      pgtype.Timestamptz `json:"added_at"`
+	TitleEn      string             `json:"title_en"`
+	TitleUr      string             `json:"title_ur"`
+	Type         ContentType        `json:"type"`
+	MediaUrl     string             `json:"media_url"`
+	ThumbnailUrl *string            `json:"thumbnail_url"`
+	Duration     *int32             `json:"duration"`
+}
+
+func (q *Queries) ListPlaylistItems(ctx context.Context, playlistID pgtype.UUID) ([]ListPlaylistItemsRow, error) {
+	rows, err := q.db.Query(ctx, listPlaylistItems, playlistID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetDownloadsRow
+	var items []ListPlaylistItemsRow
 	for rows.Next() {
-		var i GetDownloadsRow
+		var i ListPlaylistItemsRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
+			&i.PlaylistID,
 			&i.ContentID,
-			&i.DownloadedAt,
+			&i.SortOrder,
+			&i.AddedAt,
 			&i.TitleEn,
 			&i.TitleUr,
-			&i.MediaUrl,
 			&i.Type,
+			&i.MediaUrl,
+			&i.ThumbnailUrl,
+			&i.Duration,
 		); err != nil {
 			return nil, err
 		}
@@ -57,12 +135,12 @@ func (q *Queries) GetDownloads(ctx context.Context, userID pgtype.UUID) ([]GetDo
 	return items, nil
 }
 
-const getPlaylists = `-- name: GetPlaylists :many
+const listPlaylists = `-- name: ListPlaylists :many
 SELECT id, user_id, name, is_public, created_at FROM playlists WHERE user_id = $1 ORDER BY created_at DESC
 `
 
-func (q *Queries) GetPlaylists(ctx context.Context, userID pgtype.UUID) ([]Playlist, error) {
-	rows, err := q.db.Query(ctx, getPlaylists, userID)
+func (q *Queries) ListPlaylists(ctx context.Context, userID pgtype.UUID) ([]Playlist, error) {
+	rows, err := q.db.Query(ctx, listPlaylists, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -85,4 +163,18 @@ func (q *Queries) GetPlaylists(ctx context.Context, userID pgtype.UUID) ([]Playl
 		return nil, err
 	}
 	return items, nil
+}
+
+const removePlaylistItem = `-- name: RemovePlaylistItem :exec
+DELETE FROM playlist_items WHERE playlist_id = $1 AND content_id = $2
+`
+
+type RemovePlaylistItemParams struct {
+	PlaylistID pgtype.UUID `json:"playlist_id"`
+	ContentID  pgtype.UUID `json:"content_id"`
+}
+
+func (q *Queries) RemovePlaylistItem(ctx context.Context, arg RemovePlaylistItemParams) error {
+	_, err := q.db.Exec(ctx, removePlaylistItem, arg.PlaylistID, arg.ContentID)
+	return err
 }

@@ -12,10 +12,8 @@ import (
 )
 
 const createScheduledSession = `-- name: CreateScheduledSession :one
-INSERT INTO scheduled_sessions
-  (title_en, title_ur, description_en, description_ur, scheduled_at, is_recurring, recurrence_rule, created_by)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-RETURNING id, title_en, title_ur, description_en, description_ur, scheduled_at, is_recurring, recurrence_rule, created_by, created_at
+INSERT INTO scheduled_sessions (title_en, title_ur, description_en, description_ur, scheduled_at, is_recurring, recurrence_rule, created_by)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, title_en, title_ur, description_en, description_ur, scheduled_at, is_recurring, recurrence_rule, created_by, created_at
 `
 
 type CreateScheduledSessionParams struct {
@@ -65,14 +63,36 @@ func (q *Queries) DeleteScheduledSession(ctx context.Context, id pgtype.UUID) er
 	return err
 }
 
-const listScheduledSessions = `-- name: ListScheduledSessions :many
+const getScheduledSession = `-- name: GetScheduledSession :one
+SELECT id, title_en, title_ur, description_en, description_ur, scheduled_at, is_recurring, recurrence_rule, created_by, created_at FROM scheduled_sessions WHERE id = $1
+`
+
+func (q *Queries) GetScheduledSession(ctx context.Context, id pgtype.UUID) (ScheduledSession, error) {
+	row := q.db.QueryRow(ctx, getScheduledSession, id)
+	var i ScheduledSession
+	err := row.Scan(
+		&i.ID,
+		&i.TitleEn,
+		&i.TitleUr,
+		&i.DescriptionEn,
+		&i.DescriptionUr,
+		&i.ScheduledAt,
+		&i.IsRecurring,
+		&i.RecurrenceRule,
+		&i.CreatedBy,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const listUpcomingSchedule = `-- name: ListUpcomingSchedule :many
 SELECT id, title_en, title_ur, description_en, description_ur, scheduled_at, is_recurring, recurrence_rule, created_by, created_at FROM scheduled_sessions
-WHERE scheduled_at >= NOW() - INTERVAL '1 hour'
+WHERE scheduled_at > NOW()
 ORDER BY scheduled_at ASC
 `
 
-func (q *Queries) ListScheduledSessions(ctx context.Context) ([]ScheduledSession, error) {
-	rows, err := q.db.Query(ctx, listScheduledSessions)
+func (q *Queries) ListUpcomingSchedule(ctx context.Context) ([]ScheduledSession, error) {
+	rows, err := q.db.Query(ctx, listUpcomingSchedule)
 	if err != nil {
 		return nil, err
 	}
@@ -103,10 +123,10 @@ func (q *Queries) ListScheduledSessions(ctx context.Context) ([]ScheduledSession
 }
 
 const updateScheduledSession = `-- name: UpdateScheduledSession :one
-UPDATE scheduled_sessions SET
-  title_en=$2, title_ur=$3, description_en=$4, description_ur=$5,
-  scheduled_at=$6, is_recurring=$7, recurrence_rule=$8
-WHERE id=$1 RETURNING id, title_en, title_ur, description_en, description_ur, scheduled_at, is_recurring, recurrence_rule, created_by, created_at
+UPDATE scheduled_sessions
+SET title_en = $2, title_ur = $3, description_en = $4, description_ur = $5,
+    scheduled_at = $6, is_recurring = $7, recurrence_rule = $8
+WHERE id = $1 RETURNING id, title_en, title_ur, description_en, description_ur, scheduled_at, is_recurring, recurrence_rule, created_by, created_at
 `
 
 type UpdateScheduledSessionParams struct {
