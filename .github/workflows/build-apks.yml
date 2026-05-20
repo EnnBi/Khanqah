@@ -1,0 +1,72 @@
+name: Build APKs
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, arch/separate-backend]
+    paths:
+      - 'android/**'
+      - 'android-admin/**'
+
+jobs:
+  build-user-app:
+    name: Build user app APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Make gradlew executable
+        working-directory: android
+        run: chmod +x gradlew
+
+      - name: Build debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: khanqah-user-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 14
+
+  build-admin-app:
+    name: Build admin app APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Make gradlew executable
+        working-directory: android-admin
+        run: chmod +x gradlew
+
+      - name: Build debug APK
+        working-directory: android-admin
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: khanqah-admin-debug
+          path: android-admin/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 14
