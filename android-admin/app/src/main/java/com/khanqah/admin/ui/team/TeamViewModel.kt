@@ -1,0 +1,21 @@
+package com.khanqah.admin.ui.team
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.khanqah.admin.data.model.User
+import com.khanqah.admin.data.repository.TeamRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+
+class TeamViewModel(private val repo: TeamRepository) : ViewModel() {
+    private val _users = MutableStateFlow<List<User>>(emptyList())
+    val users = _users.asStateFlow()
+
+    init { viewModelScope.launch { _users.value = repo.list() } }
+
+    fun updateRole(id: String, role: String) = viewModelScope.launch {
+        val updated = repo.updateRole(id, role)
+        _users.value = _users.value.map { if (it.id == id) updated else it }
+    }
+}
