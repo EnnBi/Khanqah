@@ -1,15 +1,27 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	dbgen "khanqah/api/internal/db/generated"
 )
+
+var validContentTypes = map[dbgen.ContentType]bool{
+	dbgen.ContentTypeBayan:    true,
+	dbgen.ContentTypeClip:     true,
+	dbgen.ContentTypeNazam:    true,
+	dbgen.ContentTypeQuran:    true,
+	dbgen.ContentTypeHamdNaat: true,
+	dbgen.ContentTypeBook:     true,
+	dbgen.ContentTypeMamulat:  true,
+}
 
 func ListContent(pool *pgxpool.Pool) http.HandlerFunc {
 	q := dbgen.New(pool)
@@ -18,11 +30,16 @@ func ListContent(pool *pgxpool.Pool) http.HandlerFunc {
 		offset := int32(0)
 		if l := r.URL.Query().Get("limit"); l != "" {
 			if v, err := strconv.Atoi(l); err == nil {
-				limit = int32(v)
+				if v > 0 && v <= 100 {
+					limit = int32(v)
+				} else if v > 100 {
+					limit = 100
+				}
+				// v <= 0: keep default
 			}
 		}
 		if o := r.URL.Query().Get("offset"); o != "" {
-			if v, err := strconv.Atoi(o); err == nil {
+			if v, err := strconv.Atoi(o); err == nil && v >= 0 {
 				offset = int32(v)
 			}
 		}
@@ -31,8 +48,13 @@ func ListContent(pool *pgxpool.Pool) http.HandlerFunc {
 		categoryParam := r.URL.Query().Get("category_id")
 
 		if typeParam != "" {
+			ct := dbgen.ContentType(typeParam)
+			if !validContentTypes[ct] {
+				writeError(w, http.StatusBadRequest, "invalid type parameter")
+				return
+			}
 			rows, err := q.ListContentByType(r.Context(), dbgen.ListContentByTypeParams{
-				Type:   dbgen.ContentType(typeParam),
+				Type:   ct,
 				Limit:  limit,
 				Offset: offset,
 			})
@@ -85,7 +107,11 @@ func GetContent(pool *pgxpool.Pool) http.HandlerFunc {
 		}
 		row, err := q.GetContent(r.Context(), id)
 		if err != nil {
-			writeError(w, http.StatusNotFound, "not found")
+			if errors.Is(err, pgx.ErrNoRows) {
+				writeError(w, http.StatusNotFound, "not found")
+			} else {
+				writeError(w, http.StatusInternalServerError, "internal error")
+			}
 			return
 		}
 		writeJSON(w, http.StatusOK, row)

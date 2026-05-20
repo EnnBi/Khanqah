@@ -65,6 +65,10 @@ func UpsertProgress(pool *pgxpool.Pool) http.HandlerFunc {
 			writeError(w, http.StatusBadRequest, "invalid request body")
 			return
 		}
+		if body.PositionSeconds < 0 {
+			writeError(w, http.StatusBadRequest, "position_seconds must be non-negative")
+			return
+		}
 
 		row, err := q.UpsertProgress(r.Context(), dbgen.UpsertProgressParams{
 			UserID:          userID,
