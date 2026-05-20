@@ -112,3 +112,95 @@ func (q *Queries) ListBugReports(ctx context.Context) ([]BugReport, error) {
 	}
 	return items, nil
 }
+
+const listBugReportsByStatus = `-- name: ListBugReportsByStatus :many
+SELECT id, client_id, timestamp, type, note, route, app_version, platform, logs, network, error, reported_by, status, fixed_at, fixed_by, fixed_note, created_at FROM bug_reports
+WHERE status = $1
+ORDER BY timestamp DESC
+LIMIT 100
+`
+
+func (q *Queries) ListBugReportsByStatus(ctx context.Context, status BugReportStatus) ([]BugReport, error) {
+	rows, err := q.db.Query(ctx, listBugReportsByStatus, status)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []BugReport
+	for rows.Next() {
+		var i BugReport
+		if err := rows.Scan(
+			&i.ID,
+			&i.ClientID,
+			&i.Timestamp,
+			&i.Type,
+			&i.Note,
+			&i.Route,
+			&i.AppVersion,
+			&i.Platform,
+			&i.Logs,
+			&i.Network,
+			&i.Error,
+			&i.ReportedBy,
+			&i.Status,
+			&i.FixedAt,
+			&i.FixedBy,
+			&i.FixedNote,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const updateBugReportStatus = `-- name: UpdateBugReportStatus :one
+UPDATE bug_reports
+SET status = $2,
+    fixed_at = CASE WHEN $2::bug_report_status = 'fixed' THEN NOW() ELSE NULL END,
+    fixed_by = $3,
+    fixed_note = $4
+WHERE id = $1
+RETURNING id, client_id, timestamp, type, note, route, app_version, platform, logs, network, error, reported_by, status, fixed_at, fixed_by, fixed_note, created_at
+`
+
+type UpdateBugReportStatusParams struct {
+	ID        pgtype.UUID     `json:"id"`
+	Status    BugReportStatus `json:"status"`
+	FixedBy   pgtype.UUID     `json:"fixed_by"`
+	FixedNote *string         `json:"fixed_note"`
+}
+
+func (q *Queries) UpdateBugReportStatus(ctx context.Context, arg UpdateBugReportStatusParams) (BugReport, error) {
+	row := q.db.QueryRow(ctx, updateBugReportStatus,
+		arg.ID,
+		arg.Status,
+		arg.FixedBy,
+		arg.FixedNote,
+	)
+	var i BugReport
+	err := row.Scan(
+		&i.ID,
+		&i.ClientID,
+		&i.Timestamp,
+		&i.Type,
+		&i.Note,
+		&i.Route,
+		&i.AppVersion,
+		&i.Platform,
+		&i.Logs,
+		&i.Network,
+		&i.Error,
+		&i.ReportedBy,
+		&i.Status,
+		&i.FixedAt,
+		&i.FixedBy,
+		&i.FixedNote,
+		&i.CreatedAt,
+	)
+	return i, err
+}

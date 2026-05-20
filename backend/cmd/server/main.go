@@ -73,6 +73,7 @@ func main() {
 		r.Get("/categories", handler.ListCategories(pool))
 		r.Get("/schedule", handler.ListSchedule(pool))
 		r.Get("/live/current", handler.GetCurrentLive(pool))
+		r.Post("/bugs", handler.SubmitBugReport(pool))
 
 		// Listener (any valid JWT)
 		r.Group(func(r chi.Router) {
