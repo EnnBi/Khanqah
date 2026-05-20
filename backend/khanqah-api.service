@@ -1,0 +1,15 @@
+[Unit]
+Description=Khanqah Go API
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/khanqah/backend
+EnvironmentFile=/etc/khanqah/api.env
+ExecStart=/root/khanqah/backend/bin/khanqah-api
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
