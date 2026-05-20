@@ -12,6 +12,15 @@ import (
 	dbgen "khanqah/api/internal/db/generated"
 )
 
+// ListTeam godoc
+//	@Summary		List all users
+//	@Tags			admin
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			limit	query	int	false	"Max results (default 50)"
+//	@Param			offset	query	int	false	"Pagination offset"
+//	@Success		200	{array}		object
+//	@Router			/admin/team [get]
 func ListTeam(pool *pgxpool.Pool) http.HandlerFunc {
 	q := dbgen.New(pool)
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -39,6 +48,17 @@ func ListTeam(pool *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
+// UpdateUserRole godoc
+//	@Summary		Update user role
+//	@Tags			admin
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id		path		string				true	"User UUID"
+//	@Param			body	body		updateUserRoleRequest	true	"New role"
+//	@Success		200		{object}	object
+//	@Failure		400		{object}	errorResponse
+//	@Router			/admin/team/{id}/role [put]
 func UpdateUserRole(pool *pgxpool.Pool) http.HandlerFunc {
 	q := dbgen.New(pool)
 	return func(w http.ResponseWriter, r *http.Request) {

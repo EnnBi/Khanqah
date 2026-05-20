@@ -14,6 +14,16 @@ import (
 	"khanqah/api/internal/middleware"
 )
 
+// CreateScheduledSession godoc
+//	@Summary		Create scheduled session
+//	@Tags			admin
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			body	body		object	true	"Scheduled session data"
+//	@Success		201		{object}	object
+//	@Failure		400		{object}	errorResponse
+//	@Router			/admin/schedule [post]
 func CreateScheduledSession(pool *pgxpool.Pool) http.HandlerFunc {
 	q := dbgen.New(pool)
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -41,6 +51,17 @@ func CreateScheduledSession(pool *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
+// UpdateScheduledSession godoc
+//	@Summary		Update scheduled session
+//	@Tags			admin
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id		path		string	true	"Session UUID"
+//	@Param			body	body		object	true	"Session data"
+//	@Success		200		{object}	object
+//	@Failure		404		{object}	errorResponse
+//	@Router			/admin/schedule/{id} [put]
 func UpdateScheduledSession(pool *pgxpool.Pool) http.HandlerFunc {
 	q := dbgen.New(pool)
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -68,6 +89,14 @@ func UpdateScheduledSession(pool *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
+// DeleteScheduledSession godoc
+//	@Summary		Delete scheduled session
+//	@Tags			admin
+//	@Security		BearerAuth
+//	@Param			id	path	string	true	"Session UUID"
+//	@Success		204
+//	@Failure		400	{object}	errorResponse
+//	@Router			/admin/schedule/{id} [delete]
 func DeleteScheduledSession(pool *pgxpool.Pool) http.HandlerFunc {
 	q := dbgen.New(pool)
 	return func(w http.ResponseWriter, r *http.Request) {

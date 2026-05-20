@@ -12,7 +12,14 @@ import (
 	"khanqah/api/internal/middleware"
 )
 
-// GetProgress lists all listening progress records for the authenticated user.
+// GetProgress godoc
+//	@Summary		Get listening progress
+//	@Tags			me
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Success		200	{array}		object
+//	@Failure		401	{object}	errorResponse
+//	@Router			/me/progress [get]
 func GetProgress(pool *pgxpool.Pool) http.HandlerFunc {
 	q := dbgen.New(pool)
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -35,8 +42,18 @@ func GetProgress(pool *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// UpsertProgress creates or updates listening progress for a specific content item.
-// URL param: contentId
+// UpsertProgress godoc
+//	@Summary		Update listening progress
+//	@Tags			me
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			contentId	path		string				true	"Content UUID"
+//	@Param			body		body		upsertProgressRequest	true	"Progress update"
+//	@Success		200			{object}	object
+//	@Failure		400			{object}	errorResponse
+//	@Failure		401			{object}	errorResponse
+//	@Router			/me/progress/{contentId} [put]
 func UpsertProgress(pool *pgxpool.Pool) http.HandlerFunc {
 	q := dbgen.New(pool)
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -84,7 +101,14 @@ func UpsertProgress(pool *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// GetPlaylists lists all playlists for the authenticated user.
+// GetPlaylists godoc
+//	@Summary		Get playlists
+//	@Tags			me
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Success		200	{array}		object
+//	@Failure		401	{object}	errorResponse
+//	@Router			/me/playlists [get]
 func GetPlaylists(pool *pgxpool.Pool) http.HandlerFunc {
 	q := dbgen.New(pool)
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -107,7 +131,14 @@ func GetPlaylists(pool *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// GetDownloads lists all downloads for the authenticated user.
+// GetDownloads godoc
+//	@Summary		Get downloads
+//	@Tags			me
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Success		200	{array}		object
+//	@Failure		401	{object}	errorResponse
+//	@Router			/me/downloads [get]
 func GetDownloads(pool *pgxpool.Pool) http.HandlerFunc {
 	q := dbgen.New(pool)
 	return func(w http.ResponseWriter, r *http.Request) {

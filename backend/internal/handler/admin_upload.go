@@ -25,6 +25,17 @@ var allowedMIMETypes = map[string]bool{
 	"application/pdf": true,
 }
 
+// GenerateUploadURL godoc
+//	@Summary		Generate R2 upload URL
+//	@Description	Returns a pre-signed PUT URL for direct upload to Cloudflare R2. Valid 15 minutes.
+//	@Tags			admin
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			body	body		uploadURLRequest	true	"File info"
+//	@Success		200		{object}	uploadURLResponse
+//	@Failure		400		{object}	errorResponse
+//	@Router			/admin/upload [post]
 func GenerateUploadURL(r2 *storage.R2Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req struct {

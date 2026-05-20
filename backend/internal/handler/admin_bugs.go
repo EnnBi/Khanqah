@@ -7,6 +7,14 @@ import (
 	dbgen "khanqah/api/internal/db/generated"
 )
 
+// ListBugReports godoc
+//	@Summary		List bug reports
+//	@Tags			admin
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			status	query	string	false	"Filter by status (open, in_progress, resolved, closed)"
+//	@Success		200	{array}		object
+//	@Router			/admin/bugs [get]
 func ListBugReports(pool *pgxpool.Pool) http.HandlerFunc {
 	q := dbgen.New(pool)
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -29,6 +37,16 @@ func ListBugReports(pool *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
+// SubmitBugReport godoc
+//	@Summary		Submit a bug report
+//	@Tags			bugs
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		object	true	"Bug report data"
+//	@Success		201		{object}	object
+//	@Success		200		{object}	object	"Already submitted"
+//	@Failure		400		{object}	errorResponse
+//	@Router			/bugs [post]
 func SubmitBugReport(pool *pgxpool.Pool) http.HandlerFunc {
 	q := dbgen.New(pool)
 	return func(w http.ResponseWriter, r *http.Request) {

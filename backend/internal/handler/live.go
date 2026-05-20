@@ -10,6 +10,13 @@ import (
 	dbgen "khanqah/api/internal/db/generated"
 )
 
+// GetCurrentLive godoc
+//	@Summary		Get current live session
+//	@Description	Returns the active live session, or null if none is live.
+//	@Tags			live
+//	@Produce		json
+//	@Success		200	{object}	object
+//	@Router			/live/current [get]
 func GetCurrentLive(pool *pgxpool.Pool) http.HandlerFunc {
 	q := dbgen.New(pool)
 	return func(w http.ResponseWriter, r *http.Request) {

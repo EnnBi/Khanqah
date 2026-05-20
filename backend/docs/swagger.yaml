@@ -1,0 +1,827 @@
+definitions:
+  handler.errorResponse:
+    properties:
+      error:
+        example: phone is required
+        type: string
+    type: object
+  handler.otpSentResponse:
+    properties:
+      message:
+        example: OTP sent
+        type: string
+    type: object
+  handler.refreshTokenRequest:
+    properties:
+      refresh_token:
+        type: string
+    type: object
+  handler.refreshTokenResponse:
+    properties:
+      access_token:
+        type: string
+    type: object
+  handler.sendOTPRequest:
+    properties:
+      phone:
+        example: "+919876543210"
+        type: string
+    type: object
+  handler.startLiveRequest:
+    properties:
+      stream_url:
+        example: rtmp://live.example.com/live/key
+        type: string
+      title_en:
+        example: Friday Bayan
+        type: string
+      title_ur:
+        example: جمعہ بیان
+        type: string
+    type: object
+  handler.updateUserRoleRequest:
+    properties:
+      role:
+        example: editor
+        type: string
+    type: object
+  handler.uploadURLRequest:
+    properties:
+      content_type:
+        example: audio/mpeg
+        type: string
+      filename:
+        example: bayan.mp3
+        type: string
+    type: object
+  handler.uploadURLResponse:
+    properties:
+      cdn_url:
+        type: string
+      file_key:
+        example: content/1716200000000000000.mp3
+        type: string
+      upload_url:
+        type: string
+    type: object
+  handler.upsertProgressRequest:
+    properties:
+      completed:
+        example: false
+        type: boolean
+      position_seconds:
+        example: 120
+        type: integer
+    type: object
+  handler.verifyOTPRequest:
+    properties:
+      otp:
+        example: "123456"
+        type: string
+      phone:
+        example: "+919876543210"
+        type: string
+    type: object
+  handler.verifyOTPResponse:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+      role:
+        example: listener
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /admin/bugs:
+    get:
+      parameters:
+      - description: Filter by status (open, in_progress, resolved, closed)
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: object
+            type: array
+      security:
+      - BearerAuth: []
+      summary: List bug reports
+      tags:
+      - admin
+  /admin/categories:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Category data
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create category
+      tags:
+      - admin
+  /admin/categories/{id}:
+    delete:
+      parameters:
+      - description: Category UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: ""
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete category
+      tags:
+      - admin
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Category UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Category data
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update category
+      tags:
+      - admin
+  /admin/content:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Content data
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create content
+      tags:
+      - admin
+  /admin/content/{id}:
+    delete:
+      parameters:
+      - description: Content UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: ""
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete content
+      tags:
+      - admin
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Content UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Content data
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update content
+      tags:
+      - admin
+  /admin/live/end/{id}:
+    post:
+      parameters:
+      - description: Live session UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: End live session
+      tags:
+      - admin
+  /admin/live/start:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Live session data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.startLiveRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Start live session
+      tags:
+      - admin
+  /admin/schedule:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Scheduled session data
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create scheduled session
+      tags:
+      - admin
+  /admin/schedule/{id}:
+    delete:
+      parameters:
+      - description: Session UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: ""
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete scheduled session
+      tags:
+      - admin
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Session UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Session data
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update scheduled session
+      tags:
+      - admin
+  /admin/team:
+    get:
+      parameters:
+      - description: Max results (default 50)
+        in: query
+        name: limit
+        type: integer
+      - description: Pagination offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: object
+            type: array
+      security:
+      - BearerAuth: []
+      summary: List all users
+      tags:
+      - admin
+  /admin/team/{id}/role:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: User UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: New role
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.updateUserRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update user role
+      tags:
+      - admin
+  /admin/upload:
+    post:
+      consumes:
+      - application/json
+      description: Returns a pre-signed PUT URL for direct upload to Cloudflare R2.
+        Valid 15 minutes.
+      parameters:
+      - description: File info
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.uploadURLRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.uploadURLResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Generate R2 upload URL
+      tags:
+      - admin
+  /auth/otp/send:
+    post:
+      consumes:
+      - application/json
+      description: Send a 6-digit OTP via SMS. Rate-limited to 3 requests per 10 minutes
+        per phone number.
+      parameters:
+      - description: Phone number
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.sendOTPRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.otpSentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      summary: Send OTP
+      tags:
+      - auth
+  /auth/otp/verify:
+    post:
+      consumes:
+      - application/json
+      description: Verify OTP and receive JWT access + refresh tokens. Creates user
+        on first login.
+      parameters:
+      - description: Phone and OTP
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.verifyOTPRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.verifyOTPResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      summary: Verify OTP
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Exchange a refresh token for a new access token. The old refresh
+        token is consumed.
+      parameters:
+      - description: Refresh token
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.refreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.refreshTokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      summary: Refresh access token
+      tags:
+      - auth
+  /bugs:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Bug report data
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Already submitted
+          schema:
+            type: object
+        "201":
+          description: Created
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      summary: Submit a bug report
+      tags:
+      - bugs
+  /categories:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: object
+            type: array
+      summary: List categories
+      tags:
+      - categories
+  /content:
+    get:
+      description: Returns a paginated list of content. Filter by type or category_id.
+      parameters:
+      - description: Content type (bayan, clip, nazam, quran, hamd_naat, book, mamulat)
+        in: query
+        name: type
+        type: string
+      - description: Category UUID
+        in: query
+        name: category_id
+        type: string
+      - description: Max results (default 20, max 100)
+        in: query
+        name: limit
+        type: integer
+      - description: Pagination offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: object
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      summary: List content
+      tags:
+      - content
+  /content/{id}:
+    get:
+      parameters:
+      - description: Content UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      summary: Get content by ID
+      tags:
+      - content
+  /live/current:
+    get:
+      description: Returns the active live session, or null if none is live.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      summary: Get current live session
+      tags:
+      - live
+  /me/downloads:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: object
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get downloads
+      tags:
+      - me
+  /me/playlists:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: object
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get playlists
+      tags:
+      - me
+  /me/progress:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: object
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get listening progress
+      tags:
+      - me
+  /me/progress/{contentId}:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Content UUID
+        in: path
+        name: contentId
+        required: true
+        type: string
+      - description: Progress update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.upsertProgressRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update listening progress
+      tags:
+      - me
+  /schedule:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: object
+            type: array
+      summary: List upcoming scheduled sessions
+      tags:
+      - schedule
+swagger: "2.0"

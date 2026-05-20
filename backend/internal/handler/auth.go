@@ -28,6 +28,18 @@ func uuidString(u pgtype.UUID) string {
 		b[0:4], b[4:6], b[6:8], b[8:10], b[10:16])
 }
 
+// SendOTP godoc
+//	@Summary		Send OTP
+//	@Description	Send a 6-digit OTP via SMS. Rate-limited to 3 requests per 10 minutes per phone number.
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		sendOTPRequest	true	"Phone number"
+//	@Success		200		{object}	otpSentResponse
+//	@Failure		400		{object}	errorResponse
+//	@Failure		429		{object}	errorResponse
+//	@Failure		500		{object}	errorResponse
+//	@Router			/auth/otp/send [post]
 func SendOTP(pool *pgxpool.Pool, smsSvc *sms.Client) http.HandlerFunc {
 	q := dbgen.New(pool)
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -78,6 +90,18 @@ func SendOTP(pool *pgxpool.Pool, smsSvc *sms.Client) http.HandlerFunc {
 	}
 }
 
+// VerifyOTP godoc
+//	@Summary		Verify OTP
+//	@Description	Verify OTP and receive JWT access + refresh tokens. Creates user on first login.
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		verifyOTPRequest	true	"Phone and OTP"
+//	@Success		200		{object}	verifyOTPResponse
+//	@Failure		400		{object}	errorResponse
+//	@Failure		401		{object}	errorResponse
+//	@Failure		500		{object}	errorResponse
+//	@Router			/auth/otp/verify [post]
 func VerifyOTP(pool *pgxpool.Pool) http.HandlerFunc {
 	q := dbgen.New(pool)
 	secret := os.Getenv("JWT_SECRET")
@@ -172,6 +196,17 @@ func VerifyOTP(pool *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
+// RefreshToken godoc
+//	@Summary		Refresh access token
+//	@Description	Exchange a refresh token for a new access token. The old refresh token is consumed.
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		refreshTokenRequest	true	"Refresh token"
+//	@Success		200		{object}	refreshTokenResponse
+//	@Failure		400		{object}	errorResponse
+//	@Failure		401		{object}	errorResponse
+//	@Router			/auth/refresh [post]
 func RefreshToken(pool *pgxpool.Pool) http.HandlerFunc {
 	q := dbgen.New(pool)
 	secret := os.Getenv("JWT_SECRET")

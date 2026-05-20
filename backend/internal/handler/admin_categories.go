@@ -13,6 +13,16 @@ import (
 	dbgen "khanqah/api/internal/db/generated"
 )
 
+// CreateCategory godoc
+//	@Summary		Create category
+//	@Tags			admin
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			body	body		object	true	"Category data"
+//	@Success		201		{object}	object
+//	@Failure		400		{object}	errorResponse
+//	@Router			/admin/categories [post]
 func CreateCategory(pool *pgxpool.Pool) http.HandlerFunc {
 	q := dbgen.New(pool)
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -30,6 +40,18 @@ func CreateCategory(pool *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
+// UpdateCategory godoc
+//	@Summary		Update category
+//	@Tags			admin
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id		path		string	true	"Category UUID"
+//	@Param			body	body		object	true	"Category data"
+//	@Success		200		{object}	object
+//	@Failure		400		{object}	errorResponse
+//	@Failure		404		{object}	errorResponse
+//	@Router			/admin/categories/{id} [put]
 func UpdateCategory(pool *pgxpool.Pool) http.HandlerFunc {
 	q := dbgen.New(pool)
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -57,6 +79,14 @@ func UpdateCategory(pool *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
+// DeleteCategory godoc
+//	@Summary		Delete category
+//	@Tags			admin
+//	@Security		BearerAuth
+//	@Param			id	path	string	true	"Category UUID"
+//	@Success		204
+//	@Failure		400	{object}	errorResponse
+//	@Router			/admin/categories/{id} [delete]
 func DeleteCategory(pool *pgxpool.Pool) http.HandlerFunc {
 	q := dbgen.New(pool)
 	return func(w http.ResponseWriter, r *http.Request) {

@@ -23,6 +23,18 @@ var validContentTypes = map[dbgen.ContentType]bool{
 	dbgen.ContentTypeMamulat:  true,
 }
 
+// ListContent godoc
+//	@Summary		List content
+//	@Description	Returns a paginated list of content. Filter by type or category_id.
+//	@Tags			content
+//	@Produce		json
+//	@Param			type		query	string	false	"Content type (bayan, clip, nazam, quran, hamd_naat, book, mamulat)"
+//	@Param			category_id	query	string	false	"Category UUID"
+//	@Param			limit		query	int		false	"Max results (default 20, max 100)"
+//	@Param			offset		query	int		false	"Pagination offset"
+//	@Success		200	{array}		object
+//	@Failure		400	{object}	errorResponse
+//	@Router			/content [get]
 func ListContent(pool *pgxpool.Pool) http.HandlerFunc {
 	q := dbgen.New(pool)
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -97,6 +109,15 @@ func ListContent(pool *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
+// GetContent godoc
+//	@Summary		Get content by ID
+//	@Tags			content
+//	@Produce		json
+//	@Param			id	path		string	true	"Content UUID"
+//	@Success		200	{object}	object
+//	@Failure		400	{object}	errorResponse
+//	@Failure		404	{object}	errorResponse
+//	@Router			/content/{id} [get]
 func GetContent(pool *pgxpool.Pool) http.HandlerFunc {
 	q := dbgen.New(pool)
 	return func(w http.ResponseWriter, r *http.Request) {

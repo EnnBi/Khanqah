@@ -14,6 +14,16 @@ import (
 	"khanqah/api/internal/middleware"
 )
 
+// StartLiveSession godoc
+//	@Summary		Start live session
+//	@Tags			admin
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			body	body		startLiveRequest	true	"Live session data"
+//	@Success		201		{object}	object
+//	@Failure		400		{object}	errorResponse
+//	@Router			/admin/live/start [post]
 func StartLiveSession(pool *pgxpool.Pool) http.HandlerFunc {
 	q := dbgen.New(pool)
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -45,6 +55,15 @@ func StartLiveSession(pool *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
+// EndLiveSession godoc
+//	@Summary		End live session
+//	@Tags			admin
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id	path		string	true	"Live session UUID"
+//	@Success		200	{object}	object
+//	@Failure		404	{object}	errorResponse
+//	@Router			/admin/live/end/{id} [post]
 func EndLiveSession(pool *pgxpool.Pool) http.HandlerFunc {
 	q := dbgen.New(pool)
 	return func(w http.ResponseWriter, r *http.Request) {

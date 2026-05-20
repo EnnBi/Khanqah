@@ -8,6 +8,12 @@ import (
 	dbgen "khanqah/api/internal/db/generated"
 )
 
+// ListSchedule godoc
+//	@Summary		List upcoming scheduled sessions
+//	@Tags			schedule
+//	@Produce		json
+//	@Success		200	{array}		object
+//	@Router			/schedule [get]
 func ListSchedule(pool *pgxpool.Pool) http.HandlerFunc {
 	q := dbgen.New(pool)
 	return func(w http.ResponseWriter, r *http.Request) {

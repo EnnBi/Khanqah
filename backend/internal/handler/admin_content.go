@@ -14,6 +14,16 @@ import (
 	"khanqah/api/internal/middleware"
 )
 
+// CreateContent godoc
+//	@Summary		Create content
+//	@Tags			admin
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			body	body		object	true	"Content data"
+//	@Success		201		{object}	object
+//	@Failure		400		{object}	errorResponse
+//	@Router			/admin/content [post]
 func CreateContent(pool *pgxpool.Pool) http.HandlerFunc {
 	q := dbgen.New(pool)
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -41,6 +51,18 @@ func CreateContent(pool *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
+// UpdateContent godoc
+//	@Summary		Update content
+//	@Tags			admin
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id		path		string	true	"Content UUID"
+//	@Param			body	body		object	true	"Content data"
+//	@Success		200		{object}	object
+//	@Failure		400		{object}	errorResponse
+//	@Failure		404		{object}	errorResponse
+//	@Router			/admin/content/{id} [put]
 func UpdateContent(pool *pgxpool.Pool) http.HandlerFunc {
 	q := dbgen.New(pool)
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -68,6 +90,14 @@ func UpdateContent(pool *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
+// DeleteContent godoc
+//	@Summary		Delete content
+//	@Tags			admin
+//	@Security		BearerAuth
+//	@Param			id	path	string	true	"Content UUID"
+//	@Success		204
+//	@Failure		400	{object}	errorResponse
+//	@Router			/admin/content/{id} [delete]
 func DeleteContent(pool *pgxpool.Pool) http.HandlerFunc {
 	q := dbgen.New(pool)
 	return func(w http.ResponseWriter, r *http.Request) {
