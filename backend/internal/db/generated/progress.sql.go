@@ -37,6 +37,7 @@ func (q *Queries) GetProgress(ctx context.Context, arg GetProgressParams) (Liste
 
 const listProgressByUser = `-- name: ListProgressByUser :many
 SELECT id, user_id, content_id, position_seconds, completed, updated_at FROM listening_progress WHERE user_id = $1
+ORDER BY updated_at DESC
 `
 
 func (q *Queries) ListProgressByUser(ctx context.Context, userID pgtype.UUID) ([]ListeningProgress, error) {

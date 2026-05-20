@@ -12,4 +12,5 @@ SET position_seconds = EXCLUDED.position_seconds,
 RETURNING *;
 
 -- name: ListProgressByUser :many
-SELECT * FROM listening_progress WHERE user_id = $1;
+SELECT * FROM listening_progress WHERE user_id = $1
+ORDER BY updated_at DESC;

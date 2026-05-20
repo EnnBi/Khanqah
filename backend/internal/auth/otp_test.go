@@ -7,7 +7,10 @@ import (
 )
 
 func TestGenerateOTP(t *testing.T) {
-	otp := auth.GenerateOTP()
+	otp, err := auth.GenerateOTP()
+	if err != nil {
+		t.Fatalf("GenerateOTP: %v", err)
+	}
 	if len(otp) != 6 {
 		t.Errorf("OTP length = %d, want 6", len(otp))
 	}
@@ -24,10 +27,18 @@ func TestHashAndVerifyOTP(t *testing.T) {
 	if err != nil {
 		t.Fatalf("HashOTP: %v", err)
 	}
-	if !auth.VerifyOTP(otp, hash) {
+	ok, err := auth.VerifyOTP(otp, hash)
+	if err != nil {
+		t.Fatalf("VerifyOTP: %v", err)
+	}
+	if !ok {
 		t.Error("VerifyOTP returned false for correct OTP")
 	}
-	if auth.VerifyOTP("999999", hash) {
+	ok, err = auth.VerifyOTP("999999", hash)
+	if err != nil {
+		t.Fatalf("VerifyOTP unexpected error for wrong OTP: %v", err)
+	}
+	if ok {
 		t.Error("VerifyOTP returned true for wrong OTP")
 	}
 }

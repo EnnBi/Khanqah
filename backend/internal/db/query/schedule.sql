@@ -1,6 +1,6 @@
 -- name: ListUpcomingSchedule :many
 SELECT * FROM scheduled_sessions
-WHERE scheduled_at > NOW()
+WHERE scheduled_at >= NOW()
 ORDER BY scheduled_at ASC;
 
 -- name: GetScheduledSession :one

@@ -70,3 +70,14 @@ func TestRequireRole_Forbidden(t *testing.T) {
 		t.Errorf("status = %d, want 403", rr.Code)
 	}
 }
+
+func TestRequireRole_NoClaims(t *testing.T) {
+	req := httptest.NewRequest("GET", "/", nil)
+	rr := httptest.NewRecorder()
+	middleware.RequireRole("admin")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})).ServeHTTP(rr, req)
+	if rr.Code != http.StatusForbidden {
+		t.Errorf("status = %d, want 403 when no claims in context", rr.Code)
+	}
+}

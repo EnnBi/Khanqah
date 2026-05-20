@@ -20,12 +20,13 @@ func SignToken(secret, userID, role string) (string, error) {
 }
 
 func SignTokenWithExpiry(secret, userID, role string, ttl time.Duration) (string, error) {
+	now := time.Now()
 	claims := Claims{
 		UserID: userID,
 		Role:   role,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(ttl)),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			ExpiresAt: jwt.NewNumericDate(now.Add(ttl)),
+			IssuedAt:  jwt.NewNumericDate(now),
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

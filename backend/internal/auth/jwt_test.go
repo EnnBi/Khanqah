@@ -41,3 +41,14 @@ func TestVerifyWrongSecret(t *testing.T) {
 		t.Error("expected error for wrong secret, got nil")
 	}
 }
+
+func TestVerifyAlgNone(t *testing.T) {
+	// Manually crafted "alg:none" token (not signed)
+	// header: {"alg":"none","typ":"JWT"}, payload: {"user_id":"x","role":"admin"}
+	// This tests that our keyfunc rejects non-HMAC algorithms
+	token := "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJ1c2VyX2lkIjoieCIsInJvbGUiOiJhZG1pbiJ9."
+	_, err := auth.VerifyToken("any-secret", token)
+	if err == nil {
+		t.Error("expected error for alg:none token, got nil")
+	}
+}

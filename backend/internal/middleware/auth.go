@@ -53,5 +53,6 @@ func ClaimsFromContext(ctx context.Context) *auth.Claims {
 	if v == nil {
 		return nil
 	}
-	return v.(*auth.Claims)
+	claims, _ := v.(*auth.Claims)
+	return claims
 }
