@@ -1,1 +1,97 @@
 @import "tailwindcss";
+
+/* ── Light mode (off-white + forest green) ── */
+:root {
+  --bg: #f7f5f0;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f1ede5;
+  --fg: #0f2e24;
+  --fg-muted: #4a5f58;
+  --fg-subtle: #8a7d66;
+  --accent: #0f2e24;
+  --accent-hover: #081a15;
+  --accent-light: #e6f0ec;
+  --gold: #d4a853;
+  --gold-dark: #a8852e;
+  --gold-light: #f5e9c8;
+  --red: #c23e3e;
+  --border: rgba(15, 46, 36, 0.1);
+  --border-strong: rgba(15, 46, 36, 0.2);
+  --shadow-sm: 0 1px 2px rgba(15,46,36,0.06);
+  --shadow: 0 1px 4px rgba(15,46,36,0.08), 0 1px 2px rgba(15,46,36,0.04);
+  --shadow-md: 0 4px 12px rgba(15,46,36,0.1), 0 1px 3px rgba(15,46,36,0.06);
+
+  /* Nav-specific */
+  --nav-bg: rgba(247,245,240,0.93);
+  --nav-active-bg: rgba(15,46,36,0.08);
+  --nav-link: #4a5f58;
+  --nav-link-active: #0f2e24;
+  --btn-primary-bg: #0f2e24;
+  --btn-primary-fg: #d4a853;
+}
+
+/* ── Dark mode (deep forest + gold) ── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #081a15;
+    --bg-card: #0f2e24;
+    --bg-card-hover: #143830;
+    --fg: #f7f5f0;
+    --fg-muted: #c9c0ac;
+    --fg-subtle: #8a7d66;
+    --accent: #d4a853;
+    --accent-hover: #e8c672;
+    --accent-light: rgba(212,168,83,0.12);
+    --gold: #d4a853;
+    --gold-dark: #e8c672;
+    --gold-light: rgba(212,168,83,0.15);
+    --red: #d65050;
+    --border: rgba(247,245,240,0.1);
+    --border-strong: rgba(247,245,240,0.2);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+    --shadow: 0 1px 4px rgba(0,0,0,0.35), 0 1px 2px rgba(0,0,0,0.2);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.4), 0 1px 4px rgba(0,0,0,0.25);
+
+    --nav-bg: rgba(8,26,21,0.93);
+    --nav-active-bg: rgba(212,168,83,0.12);
+    --nav-link: #c9c0ac;
+    --nav-link-active: #d4a853;
+    --btn-primary-bg: #d4a853;
+    --btn-primary-fg: #0f2e24;
+  }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  background-color: var(--bg);
+  color: var(--fg);
+  font-family: 'Jost', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.serif { font-family: 'Cormorant Garamond', Georgia, serif; }
+
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.animate-fade-up { animation: fadeUp 0.35s ease both; }
+.live-dot { animation: pulseDot 1.4s ease-in-out infinite; }

@@ -1,0 +1,57 @@
+name: Deploy backend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: false
+
+env:
+  DEPLOY_HOST: 165.22.208.103
+  DEPLOY_USER: root
+  BINARY_PATH: /usr/local/bin/khanqah-api
+  SERVICE: khanqah-api
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache: true
+          cache-dependency-path: backend/go.sum
+
+      - name: Build
+        working-directory: backend
+        run: GOOS=linux GOARCH=amd64 go build -o khanqah-api ./cmd/server/
+
+      - name: Configure SSH
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Deploy
+        run: |
+          ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+            "systemctl stop $SERVICE"
+          scp -i ~/.ssh/deploy_key \
+            backend/khanqah-api "$DEPLOY_USER@$DEPLOY_HOST:$BINARY_PATH"
+          ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+            "chmod +x $BINARY_PATH && systemctl start $SERVICE"
+
+      - name: Smoke test
+        run: |
+          sleep 3
+          curl -fsSL "https://arrashid.ennbi.com/api/health" -o /dev/null -w "%{http_code}" | grep -q 200
