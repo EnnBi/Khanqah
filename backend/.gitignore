@@ -1,4 +1,4 @@
 bin/
 *.env
-server
+/server
 khanqah-api
