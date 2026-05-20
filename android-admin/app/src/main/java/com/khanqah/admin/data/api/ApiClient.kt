@@ -6,7 +6,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
-private const val BASE_URL = "https://khanqah.com/api/"
+private const val BASE_URL = "https://arrashid.ennbi.com/api/"
 
 class ApiClient(private val tokenManager: TokenManager) {
     private val authInterceptor = Interceptor { chain ->
