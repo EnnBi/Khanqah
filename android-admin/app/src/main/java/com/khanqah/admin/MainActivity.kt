@@ -3,11 +3,22 @@ package com.khanqah.admin
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.material3.Text
+import androidx.activity.enableEdgeToEdge
+import com.khanqah.admin.ui.navigation.AdminNavGraph
+import com.khanqah.admin.ui.theme.KhanqahTheme
+import kotlinx.coroutines.runBlocking
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { Text("Khanqah Admin") }
+        enableEdgeToEdge()
+        val app = application as AdminApp
+        val startDest = if (runBlocking { app.authRepo.isLoggedIn() }) "content" else "login"
+
+        setContent {
+            KhanqahTheme {
+                AdminNavGraph(app = app, startDestination = startDest)
+            }
+        }
     }
 }
