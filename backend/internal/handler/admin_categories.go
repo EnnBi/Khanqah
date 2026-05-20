@@ -2,9 +2,11 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -44,7 +46,11 @@ func UpdateCategory(pool *pgxpool.Pool) http.HandlerFunc {
 		req.ID = id
 		row, err := q.UpdateCategory(r.Context(), req)
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, "internal error")
+			if errors.Is(err, pgx.ErrNoRows) {
+				writeError(w, http.StatusNotFound, "not found")
+			} else {
+				writeError(w, http.StatusInternalServerError, "internal error")
+			}
 			return
 		}
 		writeJSON(w, http.StatusOK, row)

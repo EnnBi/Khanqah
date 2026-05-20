@@ -2,9 +2,11 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -16,6 +18,10 @@ func CreateScheduledSession(pool *pgxpool.Pool) http.HandlerFunc {
 	q := dbgen.New(pool)
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims := middleware.ClaimsFromContext(r.Context())
+		if claims == nil {
+			writeError(w, http.StatusInternalServerError, "missing auth context")
+			return
+		}
 		var createdBy pgtype.UUID
 		createdBy.Scan(claims.UserID)
 
@@ -51,7 +57,11 @@ func UpdateScheduledSession(pool *pgxpool.Pool) http.HandlerFunc {
 		req.ID = id
 		row, err := q.UpdateScheduledSession(r.Context(), req)
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, "internal error")
+			if errors.Is(err, pgx.ErrNoRows) {
+				writeError(w, http.StatusNotFound, "not found")
+			} else {
+				writeError(w, http.StatusInternalServerError, "internal error")
+			}
 			return
 		}
 		writeJSON(w, http.StatusOK, row)
