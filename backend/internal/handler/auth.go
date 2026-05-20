@@ -1,13 +1,17 @@
 package handler
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
@@ -77,6 +81,9 @@ func SendOTP(pool *pgxpool.Pool, smsSvc *sms.Client) http.HandlerFunc {
 func VerifyOTP(pool *pgxpool.Pool) http.HandlerFunc {
 	q := dbgen.New(pool)
 	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		panic("JWT_SECRET must be set")
+	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req struct {
 			Phone string `json:"phone"`
@@ -89,7 +96,11 @@ func VerifyOTP(pool *pgxpool.Pool) http.HandlerFunc {
 
 		otpRow, err := q.GetLatestOTPByPhone(r.Context(), req.Phone)
 		if err != nil {
-			writeError(w, http.StatusUnauthorized, "invalid or expired OTP")
+			if errors.Is(err, pgx.ErrNoRows) {
+				writeError(w, http.StatusUnauthorized, "invalid or expired OTP")
+			} else {
+				writeError(w, http.StatusInternalServerError, "internal error")
+			}
 			return
 		}
 		if otpRow.Attempts >= 3 {
@@ -108,7 +119,10 @@ func VerifyOTP(pool *pgxpool.Pool) http.HandlerFunc {
 			writeError(w, http.StatusUnauthorized, "invalid OTP")
 			return
 		}
-		_ = q.MarkOTPUsed(r.Context(), otpRow.ID)
+		if err := q.MarkOTPUsed(r.Context(), otpRow.ID); err != nil {
+			writeError(w, http.StatusInternalServerError, "internal error")
+			return
+		}
 
 		user, err := q.GetUserByPhone(r.Context(), req.Phone)
 		if err != nil {
@@ -128,18 +142,12 @@ func VerifyOTP(pool *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		// Generate a 12-char raw refresh token using two OTP calls
-		raw1, err := auth.GenerateOTP()
-		if err != nil {
+		rawBytes := make([]byte, 32)
+		if _, err := rand.Read(rawBytes); err != nil {
 			writeError(w, http.StatusInternalServerError, "internal error")
 			return
 		}
-		raw2, err := auth.GenerateOTP()
-		if err != nil {
-			writeError(w, http.StatusInternalServerError, "internal error")
-			return
-		}
-		refreshRaw := raw1 + raw2
+		refreshRaw := base64.RawURLEncoding.EncodeToString(rawBytes)
 
 		refreshHash, err := bcrypt.GenerateFromPassword([]byte(refreshRaw), bcrypt.DefaultCost)
 		if err != nil {
@@ -167,6 +175,9 @@ func VerifyOTP(pool *pgxpool.Pool) http.HandlerFunc {
 func RefreshToken(pool *pgxpool.Pool) http.HandlerFunc {
 	q := dbgen.New(pool)
 	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		panic("JWT_SECRET must be set")
+	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req struct {
 			RefreshToken string `json:"refresh_token"`
@@ -192,7 +203,10 @@ func RefreshToken(pool *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		_ = q.DeleteRefreshToken(r.Context(), parts.id)
+		if err := q.DeleteRefreshToken(r.Context(), parts.id); err != nil {
+			writeError(w, http.StatusInternalServerError, "internal error")
+			return
+		}
 
 		user, err := q.GetUserByID(r.Context(), rtRow.UserID)
 		if err != nil {
@@ -215,13 +229,13 @@ type refreshParts struct {
 }
 
 func splitRefreshToken(token string) *refreshParts {
-	idx := strings.Index(token, ".")
-	if idx < 1 {
+	uuidPart, raw, ok := strings.Cut(token, ".")
+	if !ok || uuidPart == "" || raw == "" {
 		return nil
 	}
 	var id pgtype.UUID
-	if err := id.Scan(token[:idx]); err != nil {
+	if err := id.Scan(uuidPart); err != nil {
 		return nil
 	}
-	return &refreshParts{id: id, raw: token[idx+1:]}
+	return &refreshParts{id: id, raw: raw}
 }
