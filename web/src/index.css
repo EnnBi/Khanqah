@@ -75,6 +75,15 @@ body {
 
 .serif { font-family: 'Cormorant Garamond', Georgia, serif; }
 
+@font-face {
+  font-family: 'NastaleeqUrdu';
+  src: url('/JameelNooriNastaleeq.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+.nastaleeq { font-family: 'NastaleeqUrdu', serif; }
+
 :focus-visible {
   outline: 2px solid var(--gold);
   outline-offset: 2px;

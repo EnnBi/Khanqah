@@ -79,7 +79,7 @@ export default function Login() {
         <h1 className="serif" style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--fg)', letterSpacing: '-0.01em', lineHeight: 1.2 }}>
           Khanqah Maseeh-ul-Ummah
         </h1>
-        <p style={{ fontSize: '0.95rem', color: 'var(--fg-muted)', fontFamily: 'serif', marginTop: 4 }}>خانقاہ مسیح الامۃ</p>
+        <p className="nastaleeq" style={{ fontSize: '1.4rem', color: 'var(--fg-muted)', marginTop: 4 }}>خانقاہ مسیح الامۃ</p>
       </div>
 
       {/* Card */}
