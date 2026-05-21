@@ -5,6 +5,12 @@ import { useAuthStore } from '../../stores/auth'
 
 const ROLES = ['listener', 'editor', 'admin', 'broadcaster']
 
+const btnIcon: React.CSSProperties = {
+  background: 'none', border: 'none', cursor: 'pointer',
+  color: 'var(--gold)', fontSize: '1rem', padding: '4px 6px',
+  lineHeight: 1, borderRadius: 6, display: 'flex', alignItems: 'center',
+}
+
 export default function Team() {
   const qc = useQueryClient()
   const myId = useAuthStore(s => {
@@ -30,7 +36,7 @@ export default function Team() {
   })
 
   return (
-    <div style={{ maxWidth: 680 }}>
+    <div style={{ maxWidth: 720 }}>
       <h1 style={{ fontSize: '1.4rem', fontWeight: 600, color: 'var(--fg)', marginBottom: '1.5rem' }}>Team</h1>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
         {users?.length === 0 && (
@@ -40,90 +46,90 @@ export default function Team() {
           <div key={u.id} style={{
             background: 'var(--bg-card)', border: '1px solid var(--border)',
             borderRadius: 8, padding: '10px 14px',
+            display: 'flex', alignItems: 'center', gap: '1rem',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
+            {/* Left: name + phone */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              {editId === u.id ? (
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  <input
+                    autoFocus
+                    value={editName}
+                    onChange={e => setEditName(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && editName.trim()) updateName.mutate({ id: u.id, name: editName.trim() })
+                      if (e.key === 'Escape') setEditId(null)
+                    }}
+                    style={{
+                      flex: 1, padding: '4px 8px', fontSize: '0.88rem',
+                      border: '1px solid var(--accent)', borderRadius: 6,
+                      background: 'var(--bg)', color: 'var(--fg)',
+                      fontFamily: 'inherit', outline: 'none',
+                    }}
+                  />
+                  <button
+                    onClick={() => editName.trim() && updateName.mutate({ id: u.id, name: editName.trim() })}
+                    disabled={!editName.trim() || updateName.isPending}
+                    style={{ fontSize: '0.78rem', fontWeight: 600, color: '#fff', background: 'var(--accent)', border: 'none', borderRadius: 6, padding: '4px 10px', cursor: 'pointer' }}
+                  >Save</button>
+                  <button
+                    onClick={() => setEditId(null)}
+                    style={{ fontSize: '0.78rem', color: 'var(--fg-muted)', background: 'none', border: 'none', cursor: 'pointer' }}
+                  >Cancel</button>
+                </div>
+              ) : (
+                <p style={{ fontWeight: 500, color: 'var(--fg)', fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {u.display_name || <span style={{ color: 'var(--fg-subtle)', fontStyle: 'italic' }}>No name</span>}
+                </p>
+              )}
+              <p style={{ color: 'var(--fg-muted)', fontSize: '0.8rem', marginTop: 2 }}>{u.phone}</p>
+            </div>
 
-              {/* Name / inline edit */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                {editId === u.id ? (
-                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                    <input
-                      autoFocus
-                      value={editName}
-                      onChange={e => setEditName(e.target.value)}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter' && editName.trim()) updateName.mutate({ id: u.id, name: editName.trim() })
-                        if (e.key === 'Escape') setEditId(null)
-                      }}
-                      style={{
-                        flex: 1, padding: '4px 8px', fontSize: '0.88rem',
-                        border: '1px solid var(--accent)', borderRadius: 6,
-                        background: 'var(--bg)', color: 'var(--fg)',
-                        fontFamily: 'inherit', outline: 'none',
-                      }}
-                    />
+            {/* Center: role dropdown */}
+            <select
+              value={u.role}
+              onChange={e => updateRole.mutate({ id: u.id, role: e.target.value })}
+              style={{
+                border: '1px solid var(--border)', borderRadius: 6,
+                padding: '5px 10px', fontSize: '0.82rem',
+                background: 'var(--bg)', color: 'var(--fg)', cursor: 'pointer',
+                flexShrink: 0,
+              }}
+            >
+              {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+
+            {/* Right: edit + delete icon buttons */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.1rem', flexShrink: 0 }}>
+              {editId !== u.id && (
+                <button
+                  onClick={() => { setEditId(u.id); setEditName(u.display_name || ''); setDeleteId(null) }}
+                  title="Edit name"
+                  style={btnIcon}
+                >✎</button>
+              )}
+              {u.id !== myId && editId !== u.id && (
+                deleteId === u.id ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--fg-muted)', whiteSpace: 'nowrap' }}>Delete?</span>
                     <button
-                      onClick={() => editName.trim() && updateName.mutate({ id: u.id, name: editName.trim() })}
-                      disabled={!editName.trim() || updateName.isPending}
-                      style={{ fontSize: '0.78rem', fontWeight: 600, color: '#fff', background: 'var(--accent)', border: 'none', borderRadius: 6, padding: '4px 10px', cursor: 'pointer' }}
-                    >Save</button>
+                      onClick={() => deleteUser.mutate(u.id)}
+                      disabled={deleteUser.isPending}
+                      style={{ fontSize: '0.72rem', fontWeight: 600, color: '#fff', background: '#dc2626', border: 'none', borderRadius: 6, padding: '3px 8px', cursor: 'pointer' }}
+                    >Yes</button>
                     <button
-                      onClick={() => setEditId(null)}
-                      style={{ fontSize: '0.78rem', color: 'var(--fg-muted)', background: 'none', border: 'none', cursor: 'pointer' }}
-                    >Cancel</button>
+                      onClick={() => setDeleteId(null)}
+                      style={{ fontSize: '0.72rem', color: 'var(--fg-muted)', background: 'none', border: 'none', cursor: 'pointer' }}
+                    >No</button>
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <p style={{ fontWeight: 500, color: 'var(--fg)', fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {u.display_name || <span style={{ color: 'var(--fg-subtle)', fontStyle: 'italic' }}>No name</span>}
-                    </p>
-                    <button
-                      onClick={() => { setEditId(u.id); setEditName(u.display_name || '') }}
-                      title="Edit name"
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gold)', padding: '2px 4px', lineHeight: 1, flexShrink: 0 }}
-                    >✎</button>
-                  </div>
-                )}
-                <p style={{ color: 'var(--fg-muted)', fontSize: '0.8rem', marginTop: 2 }}>{u.phone}</p>
-              </div>
-
-              {/* Role + delete */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
-                <select
-                  value={u.role}
-                  onChange={e => updateRole.mutate({ id: u.id, role: e.target.value })}
-                  style={{
-                    border: '1px solid var(--border)', borderRadius: 6,
-                    padding: '5px 10px', fontSize: '0.82rem',
-                    background: 'var(--bg)', color: 'var(--fg)', cursor: 'pointer',
-                  }}
-                >
-                  {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
-                </select>
-
-                {u.id !== myId && (
-                  deleteId === u.id ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--fg-muted)' }}>Delete?</span>
-                      <button
-                        onClick={() => deleteUser.mutate(u.id)}
-                        disabled={deleteUser.isPending}
-                        style={{ fontSize: '0.75rem', fontWeight: 600, color: '#fff', background: 'var(--red, #dc2626)', border: 'none', borderRadius: 6, padding: '4px 8px', cursor: 'pointer' }}
-                      >Yes</button>
-                      <button
-                        onClick={() => setDeleteId(null)}
-                        style={{ fontSize: '0.75rem', color: 'var(--fg-muted)', background: 'none', border: 'none', cursor: 'pointer' }}
-                      >No</button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setDeleteId(u.id)}
-                      title="Delete user"
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gold)', fontSize: '1rem', padding: '4px', lineHeight: 1 }}
-                    >🗑</button>
-                  )
-                )}
-              </div>
+                  <button
+                    onClick={() => { setDeleteId(u.id); setEditId(null) }}
+                    title="Delete user"
+                    style={btnIcon}
+                  >🗑</button>
+                )
+              )}
             </div>
           </div>
         ))}
