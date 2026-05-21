@@ -181,7 +181,7 @@ func VerifyOTP(pool *pgxpool.Pool) http.HandlerFunc {
 		rtRow, err := q.CreateRefreshToken(r.Context(), dbgen.CreateRefreshTokenParams{
 			UserID:    user.ID,
 			TokenHash: string(refreshHash),
-			ExpiresAt: pgtype.Timestamptz{Time: time.Now().Add(30 * 24 * time.Hour), Valid: true},
+			ExpiresAt: pgtype.Timestamptz{Time: time.Now().Add(365 * 24 * time.Hour), Valid: true},
 		})
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, "internal error")
@@ -254,7 +254,32 @@ func RefreshToken(pool *pgxpool.Pool) http.HandlerFunc {
 			writeError(w, http.StatusInternalServerError, "internal error")
 			return
 		}
-		writeJSON(w, http.StatusOK, map[string]string{"access_token": accessToken})
+
+		newRawBytes := make([]byte, 32)
+		if _, err := rand.Read(newRawBytes); err != nil {
+			writeError(w, http.StatusInternalServerError, "internal error")
+			return
+		}
+		newRefreshRaw := base64.RawURLEncoding.EncodeToString(newRawBytes)
+		newRefreshHash, err := bcrypt.GenerateFromPassword([]byte(newRefreshRaw), bcrypt.DefaultCost)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "internal error")
+			return
+		}
+		newRtRow, err := q.CreateRefreshToken(r.Context(), dbgen.CreateRefreshTokenParams{
+			UserID:    rtRow.UserID,
+			TokenHash: string(newRefreshHash),
+			ExpiresAt: pgtype.Timestamptz{Time: time.Now().Add(365 * 24 * time.Hour), Valid: true},
+		})
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "internal error")
+			return
+		}
+
+		writeJSON(w, http.StatusOK, map[string]string{
+			"access_token":  accessToken,
+			"refresh_token": uuidString(newRtRow.ID) + "." + newRefreshRaw,
+		})
 	}
 }
 
