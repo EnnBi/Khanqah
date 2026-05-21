@@ -75,10 +75,11 @@ export default function Login() {
     }}>
       {/* Brand */}
       <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-        <h1 className="serif" style={{ fontSize: '2.5rem', fontWeight: 600, color: 'var(--fg)', letterSpacing: '-0.02em', lineHeight: 1 }}>
-          Khanqah
+        <img src="/khanqah-logo.png" alt="Khanqah Maseeh-ul-Ummah" style={{ width: 90, height: 'auto', marginBottom: 12 }} />
+        <h1 className="serif" style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--fg)', letterSpacing: '-0.01em', lineHeight: 1.2 }}>
+          Khanqah Maseeh-ul-Ummah
         </h1>
-        <p style={{ fontSize: '1rem', color: 'var(--fg-muted)', fontFamily: 'serif', marginTop: 6 }}>خانقاہ</p>
+        <p style={{ fontSize: '0.95rem', color: 'var(--fg-muted)', fontFamily: 'serif', marginTop: 4 }}>خانقاہ مسیح الامۃ</p>
       </div>
 
       {/* Card */}

@@ -28,7 +28,8 @@ export default function AdminLayout() {
         height: 52, display: 'flex', alignItems: 'center',
         padding: '0 1.5rem', gap: '1rem',
       }}>
-        <span className="serif" style={{ fontWeight: 600, fontSize: '1.1rem', color: 'var(--fg)' }}>
+        <img src="/khanqah-logo.png" alt="logo" style={{ width: 28, height: 'auto' }} />
+        <span className="serif" style={{ fontWeight: 600, fontSize: '1rem', color: 'var(--fg)' }}>
           Admin Panel
         </span>
         <span style={{ color: 'var(--border)' }}>·</span>

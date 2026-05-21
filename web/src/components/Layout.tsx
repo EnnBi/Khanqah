@@ -29,12 +29,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           display: 'flex', alignItems: 'center', gap: '2.5rem',
         }}>
           {/* Brand */}
-          <a href="/" style={{ textDecoration: 'none', flexShrink: 0, lineHeight: 1 }}>
-            <span className="serif" style={{ fontSize: '1.45rem', fontWeight: 600, color: 'var(--fg)', letterSpacing: '-0.01em' }}>
-              Khanqah
-            </span>
-            <span style={{ display: 'block', fontSize: '0.7rem', color: 'var(--fg-muted)', letterSpacing: '0.06em', marginTop: 1, fontFamily: 'serif' }}>
-              خانقاہ
+          <a href="/" style={{ textDecoration: 'none', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <img src="/khanqah-logo.png" alt="logo" style={{ width: 34, height: 'auto' }} />
+            <span>
+              <span className="serif" style={{ display: 'block', fontSize: '1.05rem', fontWeight: 600, color: 'var(--fg)', letterSpacing: '-0.01em', lineHeight: 1.1 }}>
+                Khanqah Maseeh-ul-Ummah
+              </span>
+              <span style={{ display: 'block', fontSize: '0.72rem', color: 'var(--fg-muted)', fontFamily: 'serif', marginTop: 1 }}>
+                خانقاہ مسیح الامۃ
+              </span>
             </span>
           </a>
 
@@ -115,11 +118,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         padding: '2rem 1.5rem',
         textAlign: 'center',
       }}>
-        <p className="serif" style={{ fontSize: '1.1rem', color: 'var(--fg-muted)', fontStyle: 'italic' }}>
-          خانقاہ
+        <img src="/khanqah-logo.png" alt="logo" style={{ width: 40, height: 'auto', opacity: 0.6, marginBottom: 8 }} />
+        <p className="serif" style={{ fontSize: '1rem', color: 'var(--fg-muted)', fontStyle: 'italic' }}>
+          Khanqah Maseeh-ul-Ummah
         </p>
-        <p style={{ fontSize: '0.75rem', color: 'var(--fg-subtle)', marginTop: 6, letterSpacing: '0.04em' }}>
-          A DIGITAL ARCHIVE OF SACRED KNOWLEDGE
+        <p style={{ fontSize: '0.72rem', color: 'var(--fg-subtle)', marginTop: 4, fontFamily: 'serif' }}>
+          خانقاہ مسیح الامۃ
         </p>
       </footer>
     </div>
