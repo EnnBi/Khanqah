@@ -16,28 +16,38 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val app = application as KhanqahApp
-        val isLoggedIn = runBlocking { app.authRepo.isLoggedIn() }
-        val initialRole = runBlocking { app.authRepo.getRole() }
+        val isLoggedIn   = runBlocking { app.authRepo.isLoggedIn() }
+        val initialRole  = runBlocking { app.authRepo.getRole() }
+        val initialName  = runBlocking { app.authRepo.getDisplayName() }
+        val initialPhone = runBlocking { app.authRepo.getPhone() }
 
         setContent {
             KhanqahTheme {
-                val live by app.homeViewModel.live.collectAsState()
+                val live     by app.homeViewModel.live.collectAsState()
                 val schedule by app.homeViewModel.schedule.collectAsState()
-                var userRole by remember { mutableStateOf(initialRole) }
+                var userRole    by remember { mutableStateOf(initialRole) }
+                var displayName by remember { mutableStateOf(initialName) }
+                var phone       by remember { mutableStateOf(initialPhone) }
                 val scope = rememberCoroutineScope()
 
                 AppNavGraph(
-                    authViewModel = app.authViewModel,
-                    homeViewModel = app.homeViewModel,
-                    playerViewModelFactory = { app.makePlayerViewModel(it) },
-                    liveSession = live,
-                    scheduleList = schedule,
-                    userRole = userRole,
-                    startDestination = if (isLoggedIn) Screen.Home.route else Screen.Login.route,
-                    onLogout = {
+                    authViewModel                  = app.authViewModel,
+                    homeViewModel                  = app.homeViewModel,
+                    libraryViewModel               = app.libraryViewModel,
+                    playerViewModelFactory         = { app.makePlayerViewModel(it) },
+                    categoryDetailViewModelFactory = { app.makeCategoryDetailViewModel(it) },
+                    liveSession                    = live,
+                    scheduleList                   = schedule,
+                    displayName                    = displayName,
+                    phone                          = phone,
+                    userRole                       = userRole,
+                    startDestination               = if (isLoggedIn) Screen.Home.route else Screen.Login.route,
+                    onLogout                       = {
                         scope.launch {
                             app.authRepo.logout()
                             userRole = null
+                            displayName = ""
+                            phone = ""
                         }
                     },
                 )
