@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.khanqah.admin.data.model.Category
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UploadScreen(viewModel: UploadViewModel, categories: List<Category>) {
     val context = LocalContext.current

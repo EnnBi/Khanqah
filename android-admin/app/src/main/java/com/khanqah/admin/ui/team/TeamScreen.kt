@@ -12,6 +12,7 @@ import com.khanqah.admin.data.model.User
 
 private val ROLES = listOf("listener", "editor", "admin", "broadcaster")
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TeamScreen(users: List<User>, onRoleChange: (String, String) -> Unit) {
     LazyColumn(Modifier.fillMaxSize().padding(16.dp)) {
