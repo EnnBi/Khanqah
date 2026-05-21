@@ -15,22 +15,30 @@ private val LightColors = lightColorScheme(
     primary = PrimaryLight,
     onPrimary = OnPrimaryLight,
     secondary = SecondaryLight,
+    onSecondary = OnSecondaryLight,
     background = BackgroundLight,
     surface = SurfaceLight,
     onBackground = TextPrimaryLight,
     onSurface = TextPrimaryLight,
     outline = BorderLight,
+    tertiary = GoldLight,
+    onTertiary = BackgroundLight,
+    tertiaryContainer = GoldSurfaceLight,
 )
 
 private val DarkColors = darkColorScheme(
     primary = PrimaryDark,
     onPrimary = OnPrimaryDark,
     secondary = SecondaryDark,
+    onSecondary = OnSecondaryDark,
     background = BackgroundDark,
     surface = SurfaceDark,
     onBackground = TextPrimaryDark,
     onSurface = TextPrimaryDark,
     outline = BorderDark,
+    tertiary = GoldDark,
+    onTertiary = BackgroundDark,
+    tertiaryContainer = GoldSurfaceDark,
 )
 
 @Composable
