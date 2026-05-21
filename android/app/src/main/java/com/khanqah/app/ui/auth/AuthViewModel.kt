@@ -21,13 +21,23 @@ class AuthViewModel(private val repo: AuthRepository) : ViewModel() {
 
     fun sendOtp(phone: String) = viewModelScope.launch {
         _state.value = AuthState.Loading
-        try { repo.sendOtp(phone); _state.value = AuthState.OtpSent }
-        catch (e: Exception) { _state.value = AuthState.Error(e.message ?: "Failed to send OTP") }
+        try {
+            repo.sendOtp(phone)
+            _state.value = AuthState.OtpSent
+        } catch (e: Exception) {
+            _state.value = AuthState.Error(e.message ?: "Failed to send OTP")
+        }
     }
 
-    fun verifyOtp(phone: String, otp: String) = viewModelScope.launch {
+    fun verifyOtp(phone: String, otp: String, name: String = "") = viewModelScope.launch {
         _state.value = AuthState.Loading
-        try { repo.verifyOtp(phone, otp); _state.value = AuthState.Success }
-        catch (e: Exception) { _state.value = AuthState.Error(e.message ?: "Invalid OTP") }
+        try {
+            repo.verifyOtp(phone, otp, name)
+            _state.value = AuthState.Success
+        } catch (e: Exception) {
+            _state.value = AuthState.Error(e.message ?: "Invalid OTP")
+        }
     }
+
+    fun reset() { _state.value = AuthState.Idle }
 }
