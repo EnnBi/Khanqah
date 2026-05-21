@@ -5,6 +5,7 @@ import { useAuthStore } from '../../stores/auth'
 import PhoneInput from '../../components/PhoneInput'
 
 export default function Login() {
+  const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [otp, setOtp] = useState('')
   const [step, setStep] = useState<'phone' | 'otp'>('phone')
@@ -14,6 +15,7 @@ export default function Login() {
   const setTokens = useAuthStore(s => s.setTokens)
 
   async function sendOTP() {
+    if (!name.trim()) { setError('Please enter your name'); return }
     setLoading(true); setError('')
     try {
       await api.post('/auth/otp/send', { phone })
@@ -25,7 +27,7 @@ export default function Login() {
   async function verifyOTP() {
     setLoading(true); setError('')
     try {
-      const data: any = await api.post('/auth/otp/verify', { phone, otp })
+      const data: any = await api.post('/auth/otp/verify', { phone, otp, name: name.trim() })
       setTokens(data.access_token, data.refresh_token, data.role)
       navigate('/')
     } catch (e: any) { setError(e.message) }
@@ -68,12 +70,32 @@ export default function Login() {
               New or returning — enter your number to continue
             </p>
             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.06em', color: 'var(--fg-muted)', textTransform: 'uppercase', marginBottom: 6 }}>
+              Your Name
+            </label>
+            <input
+              type="text"
+              placeholder="Abdullah"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && name.trim() && phone && !loading && sendOTP()}
+              style={{
+                width: '100%', padding: '10px 14px',
+                border: '1px solid var(--border)', borderRadius: 8,
+                background: 'var(--bg)', color: 'var(--fg)',
+                fontSize: '0.95rem', outline: 'none',
+                fontFamily: 'inherit', marginBottom: '1rem',
+                transition: 'border-color 0.15s', boxSizing: 'border-box',
+              }}
+              onFocus={e => (e.target.style.borderColor = 'var(--accent)')}
+              onBlur={e => (e.target.style.borderColor = 'var(--border)')}
+            />
+            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.06em', color: 'var(--fg-muted)', textTransform: 'uppercase', marginBottom: 6 }}>
               Phone Number
             </label>
             <PhoneInput value={phone} onChange={setPhone} onSubmit={() => !loading && sendOTP()} />
             <button
               onClick={sendOTP}
-              disabled={loading || !phone}
+              disabled={loading || !phone || !name.trim()}
               style={{
                 width: '100%', padding: '11px',
                 background: loading || !phone ? 'var(--border)' : 'var(--accent)',
@@ -134,7 +156,7 @@ export default function Login() {
             >
               {loading ? 'Verifying…' : 'Verify'}
             </button>
-            <button onClick={() => { setStep('phone'); setOtp('') }} style={{
+            <button onClick={() => { setStep('phone'); setOtp(''); setError('') }} style={{
               width: '100%', padding: '8px',
               background: 'none', border: 'none',
               fontSize: '0.8rem', color: 'var(--fg-muted)',

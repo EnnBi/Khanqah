@@ -125,6 +125,8 @@ func main() {
 			r.Delete("/admin/schedule/{id}", handler.DeleteScheduledSession(pool))
 			r.Get("/admin/team", handler.ListTeam(pool))
 			r.Put("/admin/team/{id}/role", handler.UpdateUserRole(pool))
+			r.Put("/admin/team/{id}/name", handler.UpdateUserName(pool))
+			r.Delete("/admin/team/{id}", handler.DeleteUser(pool))
 			r.Get("/admin/bugs", handler.ListBugReports(pool))
 		})
 	})

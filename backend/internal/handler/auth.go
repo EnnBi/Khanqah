@@ -112,6 +112,7 @@ func VerifyOTP(pool *pgxpool.Pool) http.HandlerFunc {
 		var req struct {
 			Phone string `json:"phone"`
 			OTP   string `json:"otp"`
+			Name  string `json:"name"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Phone == "" || req.OTP == "" {
 			writeError(w, http.StatusBadRequest, "phone and otp are required")
@@ -152,7 +153,7 @@ func VerifyOTP(pool *pgxpool.Pool) http.HandlerFunc {
 		if err != nil {
 			user, err = q.CreateUser(r.Context(), dbgen.CreateUserParams{
 				Phone:       req.Phone,
-				DisplayName: "",
+				DisplayName: req.Name,
 			})
 			if err != nil {
 				writeError(w, http.StatusInternalServerError, "internal error")
@@ -192,6 +193,7 @@ func VerifyOTP(pool *pgxpool.Pool) http.HandlerFunc {
 			"access_token":  accessToken,
 			"refresh_token": uuidString(rtRow.ID) + "." + refreshRaw,
 			"role":          string(user.Role),
+			"display_name":  user.DisplayName,
 		})
 	}
 }
