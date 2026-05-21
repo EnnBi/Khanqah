@@ -4,7 +4,25 @@ import { api } from '../../api/client'
 import { useAuthStore } from '../../stores/auth'
 import PhoneInput from '../../components/PhoneInput'
 
+type Mode = 'login' | 'register'
+
+const inputStyle: React.CSSProperties = {
+  width: '100%', padding: '10px 14px',
+  border: '1px solid var(--border)', borderRadius: 8,
+  background: 'var(--bg)', color: 'var(--fg)',
+  fontSize: '0.95rem', outline: 'none',
+  fontFamily: 'inherit', marginBottom: '1rem',
+  transition: 'border-color 0.15s', boxSizing: 'border-box',
+}
+
+const labelStyle: React.CSSProperties = {
+  display: 'block', fontSize: '0.75rem', fontWeight: 600,
+  letterSpacing: '0.06em', color: 'var(--fg-muted)',
+  textTransform: 'uppercase', marginBottom: 6,
+}
+
 export default function Login() {
+  const [mode, setMode] = useState<Mode>('login')
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [otp, setOtp] = useState('')
@@ -14,8 +32,17 @@ export default function Login() {
   const navigate = useNavigate()
   const setTokens = useAuthStore(s => s.setTokens)
 
+  function switchMode(m: Mode) {
+    setMode(m)
+    setName('')
+    setPhone('')
+    setOtp('')
+    setError('')
+    setStep('phone')
+  }
+
   async function sendOTP() {
-    if (!name.trim()) { setError('Please enter your name'); return }
+    if (mode === 'register' && !name.trim()) { setError('Please enter your name'); return }
     setLoading(true); setError('')
     try {
       await api.post('/auth/otp/send', { phone })
@@ -27,12 +54,17 @@ export default function Login() {
   async function verifyOTP() {
     setLoading(true); setError('')
     try {
-      const data: any = await api.post('/auth/otp/verify', { phone, otp, name: name.trim() })
+      const data: any = await api.post('/auth/otp/verify', {
+        phone, otp,
+        ...(mode === 'register' ? { name: name.trim() } : {}),
+      })
       setTokens(data.access_token, data.refresh_token, data.role, data.user_id)
       navigate('/')
     } catch (e: any) { setError(e.message) }
     finally { setLoading(false) }
   }
+
+  const canSend = phone && (mode === 'login' || name.trim())
 
   return (
     <div style={{
@@ -59,52 +91,60 @@ export default function Login() {
         boxShadow: 'var(--shadow-md)',
       }}>
         {/* Decorative top accent */}
-        <div style={{ height: 3, background: 'linear-gradient(90deg, var(--accent), var(--gold))', borderRadius: '3px 3px 0 0', margin: '-2rem -2rem 1.75rem', borderTopLeftRadius: 14, borderTopRightRadius: 14 }} />
+        <div style={{ height: 3, background: 'linear-gradient(90deg, var(--accent), var(--gold))', margin: '-2rem -2rem 1.75rem', borderTopLeftRadius: 14, borderTopRightRadius: 14 }} />
 
         {step === 'phone' ? (
           <>
-            <h2 className="serif" style={{ fontSize: '1.4rem', fontWeight: 500, color: 'var(--fg)', marginBottom: 4 }}>
-              Sign in or create account
-            </h2>
-            <p style={{ fontSize: '0.82rem', color: 'var(--fg-muted)', marginBottom: '1.5rem' }}>
-              New or returning — enter your number to continue
-            </p>
-            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.06em', color: 'var(--fg-muted)', textTransform: 'uppercase', marginBottom: 6 }}>
-              Your Name
-            </label>
-            <input
-              type="text"
-              placeholder="Your name"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && name.trim() && phone && !loading && sendOTP()}
-              style={{
-                width: '100%', padding: '10px 14px',
-                border: '1px solid var(--border)', borderRadius: 8,
-                background: 'var(--bg)', color: 'var(--fg)',
-                fontSize: '0.95rem', outline: 'none',
-                fontFamily: 'inherit', marginBottom: '1rem',
-                transition: 'border-color 0.15s', boxSizing: 'border-box',
-              }}
-              onFocus={e => (e.target.style.borderColor = 'var(--accent)')}
-              onBlur={e => (e.target.style.borderColor = 'var(--border)')}
-            />
-            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.06em', color: 'var(--fg-muted)', textTransform: 'uppercase', marginBottom: 6 }}>
-              Phone Number
-            </label>
-            <PhoneInput value={phone} onChange={setPhone} onSubmit={() => !loading && sendOTP()} />
+            {/* Mode toggle */}
+            <div style={{ display: 'flex', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, padding: 3, marginBottom: '1.5rem' }}>
+              {(['login', 'register'] as Mode[]).map(m => (
+                <button
+                  key={m}
+                  onClick={() => switchMode(m)}
+                  style={{
+                    flex: 1, padding: '7px', border: 'none', borderRadius: 6,
+                    fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer',
+                    fontFamily: 'inherit', transition: 'background 0.15s, color 0.15s',
+                    background: mode === m ? 'var(--accent)' : 'transparent',
+                    color: mode === m ? '#fff' : 'var(--fg-muted)',
+                  }}
+                >
+                  {m === 'login' ? 'Sign in' : 'Register'}
+                </button>
+              ))}
+            </div>
+
+            {mode === 'register' && (
+              <>
+                <label style={labelStyle}>Your Name</label>
+                <input
+                  type="text"
+                  placeholder="Your name"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && canSend && !loading && sendOTP()}
+                  style={inputStyle}
+                  onFocus={e => (e.target.style.borderColor = 'var(--accent)')}
+                  onBlur={e => (e.target.style.borderColor = 'var(--border)')}
+                />
+              </>
+            )}
+
+            <label style={labelStyle}>Phone Number</label>
+            <PhoneInput value={phone} onChange={setPhone} onSubmit={() => canSend && !loading && sendOTP()} />
+
             <button
               onClick={sendOTP}
-              disabled={loading || !phone || !name.trim()}
+              disabled={loading || !canSend}
               style={{
                 width: '100%', padding: '11px',
-                background: loading || !phone ? 'var(--border)' : 'var(--accent)',
-                color: loading || !phone ? 'var(--fg-subtle)' : '#fff',
+                background: loading || !canSend ? 'var(--border)' : 'var(--accent)',
+                color: loading || !canSend ? 'var(--fg-subtle)' : '#fff',
                 border: 'none', borderRadius: 8,
                 fontSize: '0.88rem', fontWeight: 600,
-                letterSpacing: '0.03em', cursor: loading || !phone ? 'not-allowed' : 'pointer',
-                fontFamily: 'inherit',
-                transition: 'background 0.15s',
+                letterSpacing: '0.03em',
+                cursor: loading || !canSend ? 'not-allowed' : 'pointer',
+                fontFamily: 'inherit', transition: 'background 0.15s',
               }}
             >
               {loading ? 'Sending…' : 'Send OTP'}
@@ -132,8 +172,7 @@ export default function Login() {
                 background: 'var(--bg)', color: 'var(--fg)',
                 fontSize: '1.6rem', letterSpacing: '0.5em',
                 textAlign: 'center', outline: 'none',
-                fontFamily: 'monospace',
-                marginBottom: '1.25rem',
+                fontFamily: 'monospace', marginBottom: '1.25rem',
                 transition: 'border-color 0.15s',
               }}
               onFocus={e => (e.target.style.borderColor = 'var(--accent)')}
@@ -148,9 +187,9 @@ export default function Login() {
                 color: loading || otp.length !== 6 ? 'var(--fg-subtle)' : '#fff',
                 border: 'none', borderRadius: 8,
                 fontSize: '0.88rem', fontWeight: 600,
-                letterSpacing: '0.03em', cursor: loading || otp.length !== 6 ? 'not-allowed' : 'pointer',
-                fontFamily: 'inherit',
-                transition: 'background 0.15s',
+                letterSpacing: '0.03em',
+                cursor: loading || otp.length !== 6 ? 'not-allowed' : 'pointer',
+                fontFamily: 'inherit', transition: 'background 0.15s',
                 marginBottom: '0.75rem',
               }}
             >
