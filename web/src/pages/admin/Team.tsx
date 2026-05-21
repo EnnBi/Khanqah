@@ -7,24 +7,36 @@ export default function Team() {
   const qc = useQueryClient()
   const { data: users } = useQuery({ queryKey: ['team'], queryFn: () => api.get<any[]>('/admin/team') })
   const update = useMutation({
-    mutationFn: ({ id, role }: { id: string; role: string }) =>
-      api.put(`/admin/team/${id}/role`, { role }),
+    mutationFn: ({ id, role }: { id: string; role: string }) => api.put(`/admin/team/${id}/role`, { role }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['team'] }),
   })
 
   return (
-    <div className="max-w-3xl mx-auto py-8">
-      <h1 className="text-2xl font-semibold text-stone-800 mb-6">Team</h1>
-      <div className="space-y-2">
+    <div style={{ maxWidth: 680 }}>
+      <h1 style={{ fontSize: '1.4rem', fontWeight: 600, color: 'var(--fg)', marginBottom: '1.5rem' }}>Team</h1>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        {users?.length === 0 && (
+          <p style={{ color: 'var(--fg-subtle)', fontStyle: 'italic', textAlign: 'center', padding: '2rem' }}>No users yet</p>
+        )}
         {users?.map((u: any) => (
-          <div key={u.id} className="flex items-center justify-between bg-white border border-stone-100 rounded-xl px-4 py-3">
+          <div key={u.id} style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            background: 'var(--bg-card)', border: '1px solid var(--border)',
+            borderRadius: 8, padding: '10px 14px',
+          }}>
             <div>
-              <p className="font-medium text-stone-800">{u.display_name || u.phone}</p>
-              <p className="text-stone-400 text-sm">{u.phone}</p>
+              <p style={{ fontWeight: 500, color: 'var(--fg)', fontSize: '0.9rem' }}>{u.display_name || u.phone}</p>
+              <p style={{ color: 'var(--fg-muted)', fontSize: '0.8rem' }}>{u.phone}</p>
             </div>
-            <select className="border border-stone-200 rounded-lg px-2 py-1 text-sm"
+            <select
               value={u.role}
-              onChange={e => update.mutate({ id: u.id, role: e.target.value })}>
+              onChange={e => update.mutate({ id: u.id, role: e.target.value })}
+              style={{
+                border: '1px solid var(--border)', borderRadius: 6,
+                padding: '5px 10px', fontSize: '0.82rem',
+                background: 'var(--bg)', color: 'var(--fg)', cursor: 'pointer',
+              }}
+            >
               {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
           </div>

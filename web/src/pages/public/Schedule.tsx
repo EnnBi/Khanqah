@@ -18,7 +18,7 @@ export default function Schedule() {
       {sessions && sessions.length > 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           {sessions.map((s: any, i: number) => {
-            const date = new Date(s.scheduled_at)
+            const date = new Date(s.next_at ?? s.scheduled_at)
             return (
               <div key={s.id} className="animate-fade-up" style={{
                 display: 'flex', gap: '1.25rem', alignItems: 'flex-start',
@@ -53,14 +53,14 @@ export default function Schedule() {
                   <p style={{ fontSize: '0.78rem', color: 'var(--fg-subtle)', marginTop: 6, letterSpacing: '0.02em' }}>
                     {date.toLocaleString('en-US', { weekday: 'long', hour: 'numeric', minute: '2-digit' })}
                   </p>
-                  {s.is_recurring && (
+                  {s.is_recurring && s.recurrence_rule && (
                     <span style={{
                       display: 'inline-block', marginTop: 6,
                       fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.06em',
                       color: 'var(--gold)', textTransform: 'uppercase',
                       background: 'var(--gold-light)', padding: '2px 8px', borderRadius: 4,
                     }}>
-                      Weekly
+                      {s.recurrence_rule.includes('DAILY') ? 'Daily' : s.recurrence_rule.includes('WEEKLY') ? 'Weekly' : s.recurrence_rule.includes('MONTHLY') ? 'Monthly' : 'Recurring'}
                     </span>
                   )}
                 </div>

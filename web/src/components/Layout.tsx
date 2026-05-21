@@ -1,4 +1,4 @@
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '../stores/auth'
 
 const NAV = [
@@ -43,7 +43,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             {NAV.map(({ href, label }) => {
               const active = pathname === href
               return (
-                <a key={href} href={href} style={{
+                <Link key={href} to={href} style={{
                   textDecoration: 'none',
                   fontSize: '0.83rem',
                   fontWeight: 500,
@@ -55,7 +55,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   transition: 'all 0.15s',
                 }}>
                   {label}
-                </a>
+                </Link>
               )
             })}
           </nav>

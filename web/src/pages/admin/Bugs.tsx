@@ -5,17 +5,24 @@ export default function Bugs() {
   const { data: reports } = useQuery({ queryKey: ['bugs'], queryFn: () => api.get<any[]>('/admin/bugs') })
 
   return (
-    <div className="max-w-3xl mx-auto py-8">
-      <h1 className="text-2xl font-semibold text-stone-800 mb-6">Bug Reports</h1>
-      <div className="space-y-3">
+    <div style={{ maxWidth: 720 }}>
+      <h1 style={{ fontSize: '1.4rem', fontWeight: 600, color: 'var(--fg)', marginBottom: '1.5rem' }}>Bug Reports</h1>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        {reports?.length === 0 && (
+          <p style={{ color: 'var(--fg-subtle)', fontStyle: 'italic', textAlign: 'center', padding: '2rem' }}>No bug reports</p>
+        )}
         {reports?.map((r: any) => (
-          <div key={r.id} className="bg-white border border-stone-100 rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${r.status === 'open' ? 'bg-red-50 text-red-600' : 'bg-stone-100 text-stone-500'}`}>{r.status}</span>
-              <span className="text-stone-400 text-xs">{r.platform} · v{r.app_version}</span>
+          <div key={r.id} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, padding: '12px 14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+              <span style={{
+                fontSize: '0.75rem', padding: '2px 8px', borderRadius: 999, fontWeight: 500,
+                background: r.status === 'open' ? 'rgba(224,80,80,0.12)' : 'var(--nav-active-bg)',
+                color: r.status === 'open' ? '#e05050' : 'var(--fg-muted)',
+              }}>{r.status}</span>
+              <span style={{ color: 'var(--fg-subtle)', fontSize: '0.78rem' }}>{r.platform} · v{r.app_version}</span>
             </div>
-            <p className="text-stone-700">{r.note || r.type}</p>
-            <p className="text-stone-400 text-xs mt-1">{new Date(r.timestamp).toLocaleString()}</p>
+            <p style={{ color: 'var(--fg)', fontSize: '0.88rem' }}>{r.note || r.type}</p>
+            <p style={{ color: 'var(--fg-subtle)', fontSize: '0.78rem', marginTop: 4 }}>{new Date(r.timestamp).toLocaleString()}</p>
           </div>
         ))}
       </div>

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../api/client'
 import { useAuthStore } from '../../stores/auth'
+import PhoneInput from '../../components/PhoneInput'
 
 export default function Login() {
   const [phone, setPhone] = useState('')
@@ -69,24 +70,7 @@ export default function Login() {
             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.06em', color: 'var(--fg-muted)', textTransform: 'uppercase', marginBottom: 6 }}>
               Phone Number
             </label>
-            <input
-              type="tel"
-              placeholder="+91 98765 43210"
-              value={phone}
-              onChange={e => setPhone(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && phone && !loading && sendOTP()}
-              style={{
-                width: '100%', padding: '10px 14px',
-                border: '1px solid var(--border)', borderRadius: 8,
-                background: 'var(--bg)', color: 'var(--fg)',
-                fontSize: '0.95rem', outline: 'none',
-                fontFamily: 'inherit',
-                marginBottom: '1.25rem',
-                transition: 'border-color 0.15s',
-              }}
-              onFocus={e => (e.target.style.borderColor = 'var(--accent)')}
-              onBlur={e => (e.target.style.borderColor = 'var(--border)')}
-            />
+            <PhoneInput value={phone} onChange={setPhone} onSubmit={() => !loading && sendOTP()} />
             <button
               onClick={sendOTP}
               disabled={loading || !phone}

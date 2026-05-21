@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import './index.css'
 
 import ProtectedRoute from './components/ProtectedRoute'
+import AdminLayout from './components/AdminLayout'
 
 import Home from './pages/public/Home'
 import Library from './pages/public/Library'
@@ -38,14 +39,16 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/login" element={<Login />} />
 
           <Route element={<ProtectedRoute />}>
-            <Route path="/admin" element={<Navigate to="/admin/content" replace />} />
-            <Route path="/admin/content" element={<Content />} />
-            <Route path="/admin/upload" element={<Upload />} />
-            <Route path="/admin/categories" element={<Categories />} />
-            <Route path="/admin/schedule" element={<AdminSchedule />} />
-            <Route path="/admin/live" element={<AdminLive />} />
-            <Route path="/admin/team" element={<Team />} />
-            <Route path="/admin/bugs" element={<Bugs />} />
+            <Route element={<AdminLayout />}>
+              <Route path="/admin" element={<Navigate to="/admin/content" replace />} />
+              <Route path="/admin/content" element={<Content />} />
+              <Route path="/admin/upload" element={<Upload />} />
+              <Route path="/admin/categories" element={<Categories />} />
+              <Route path="/admin/schedule" element={<AdminSchedule />} />
+              <Route path="/admin/live" element={<AdminLive />} />
+              <Route path="/admin/team" element={<Team />} />
+              <Route path="/admin/bugs" element={<Bugs />} />
+            </Route>
           </Route>
         </Routes>
       </BrowserRouter>
