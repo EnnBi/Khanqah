@@ -1,14 +1,17 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Pencil, Trash2 } from 'lucide-react'
 import { api } from '../../api/client'
 import { useAuthStore } from '../../stores/auth'
 
 const ROLES = ['listener', 'editor', 'admin', 'broadcaster']
 
 const btnIcon: React.CSSProperties = {
-  background: 'none', border: 'none', cursor: 'pointer',
-  color: 'var(--gold)', fontSize: '1rem', padding: '4px 6px',
-  lineHeight: 1, borderRadius: 6, display: 'flex', alignItems: 'center',
+  display: 'flex', alignItems: 'center', gap: '0.35rem',
+  padding: '5px 10px', borderRadius: 7, border: '1px solid var(--gold)',
+  background: 'transparent', color: 'var(--gold)', cursor: 'pointer',
+  fontSize: '0.78rem', fontWeight: 500, fontFamily: 'inherit',
+  transition: 'background 0.12s, color 0.12s',
 }
 
 export default function Team() {
@@ -106,7 +109,9 @@ export default function Team() {
                   onClick={() => { setEditId(u.id); setEditName(u.display_name || ''); setDeleteId(null) }}
                   title="Edit name"
                   style={btnIcon}
-                >✎</button>
+                >
+                  <Pencil size={13} strokeWidth={2} /> Edit
+                </button>
               )}
               {u.id !== myId && editId !== u.id && (
                 deleteId === u.id ? (
@@ -115,7 +120,7 @@ export default function Team() {
                     <button
                       onClick={() => deleteUser.mutate(u.id)}
                       disabled={deleteUser.isPending}
-                      style={{ fontSize: '0.72rem', fontWeight: 600, color: '#fff', background: '#dc2626', border: 'none', borderRadius: 6, padding: '3px 8px', cursor: 'pointer' }}
+                      style={{ fontSize: '0.72rem', fontWeight: 600, color: '#fff', background: '#dc2626', border: 'none', borderRadius: 6, padding: '4px 10px', cursor: 'pointer' }}
                     >Yes</button>
                     <button
                       onClick={() => setDeleteId(null)}
@@ -126,8 +131,10 @@ export default function Team() {
                   <button
                     onClick={() => { setDeleteId(u.id); setEditId(null) }}
                     title="Delete user"
-                    style={btnIcon}
-                  >🗑</button>
+                    style={{ ...btnIcon, borderColor: '#dc2626', color: '#dc2626' }}
+                  >
+                    <Trash2 size={13} strokeWidth={2} /> Delete
+                  </button>
                 )
               )}
             </div>
