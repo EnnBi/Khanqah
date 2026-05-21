@@ -35,5 +35,8 @@ interface ApiService {
     suspend fun getProgress(): List<Progress>
 
     @PUT("me/progress/{contentId}")
-    suspend fun upsertProgress(@Path("contentId") contentId: String, @Body body: Map<String, Any>): Progress
+    suspend fun upsertProgress(
+        @Path("contentId") contentId: String,
+        @Body body: UpsertProgressRequest,
+    ): Progress
 }

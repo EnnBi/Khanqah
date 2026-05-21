@@ -3,9 +3,11 @@ package com.khanqah.app.data.model
 import com.google.gson.annotations.SerializedName
 
 data class AuthResponse(
-    @SerializedName("access_token") val accessToken: String,
+    @SerializedName("access_token")  val accessToken: String,
     @SerializedName("refresh_token") val refreshToken: String,
     val role: String,
+    @SerializedName("display_name")  val displayName: String = "",
+    @SerializedName("user_id")       val userId: String = "",
 )
 
 data class Content(
@@ -56,6 +58,11 @@ data class LiveSession(
 
 data class Progress(
     @SerializedName("content_id") val contentId: String,
+    @SerializedName("position_seconds") val positionSeconds: Int,
+    val completed: Boolean,
+)
+
+data class UpsertProgressRequest(
     @SerializedName("position_seconds") val positionSeconds: Int,
     val completed: Boolean,
 )

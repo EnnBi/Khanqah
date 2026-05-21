@@ -10,19 +10,28 @@ import kotlinx.coroutines.flow.map
 private val Context.dataStore by preferencesDataStore("auth")
 
 class TokenManager(private val context: Context) {
-    private val ACCESS = stringPreferencesKey("access_token")
-    private val REFRESH = stringPreferencesKey("refresh_token")
-    private val ROLE = stringPreferencesKey("role")
+    private val ACCESS       = stringPreferencesKey("access_token")
+    private val REFRESH      = stringPreferencesKey("refresh_token")
+    private val ROLE         = stringPreferencesKey("role")
+    private val DISPLAY_NAME = stringPreferencesKey("display_name")
+    private val USER_ID      = stringPreferencesKey("user_id")
+    private val PHONE        = stringPreferencesKey("phone")
 
-    suspend fun getAccessToken() = context.dataStore.data.map { it[ACCESS] }.first()
+    suspend fun getAccessToken()  = context.dataStore.data.map { it[ACCESS] }.first()
     suspend fun getRefreshToken() = context.dataStore.data.map { it[REFRESH] }.first()
-    suspend fun getRole() = context.dataStore.data.map { it[ROLE] }.first()
+    suspend fun getRole()         = context.dataStore.data.map { it[ROLE] }.first()
+    suspend fun getDisplayName()  = context.dataStore.data.map { it[DISPLAY_NAME] ?: "" }.first()
+    suspend fun getUserId()       = context.dataStore.data.map { it[USER_ID] ?: "" }.first()
+    suspend fun getPhone()        = context.dataStore.data.map { it[PHONE] ?: "" }.first()
 
-    suspend fun saveTokens(access: String, refresh: String, role: String) {
+    suspend fun saveTokens(access: String, refresh: String, role: String, displayName: String, userId: String, phone: String) {
         context.dataStore.edit {
-            it[ACCESS] = access
-            it[REFRESH] = refresh
-            it[ROLE] = role
+            it[ACCESS]       = access
+            it[REFRESH]      = refresh
+            it[ROLE]         = role
+            it[DISPLAY_NAME] = displayName
+            it[USER_ID]      = userId
+            it[PHONE]        = phone
         }
     }
 
