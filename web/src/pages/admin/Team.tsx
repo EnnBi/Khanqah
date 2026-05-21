@@ -80,7 +80,7 @@ export default function Team() {
                     <button
                       onClick={() => { setEditId(u.id); setEditName(u.display_name || '') }}
                       title="Edit name"
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fg-muted)', padding: '2px 4px', lineHeight: 1, flexShrink: 0 }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gold)', padding: '2px 4px', lineHeight: 1, flexShrink: 0 }}
                     >✎</button>
                   </div>
                 )}
@@ -119,7 +119,7 @@ export default function Team() {
                     <button
                       onClick={() => setDeleteId(u.id)}
                       title="Delete user"
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fg-subtle)', fontSize: '1rem', padding: '4px', lineHeight: 1 }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gold)', fontSize: '1rem', padding: '4px', lineHeight: 1 }}
                     >🗑</button>
                   )
                 )}
