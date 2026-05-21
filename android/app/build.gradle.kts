@@ -54,4 +54,7 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.work.runtime.ktx)
     debugImplementation(libs.compose.ui.tooling)
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
+    testImplementation("io.mockk:mockk:1.13.10")
 }
