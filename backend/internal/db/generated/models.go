@@ -215,6 +215,7 @@ type Category struct {
 	Type      ContentType `json:"type"`
 	ParentID  pgtype.UUID `json:"parent_id"`
 	SortOrder int32       `json:"sort_order"`
+	Slug      *string     `json:"slug"`
 }
 
 type Content struct {

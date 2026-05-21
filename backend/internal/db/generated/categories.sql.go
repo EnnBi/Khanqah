@@ -12,26 +12,17 @@ import (
 )
 
 const createCategory = `-- name: CreateCategory :one
-INSERT INTO categories (name_en, name_ur, type, parent_id, sort_order)
-VALUES ($1, $2, $3, $4, $5) RETURNING id, name_en, name_ur, type, parent_id, sort_order
+INSERT INTO categories (name_en, name_ur) VALUES ($1, $2)
+RETURNING id, name_en, name_ur, type, parent_id, sort_order, slug
 `
 
 type CreateCategoryParams struct {
-	NameEn    string      `json:"name_en"`
-	NameUr    string      `json:"name_ur"`
-	Type      ContentType `json:"type"`
-	ParentID  pgtype.UUID `json:"parent_id"`
-	SortOrder int32       `json:"sort_order"`
+	NameEn string `json:"name_en"`
+	NameUr string `json:"name_ur"`
 }
 
 func (q *Queries) CreateCategory(ctx context.Context, arg CreateCategoryParams) (Category, error) {
-	row := q.db.QueryRow(ctx, createCategory,
-		arg.NameEn,
-		arg.NameUr,
-		arg.Type,
-		arg.ParentID,
-		arg.SortOrder,
-	)
+	row := q.db.QueryRow(ctx, createCategory, arg.NameEn, arg.NameUr)
 	var i Category
 	err := row.Scan(
 		&i.ID,
@@ -40,6 +31,7 @@ func (q *Queries) CreateCategory(ctx context.Context, arg CreateCategoryParams) 
 		&i.Type,
 		&i.ParentID,
 		&i.SortOrder,
+		&i.Slug,
 	)
 	return i, err
 }
@@ -54,7 +46,7 @@ func (q *Queries) DeleteCategory(ctx context.Context, id pgtype.UUID) error {
 }
 
 const getCategory = `-- name: GetCategory :one
-SELECT id, name_en, name_ur, type, parent_id, sort_order FROM categories WHERE id = $1
+SELECT id, name_en, name_ur, type, parent_id, sort_order, slug FROM categories WHERE id = $1
 `
 
 func (q *Queries) GetCategory(ctx context.Context, id pgtype.UUID) (Category, error) {
@@ -67,12 +59,13 @@ func (q *Queries) GetCategory(ctx context.Context, id pgtype.UUID) (Category, er
 		&i.Type,
 		&i.ParentID,
 		&i.SortOrder,
+		&i.Slug,
 	)
 	return i, err
 }
 
 const listCategories = `-- name: ListCategories :many
-SELECT id, name_en, name_ur, type, parent_id, sort_order FROM categories ORDER BY sort_order ASC
+SELECT id, name_en, name_ur, type, parent_id, sort_order, slug FROM categories ORDER BY sort_order ASC, name_en ASC
 `
 
 func (q *Queries) ListCategories(ctx context.Context) ([]Category, error) {
@@ -91,6 +84,7 @@ func (q *Queries) ListCategories(ctx context.Context) ([]Category, error) {
 			&i.Type,
 			&i.ParentID,
 			&i.SortOrder,
+			&i.Slug,
 		); err != nil {
 			return nil, err
 		}
@@ -103,28 +97,18 @@ func (q *Queries) ListCategories(ctx context.Context) ([]Category, error) {
 }
 
 const updateCategory = `-- name: UpdateCategory :one
-UPDATE categories SET name_en=$2, name_ur=$3, type=$4, parent_id=$5, sort_order=$6
-WHERE id=$1 RETURNING id, name_en, name_ur, type, parent_id, sort_order
+UPDATE categories SET name_en=$2, name_ur=$3 WHERE id=$1
+RETURNING id, name_en, name_ur, type, parent_id, sort_order, slug
 `
 
 type UpdateCategoryParams struct {
-	ID        pgtype.UUID `json:"id"`
-	NameEn    string      `json:"name_en"`
-	NameUr    string      `json:"name_ur"`
-	Type      ContentType `json:"type"`
-	ParentID  pgtype.UUID `json:"parent_id"`
-	SortOrder int32       `json:"sort_order"`
+	ID     pgtype.UUID `json:"id"`
+	NameEn string      `json:"name_en"`
+	NameUr string      `json:"name_ur"`
 }
 
 func (q *Queries) UpdateCategory(ctx context.Context, arg UpdateCategoryParams) (Category, error) {
-	row := q.db.QueryRow(ctx, updateCategory,
-		arg.ID,
-		arg.NameEn,
-		arg.NameUr,
-		arg.Type,
-		arg.ParentID,
-		arg.SortOrder,
-	)
+	row := q.db.QueryRow(ctx, updateCategory, arg.ID, arg.NameEn, arg.NameUr)
 	var i Category
 	err := row.Scan(
 		&i.ID,
@@ -133,6 +117,7 @@ func (q *Queries) UpdateCategory(ctx context.Context, arg UpdateCategoryParams) 
 		&i.Type,
 		&i.ParentID,
 		&i.SortOrder,
+		&i.Slug,
 	)
 	return i, err
 }

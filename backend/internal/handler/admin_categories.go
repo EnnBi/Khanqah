@@ -95,6 +95,15 @@ func DeleteCategory(pool *pgxpool.Pool) http.HandlerFunc {
 			writeError(w, http.StatusBadRequest, "invalid id")
 			return
 		}
+		cat, err := q.GetCategory(r.Context(), id)
+		if err != nil {
+			writeError(w, http.StatusNotFound, "not found")
+			return
+		}
+		if cat.Slug != nil {
+			writeError(w, http.StatusForbidden, "system category cannot be deleted")
+			return
+		}
 		if err := q.DeleteCategory(r.Context(), id); err != nil {
 			writeError(w, http.StatusInternalServerError, "internal error")
 			return
