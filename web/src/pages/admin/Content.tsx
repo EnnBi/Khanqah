@@ -4,7 +4,7 @@ import { api } from '../../api/client'
 import { useCategories } from '../../hooks/useCategories'
 import { useUploadStore } from '../../stores/upload'
 
-const blankForm = { title_en: '', title_ur: '', type: 'bayan', category_id: '', is_video: false }
+const blankForm = { title_en: '', title_ur: '', type: '', category_id: '', is_video: false }
 
 export default function Content() {
   const qc = useQueryClient()
@@ -107,7 +107,14 @@ export default function Content() {
             <input placeholder="عنوان (اردو)" dir="rtl" value={form.title_ur} onChange={e => setForm(f => ({ ...f, title_ur: e.target.value }))} style={inputStyle} />
           </div>
           <div style={{ marginBottom: '1rem' }}>
-            <select value={form.category_id} onChange={e => setForm(f => ({ ...f, category_id: e.target.value }))} style={inputStyle}>
+            <select
+              value={form.category_id}
+              onChange={e => {
+                const cat = categories?.find((c: any) => c.id === e.target.value)
+                setForm(f => ({ ...f, category_id: e.target.value, type: cat?.type ?? f.type }))
+              }}
+              style={inputStyle}
+            >
               <option value="">Select category</option>
               {categories?.map((c: any) => <option key={c.id} value={c.id}>{c.name_en}</option>)}
             </select>
@@ -135,8 +142,6 @@ export default function Content() {
                 <p style={{ color: 'var(--fg-muted)', fontSize: '0.78rem', marginTop: 2 }}>
                   {categoryName(item.category_id)}
                   <span style={{ margin: '0 6px', color: 'var(--border)' }}>·</span>
-                  <span style={{ color: 'var(--gold)' }}>{item.type}</span>
-                  <span style={{ margin: '0 6px', color: 'var(--border)' }}>·</span>
                   {new Date(item.created_at).toLocaleDateString()}
                 </p>
               </div>
@@ -150,7 +155,14 @@ export default function Content() {
                   <input value={editForm.title_en} onChange={e => setEditForm((f: any) => ({ ...f, title_en: e.target.value }))} placeholder="Title (English)" style={inputStyle} />
                   <input dir="rtl" value={editForm.title_ur} onChange={e => setEditForm((f: any) => ({ ...f, title_ur: e.target.value }))} placeholder="عنوان (اردو)" style={inputStyle} />
                 </div>
-                <select value={editForm.category_id} onChange={e => setEditForm((f: any) => ({ ...f, category_id: e.target.value }))} style={inputStyle}>
+                <select
+                  value={editForm.category_id}
+                  onChange={e => {
+                    const cat = categories?.find((c: any) => c.id === e.target.value)
+                    setEditForm((f: any) => ({ ...f, category_id: e.target.value, type: cat?.type ?? f.type }))
+                  }}
+                  style={inputStyle}
+                >
                   <option value="">Select category</option>
                   {categories?.map((c: any) => <option key={c.id} value={c.id}>{c.name_en}</option>)}
                 </select>

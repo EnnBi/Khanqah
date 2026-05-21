@@ -2,13 +2,12 @@ import { useState, useRef } from 'react'
 import { api } from '../../api/client'
 import { useCategories } from '../../hooks/useCategories'
 
-const TYPES = ['bayan', 'clip', 'nazam', 'quran', 'hamd_naat', 'book', 'mamulat']
 
 export default function Upload() {
   const { data: categories } = useCategories()
   const fileRef = useRef<HTMLInputElement>(null)
   const [file, setFile] = useState<File | null>(null)
-  const [form, setForm] = useState({ title_en: '', title_ur: '', type: 'bayan', category_id: '', is_video: false })
+  const [form, setForm] = useState({ title_en: '', title_ur: '', type: '', category_id: '', is_video: false })
   const [progress, setProgress] = useState(0)
   const [status, setStatus] = useState<'idle' | 'uploading' | 'saving' | 'done' | 'error'>('idle')
   const [error, setError] = useState('')
@@ -70,10 +69,14 @@ export default function Upload() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.25rem' }}>
         <input placeholder="Title (English)" value={form.title_en} onChange={e => setForm(f => ({ ...f, title_en: e.target.value }))} style={inputStyle} />
         <input placeholder="عنوان (اردو)" dir="rtl" value={form.title_ur} onChange={e => setForm(f => ({ ...f, title_ur: e.target.value }))} style={inputStyle} />
-        <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} style={inputStyle}>
-          {TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-        </select>
-        <select value={form.category_id} onChange={e => setForm(f => ({ ...f, category_id: e.target.value }))} style={inputStyle}>
+        <select
+          value={form.category_id}
+          onChange={e => {
+            const cat = categories?.find((c: any) => c.id === e.target.value)
+            setForm(f => ({ ...f, category_id: e.target.value, type: cat?.type ?? f.type }))
+          }}
+          style={inputStyle}
+        >
           <option value="">Select category</option>
           {categories?.map((c: any) => <option key={c.id} value={c.id}>{c.name_en}</option>)}
         </select>
