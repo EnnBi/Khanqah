@@ -194,6 +194,7 @@ func VerifyOTP(pool *pgxpool.Pool) http.HandlerFunc {
 			"refresh_token": uuidString(rtRow.ID) + "." + refreshRaw,
 			"role":          string(user.Role),
 			"display_name":  user.DisplayName,
+			"user_id":       uuidString(user.ID),
 		})
 	}
 }

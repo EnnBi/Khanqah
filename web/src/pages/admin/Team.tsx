@@ -16,9 +16,7 @@ const btnIcon: React.CSSProperties = {
 
 export default function Team() {
   const qc = useQueryClient()
-  const myId = useAuthStore(s => {
-    try { return JSON.parse(atob(s.accessToken!.split('.')[1])).sub } catch { return null }
-  })
+  const myId = useAuthStore(s => s.userId)
   const { data: users } = useQuery({ queryKey: ['team'], queryFn: () => api.get<any[]>('/admin/team') })
 
   const [editId, setEditId] = useState<string | null>(null)
@@ -103,7 +101,7 @@ export default function Team() {
             </select>
 
             {/* Right: edit + delete icon buttons */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.1rem', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
               {editId !== u.id && (
                 <button
                   onClick={() => { setEditId(u.id); setEditName(u.display_name || ''); setDeleteId(null) }}

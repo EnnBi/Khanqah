@@ -28,7 +28,7 @@ export default function Login() {
     setLoading(true); setError('')
     try {
       const data: any = await api.post('/auth/otp/verify', { phone, otp, name: name.trim() })
-      setTokens(data.access_token, data.refresh_token, data.role)
+      setTokens(data.access_token, data.refresh_token, data.role, data.user_id)
       navigate('/')
     } catch (e: any) { setError(e.message) }
     finally { setLoading(false) }
