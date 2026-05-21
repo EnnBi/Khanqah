@@ -35,7 +35,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <span className="serif" style={{ display: 'block', fontSize: '1.05rem', fontWeight: 600, color: 'var(--fg)', letterSpacing: '-0.01em', lineHeight: 1.1 }}>
                 Khanqah Maseeh-ul-Ummah
               </span>
-              <span className="nastaleeq" style={{ display: 'block', fontSize: '1rem', color: 'var(--fg-muted)', marginTop: 1 }}>
+              <span className="nastaleeq" style={{ display: 'block', fontSize: '1.45rem', color: 'var(--fg-muted)', marginTop: 1, lineHeight: 1.1 }}>
                 خانقاہ مسیح الامۃ
               </span>
             </span>
@@ -122,7 +122,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <p className="serif" style={{ fontSize: '1rem', color: 'var(--fg-muted)', fontStyle: 'italic' }}>
           Khanqah Maseeh-ul-Ummah
         </p>
-        <p className="nastaleeq" style={{ fontSize: '1.1rem', color: 'var(--fg-subtle)', marginTop: 4 }}>
+        <p className="nastaleeq" style={{ fontSize: '1.6rem', color: 'var(--fg-subtle)', marginTop: 4 }}>
           خانقاہ مسیح الامۃ
         </p>
       </footer>
