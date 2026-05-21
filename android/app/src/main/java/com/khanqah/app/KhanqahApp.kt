@@ -6,6 +6,7 @@ import com.khanqah.app.data.api.TokenManager
 import com.khanqah.app.data.db.AppDatabase
 import com.khanqah.app.data.repository.AuthRepository
 import com.khanqah.app.data.repository.ContentRepository
+import com.khanqah.app.data.repository.ProgressRepository
 import com.khanqah.app.ui.auth.AuthViewModel
 import com.khanqah.app.ui.home.HomeViewModel
 import com.khanqah.app.ui.player.PlayerViewModel
@@ -14,6 +15,7 @@ class KhanqahApp : Application() {
     lateinit var tokenManager: TokenManager
     lateinit var authRepo: AuthRepository
     lateinit var contentRepo: ContentRepository
+    lateinit var progressRepo: ProgressRepository
     lateinit var authViewModel: AuthViewModel
     lateinit var homeViewModel: HomeViewModel
 
@@ -24,9 +26,10 @@ class KhanqahApp : Application() {
         val apiClient = ApiClient(tokenManager)
         authRepo = AuthRepository(apiClient.service, tokenManager)
         contentRepo = ContentRepository(apiClient.service, db)
+        progressRepo = ProgressRepository(apiClient.service)
         authViewModel = AuthViewModel(authRepo)
         homeViewModel = HomeViewModel(contentRepo, apiClient.service)
     }
 
-    fun makePlayerViewModel(contentId: String) = PlayerViewModel(contentRepo, this)
+    fun makePlayerViewModel(contentId: String) = PlayerViewModel(contentRepo, progressRepo, this)
 }
