@@ -87,7 +87,7 @@ func (q *Queries) GetScheduledSession(ctx context.Context, id pgtype.UUID) (Sche
 
 const listUpcomingSchedule = `-- name: ListUpcomingSchedule :many
 SELECT id, title_en, title_ur, description_en, description_ur, scheduled_at, is_recurring, recurrence_rule, created_by, created_at FROM scheduled_sessions
-WHERE scheduled_at >= NOW()
+WHERE scheduled_at >= NOW() OR is_recurring = true
 ORDER BY scheduled_at ASC
 `
 
