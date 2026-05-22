@@ -20,4 +20,10 @@ interface ContentDao {
 
     @Upsert
     suspend fun upsertAll(items: List<ContentEntity>)
+
+    @Query("DELETE FROM content WHERE categoryId = :categoryId AND id NOT IN (:freshIds)")
+    suspend fun deleteStaleByCategory(categoryId: String, freshIds: List<String>)
+
+    @Query("DELETE FROM content WHERE id NOT IN (:freshIds)")
+    suspend fun deleteStaleAll(freshIds: List<String>)
 }

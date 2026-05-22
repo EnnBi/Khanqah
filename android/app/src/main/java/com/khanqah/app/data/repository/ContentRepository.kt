@@ -17,7 +17,16 @@ class ContentRepository(private val api: ApiService, private val db: AppDatabase
 
     suspend fun refreshContent(categoryId: String? = null) {
         val items = api.listContent(categoryId = categoryId) ?: return
-        db.contentDao().upsertAll(items.map { it.toEntity() })
+        val entities = items.map { it.toEntity() }
+        db.contentDao().upsertAll(entities)
+        val freshIds = entities.map { it.id }
+        if (categoryId != null) {
+            if (freshIds.isEmpty()) db.contentDao().deleteStaleByCategory(categoryId, listOf(""))
+            else db.contentDao().deleteStaleByCategory(categoryId, freshIds)
+        } else {
+            if (freshIds.isEmpty()) db.contentDao().deleteStaleAll(listOf(""))
+            else db.contentDao().deleteStaleAll(freshIds)
+        }
     }
 
     suspend fun getContent(id: String): Content {
