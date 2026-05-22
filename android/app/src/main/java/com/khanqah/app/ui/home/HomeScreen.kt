@@ -391,33 +391,48 @@ private fun formatRelativeTime(scheduledAt: String, isUrdu: Boolean): String { r
     if (diff.isNegative) return ""
     val mins = diff.toMinutes()
     val hrs  = diff.toHours()
+    val zdt  = instant.atZone(zone)
+
+    // "5:30 PM" / "شام 5:30"
+    fun timeStr(): String {
+        val h = zdt.hour; val m = zdt.minute
+        val h12 = if (h % 12 == 0) 12 else h % 12
+        val mm = "%02d".format(m)
+        return if (isUrdu) {
+            val period = if (h < 12) "صبح" else if (h < 17) "دوپہر" else "شام"
+            "$period $h12:$mm"
+        } else {
+            val period = if (h < 12) "AM" else "PM"
+            "$h12:$mm $period"
+        }
+    }
+
     when {
         mins < 1  -> if (isUrdu) "ابھی" else "Now"
         mins < 60 -> if (isUrdu) "$mins منٹ میں" else "in ${mins}m"
         hrs  < 2  -> if (isUrdu) "$hrs گھنٹے میں" else "in ${hrs}h"
         else -> {
             val today   = java.time.LocalDate.now(zone)
-            val sessDay = instant.atZone(zone).toLocalDate()
-            val dayDiff = java.time.temporal.ChronoUnit.DAYS.between(today, sessDay)
+            val dayDiff = java.time.temporal.ChronoUnit.DAYS.between(today, zdt.toLocalDate())
+            val t = timeStr()
             if (isUrdu) when (dayDiff) {
-                0L  -> "$hrs گھنٹے میں"
-                1L  -> "کل"
-                2L  -> "پرسوں"
-                else -> when (instant.atZone(zone).dayOfWeek) {
-                    java.time.DayOfWeek.MONDAY    -> "پیر"
-                    java.time.DayOfWeek.TUESDAY   -> "منگل"
-                    java.time.DayOfWeek.WEDNESDAY -> "بدھ"
-                    java.time.DayOfWeek.THURSDAY  -> "جمعرات"
-                    java.time.DayOfWeek.FRIDAY    -> "جمعہ"
-                    java.time.DayOfWeek.SATURDAY  -> "ہفتہ"
-                    java.time.DayOfWeek.SUNDAY    -> "اتوار"
+                0L  -> "$hrs گھنٹے میں · $t"
+                1L  -> "کل · $t"
+                2L  -> "پرسوں · $t"
+                else -> when (zdt.dayOfWeek) {
+                    java.time.DayOfWeek.MONDAY    -> "پیر · $t"
+                    java.time.DayOfWeek.TUESDAY   -> "منگل · $t"
+                    java.time.DayOfWeek.WEDNESDAY -> "بدھ · $t"
+                    java.time.DayOfWeek.THURSDAY  -> "جمعرات · $t"
+                    java.time.DayOfWeek.FRIDAY    -> "جمعہ · $t"
+                    java.time.DayOfWeek.SATURDAY  -> "ہفتہ · $t"
+                    java.time.DayOfWeek.SUNDAY    -> "اتوار · $t"
                 }
             } else when (dayDiff) {
-                0L  -> "in ${hrs}h"
-                1L  -> "Tomorrow"
-                2L  -> "Day after tomorrow"
-                else -> instant.atZone(zone).dayOfWeek
-                    .getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.ENGLISH)
+                0L  -> "in ${hrs}h · $t"
+                1L  -> "Tomorrow · $t"
+                2L  -> "Day after tomorrow · $t"
+                else -> "${zdt.dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.ENGLISH)} · $t"
             }
         }
     }
