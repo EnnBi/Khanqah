@@ -30,6 +30,8 @@ class LiveViewModel(private val repo: LiveRepository) : ViewModel() {
 
     init { refresh() }
 
+    fun clearAuthExpired() { _authExpired.value = false }
+
     fun refresh() = viewModelScope.launch {
         try { _currentSession.value = repo.getCurrent() } catch (e: Exception) { Log.e("LiveVM", "getCurrent", e) }
         try { _categories.value = repo.listCategories() } catch (e: Exception) { Log.e("LiveVM", "listCategories", e) }

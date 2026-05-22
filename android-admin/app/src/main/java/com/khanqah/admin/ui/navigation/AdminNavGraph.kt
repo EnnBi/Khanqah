@@ -17,6 +17,7 @@ fun AdminNavGraph(app: AdminApp, startDestination: String) {
     NavHost(navController = navController, startDestination = startDestination) {
         composable("login") {
             LoginScreen(viewModel = app.authViewModel) {
+                app.liveViewModel.clearAuthExpired()
                 app.liveViewModel.refresh()
                 app.scheduleViewModel.refresh()
                 navController.navigate("live") { popUpTo("login") { inclusive = true } }
