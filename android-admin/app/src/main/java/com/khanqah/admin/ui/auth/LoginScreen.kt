@@ -67,10 +67,11 @@ fun LoginScreen(viewModel: AuthViewModel, onSuccess: () -> Unit) {
             modifier = Modifier.padding(bottom = 32.dp),
         )
 
-        OutlinedTextField(value = phone, onValueChange = { phone = it },
-            label = { Text("Phone number") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-            modifier = Modifier.fillMaxWidth(), enabled = !isOtpStep)
+        PhoneInputField(
+            value = phone,
+            onValueChange = { phone = it },
+            enabled = !isOtpStep,
+        )
 
         if (isOtpStep) {
             Spacer(Modifier.height(16.dp))

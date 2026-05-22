@@ -122,14 +122,9 @@ fun LoginScreen(viewModel: AuthViewModel, onSuccess: () -> Unit) {
                         }
 
                         FieldLabel("Phone Number")
-                        OutlinedTextField(
+                        PhoneInputField(
                             value = phone,
                             onValueChange = { phone = it },
-                            placeholder = { Text("+91 98765 43210") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
-                            shape = RoundedCornerShape(8.dp),
                         )
                     } else {
                         Text(
