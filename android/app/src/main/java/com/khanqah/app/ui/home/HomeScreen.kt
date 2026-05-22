@@ -172,14 +172,22 @@ fun HomeScreen(
                             LiveDot()
                         } else {
                             Text(
-                                "OFF AIR · NEXT MAJLIS",
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp, letterSpacing = 0.06.sp),
+                                if (isUrdu) "آف ایئر · اگلی مجلس" else "OFF AIR · NEXT MAJLIS",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontFamily = if (isUrdu) NastaleeqFontFamily else null,
+                                    fontSize = if (isUrdu) 12.sp else 8.sp,
+                                    letterSpacing = if (isUrdu) 0.sp else 0.06.sp,
+                                ),
                                 color = MaterialTheme.colorScheme.secondary,
                             )
                         }
                         Text(
                             statusCard.second,
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontFamily = if (isUrdu) NastaleeqFontFamily else null,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = if (isUrdu) 18.sp else 13.sp,
+                            ),
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
