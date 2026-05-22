@@ -22,14 +22,28 @@ class AuthViewModel(private val repo: AuthRepository) : ViewModel() {
     fun sendOtp(phone: String) = viewModelScope.launch {
         _state.value = AuthState.Loading
         try { repo.sendOtp(phone); _state.value = AuthState.OtpSent }
-        catch (e: Exception) { _state.value = AuthState.Error(e.message ?: "Failed to send OTP") }
+        catch (e: Exception) {
+            val msg = when {
+                e.message?.contains("429") == true -> "Too many attempts. Try again in 10 minutes."
+                e.message?.contains("400") == true -> "Invalid phone number."
+                else -> "Failed to send OTP. Check your connection."
+            }
+            _state.value = AuthState.Error(msg)
+        }
     }
 
     fun verifyOtp(phone: String, otp: String) = viewModelScope.launch {
         _state.value = AuthState.Loading
         repo.verifyOtp(phone, otp)
             .onSuccess { _state.value = AuthState.Success }
-            .onFailure { _state.value = AuthState.Error(it.message ?: "Failed") }
+            .onFailure { e ->
+                val msg = when {
+                    e.message?.contains("401") == true -> "Invalid OTP. Please try again."
+                    e.message?.contains("403") == true -> "Access denied. This app is for admins only."
+                    else -> "Verification failed. Check your connection."
+                }
+                _state.value = AuthState.Error(msg)
+            }
     }
 
     fun reset() { _state.value = AuthState.Idle }

@@ -25,7 +25,12 @@ class AuthViewModel(private val repo: AuthRepository) : ViewModel() {
             repo.sendOtp(phone)
             _state.value = AuthState.OtpSent
         } catch (e: Exception) {
-            _state.value = AuthState.Error(e.message ?: "Failed to send OTP")
+            val msg = when {
+                e.message?.contains("429") == true -> "Too many attempts. Try again in 10 minutes."
+                e.message?.contains("400") == true -> "Invalid phone number."
+                else -> "Failed to send OTP. Check your connection."
+            }
+            _state.value = AuthState.Error(msg)
         }
     }
 
@@ -35,7 +40,11 @@ class AuthViewModel(private val repo: AuthRepository) : ViewModel() {
             repo.verifyOtp(phone, otp, name)
             _state.value = AuthState.Success
         } catch (e: Exception) {
-            _state.value = AuthState.Error(e.message ?: "Invalid OTP")
+            val msg = when {
+                e.message?.contains("401") == true -> "Invalid OTP. Please try again."
+                else -> "Verification failed. Check your connection."
+            }
+            _state.value = AuthState.Error(msg)
         }
     }
 
