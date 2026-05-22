@@ -8,6 +8,7 @@ class LiveRepository(private val api: AdminApiService) {
         api.getCurrentLive()
     } catch (_: Exception) { null }
     suspend fun listCategories(): List<Category> = api.listCategories()
-    suspend fun start(categoryId: String) = api.startLive(mapOf("category_id" to categoryId))
+    suspend fun start(categoryId: String, titleEn: String, titleUr: String) =
+        api.startLive(mapOf("category_id" to categoryId, "title_en" to titleEn, "title_ur" to titleUr))
     suspend fun end(id: String) = api.endLive(id)
 }

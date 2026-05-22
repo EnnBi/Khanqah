@@ -28,9 +28,9 @@ class LiveViewModel(private val repo: LiveRepository) : ViewModel() {
         try { _categories.value = repo.listCategories() } catch (_: Exception) {}
     }
 
-    fun start(categoryId: String) = viewModelScope.launch {
+    fun start(categoryId: String, titleEn: String, titleUr: String) = viewModelScope.launch {
         try {
-            _currentSession.value = repo.start(categoryId)
+            _currentSession.value = repo.start(categoryId, titleEn, titleUr)
             streamer.start(
                 onReady = { _isStreaming.value = true },
                 onError = { _isStreaming.value = false },

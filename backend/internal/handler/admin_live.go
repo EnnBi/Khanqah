@@ -39,6 +39,8 @@ func StartLiveSession(pool *pgxpool.Pool) http.HandlerFunc {
 
 		var body struct {
 			CategoryID string `json:"category_id"`
+			TitleEn    string `json:"title_en"`
+			TitleUr    string `json:"title_ur"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.CategoryID == "" {
 			writeError(w, http.StatusBadRequest, "category_id is required")
@@ -57,9 +59,18 @@ func StartLiveSession(pool *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
+		titleEn := body.TitleEn
+		if titleEn == "" {
+			titleEn = cat.NameEn
+		}
+		titleUr := body.TitleUr
+		if titleUr == "" {
+			titleUr = cat.NameUr
+		}
+
 		row, err := q.CreateLiveSession(r.Context(), dbgen.CreateLiveSessionParams{
-			TitleEn:   cat.NameEn,
-			TitleUr:   cat.NameUr,
+			TitleEn:   titleEn,
+			TitleUr:   titleUr,
 			StreamUrl: hlsStreamURL,
 			StartedBy: startedBy,
 		})

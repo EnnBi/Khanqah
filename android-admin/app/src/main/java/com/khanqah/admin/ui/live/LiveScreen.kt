@@ -36,22 +36,33 @@ fun LiveScreen(
     sessions: List<ScheduledSession>,
     categories: List<Category>,
     isStreaming: Boolean,
-    onStart: (categoryId: String) -> Unit,
+    onStart: (categoryId: String, titleEn: String, titleUr: String) -> Unit,
     onEnd: (id: String) -> Unit,
 ) {
     val nextSession = remember(sessions) { sessions.nextUpcoming() }
     var selectedCategory by remember(categories) { mutableStateOf(categories.firstOrNull()) }
     var dropdownExpanded by remember { mutableStateOf(false) }
+    var titleEn by remember { mutableStateOf("") }
+    var titleUr by remember { mutableStateOf("") }
+
+    // Pre-fill from next session when it loads
+    LaunchedEffect(nextSession) {
+        if (nextSession != null && titleEn.isBlank()) {
+            titleEn = nextSession.titleEn
+            titleUr = nextSession.titleUr
+        }
+    }
 
     val ctx = LocalContext.current
     val permLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted) selectedCategory?.let { onStart(it.id) }
+        if (granted) selectedCategory?.let { onStart(it.id, titleEn, titleUr) }
     }
 
     fun goLive() {
         val cat = selectedCategory ?: return
+        if (titleEn.isBlank()) return
         if (ContextCompat.checkSelfPermission(ctx, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-            onStart(cat.id)
+            onStart(cat.id, titleEn, titleUr)
         } else {
             permLauncher.launch(Manifest.permission.RECORD_AUDIO)
         }
@@ -89,7 +100,13 @@ fun LiveScreen(
             LiveActiveCard(session = currentSession, isStreaming = isStreaming, onEnd = onEnd)
         } else {
             if (nextSession != null) {
-                NextSessionCard(session = nextSession)
+                NextSessionCard(
+                    session = nextSession,
+                    onUse = {
+                        titleEn = nextSession.titleEn
+                        titleUr = nextSession.titleUr
+                    },
+                )
                 Spacer(Modifier.height(24.dp))
             }
 
@@ -105,6 +122,7 @@ fun LiveScreen(
             )
             Spacer(Modifier.height(10.dp))
 
+            // Category dropdown
             ExposedDropdownMenuBox(
                 expanded = dropdownExpanded,
                 onExpandedChange = { dropdownExpanded = !dropdownExpanded },
@@ -145,12 +163,34 @@ fun LiveScreen(
                     }
                 }
             }
+            Spacer(Modifier.height(10.dp))
+
+            OutlinedTextField(
+                value = titleEn,
+                onValueChange = { titleEn = it },
+                label = { Text("Title (English)") },
+                placeholder = { Text("e.g. Monday Majlis") },
+                singleLine = true,
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(10.dp))
+
+            OutlinedTextField(
+                value = titleUr,
+                onValueChange = { titleUr = it },
+                label = { Text("عنوان (اردو)") },
+                placeholder = { Text("مثلاً پیر مجلس") },
+                singleLine = true,
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.fillMaxWidth(),
+            )
 
             Spacer(Modifier.height(24.dp))
 
             Button(
                 onClick = ::goLive,
-                enabled = selectedCategory != null,
+                enabled = selectedCategory != null && titleEn.isNotBlank(),
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(
@@ -174,7 +214,7 @@ fun LiveScreen(
 }
 
 @Composable
-private fun NextSessionCard(session: ScheduledSession) {
+private fun NextSessionCard(session: ScheduledSession, onUse: () -> Unit) {
     val (day, mon, time) = parseDateParts(session.scheduledAt, session.isRecurring, session.recurrenceRule)
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -231,6 +271,14 @@ private fun NextSessionCard(session: ScheduledSession) {
                         color = MaterialTheme.colorScheme.secondary,
                     )
                 }
+            }
+            Spacer(Modifier.height(12.dp))
+            OutlinedButton(
+                onClick = onUse,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(8.dp),
+            ) {
+                Text("Use this session's title", style = MaterialTheme.typography.bodySmall)
             }
         }
     }

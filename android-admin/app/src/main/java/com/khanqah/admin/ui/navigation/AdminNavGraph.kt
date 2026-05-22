@@ -30,7 +30,7 @@ fun AdminNavGraph(app: AdminApp, startDestination: String) {
                 sessions       = sessions,
                 categories     = categories,
                 isStreaming    = isStreaming,
-                onStart        = { categoryId -> app.liveViewModel.start(categoryId) },
+                onStart        = { categoryId, en, ur -> app.liveViewModel.start(categoryId, en, ur) },
                 onEnd          = { id -> app.liveViewModel.end(id) },
             )
         }
