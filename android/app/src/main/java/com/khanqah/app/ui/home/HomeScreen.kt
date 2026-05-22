@@ -124,9 +124,9 @@ fun HomeScreen(
                 Text(
                     if (isUrdu) HomeStr.TITLE_UR else HomeStr.TITLE_EN,
                     style = MaterialTheme.typography.bodySmall.copy(
-                        fontFamily = CrimsonProFontFamily,
-                        fontStyle = FontStyle.Italic,
-                        fontSize = 12.sp,
+                        fontFamily = if (isUrdu) NastaleeqFontFamily else CrimsonProFontFamily,
+                        fontStyle = if (isUrdu) FontStyle.Normal else FontStyle.Italic,
+                        fontSize = if (isUrdu) 14.sp else 12.sp,
                     ),
                     color = gold,
                 )
@@ -229,10 +229,10 @@ fun HomeScreen(
                 Text(
                     if (isUrdu) HomeStr.RECENTS_UR else HomeStr.RECENTS_EN,
                     style = MaterialTheme.typography.titleMedium.copy(
-                        fontFamily = CrimsonProFontFamily,
-                        fontStyle = FontStyle.Italic,
+                        fontFamily = if (isUrdu) NastaleeqFontFamily else CrimsonProFontFamily,
+                        fontStyle = if (isUrdu) FontStyle.Normal else FontStyle.Italic,
                         fontWeight = FontWeight.SemiBold,
-                        fontSize = 18.sp,
+                        fontSize = if (isUrdu) 22.sp else 18.sp,
                     ),
                     color = MaterialTheme.colorScheme.onBackground,
                 )
@@ -257,6 +257,7 @@ fun HomeScreen(
 
 @Composable
 private fun FeatureTile(label: String, icon: ImageVector, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val ur = LocalIsUrdu.current
     Surface(
         modifier = modifier.height(80.dp).clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
@@ -286,7 +287,8 @@ private fun FeatureTile(label: String, icon: ImageVector, onClick: () -> Unit, m
             Text(
                 label,
                 style = MaterialTheme.typography.labelSmall.copy(
-                    fontSize = 9.sp,
+                    fontFamily = if (ur) NastaleeqFontFamily else null,
+                    fontSize = if (ur) 13.sp else 9.sp,
                     fontWeight = FontWeight.Medium,
                     letterSpacing = 0.sp,
                 ),

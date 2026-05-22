@@ -30,13 +30,21 @@ fun ScheduleScreen(sessions: List<ScheduledSession>) {
         item {
             Text(
                 if (isUrdu) ScheduleStr.TITLE_UR else ScheduleStr.TITLE_EN,
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, letterSpacing = 0.12.sp),
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontFamily = if (isUrdu) NastaleeqFontFamily else null,
+                    fontSize = if (isUrdu) 14.sp else 10.sp,
+                    letterSpacing = if (isUrdu) 0.sp else 0.12.sp,
+                ),
                 color = MaterialTheme.colorScheme.tertiary,
             )
             Spacer(Modifier.height(4.dp))
             Text(
                 if (isUrdu) ScheduleStr.UPCOMING_UR else ScheduleStr.UPCOMING_EN,
-                style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
+                style = MaterialTheme.typography.headlineLarge.copy(
+                    fontFamily = if (isUrdu) NastaleeqFontFamily else null,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = if (isUrdu) 38.sp else 32.sp,
+                ),
                 modifier = Modifier.padding(bottom = 8.dp),
             )
         }

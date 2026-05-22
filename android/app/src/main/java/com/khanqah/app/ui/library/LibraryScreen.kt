@@ -63,23 +63,41 @@ fun LibraryScreen(
                 .padding(horizontal = 20.dp)
                 .padding(top = 16.dp, bottom = 12.dp),
         ) {
-            Text(
-                "THE COLLECTION",
-                style = MaterialTheme.typography.labelSmall.copy(
+            if (isUrdu) {
+                Text(
+                    LibraryStr.TITLE_UR,
+                    fontFamily = NastaleeqFontFamily,
                     fontSize = 9.sp,
                     fontWeight = FontWeight.SemiBold,
-                    letterSpacing = 0.14.sp,
-                ),
-                color = gold.copy(alpha = 0.7f),
-            )
-            Spacer(Modifier.height(2.dp))
-            Text(
-                buildAnnotatedString {
-                    withStyle(SpanStyle(fontFamily = CrimsonProFontFamily, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onBackground, fontSize = 28.sp)) { append("Browse ") }
-                    withStyle(SpanStyle(fontFamily = CrimsonProFontFamily, fontStyle = FontStyle.Italic, fontWeight = FontWeight.Normal, color = gold, fontSize = 28.sp)) { append("everything") }
-                },
-                style = MaterialTheme.typography.headlineLarge,
-            )
+                    color = gold.copy(alpha = 0.7f),
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    LibraryStr.TITLE_UR,
+                    fontFamily = NastaleeqFontFamily,
+                    fontSize = 36.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+            } else {
+                Text(
+                    "THE COLLECTION",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 0.14.sp,
+                    ),
+                    color = gold.copy(alpha = 0.7f),
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    buildAnnotatedString {
+                        withStyle(SpanStyle(fontFamily = CrimsonProFontFamily, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onBackground, fontSize = 28.sp)) { append("Browse ") }
+                        withStyle(SpanStyle(fontFamily = CrimsonProFontFamily, fontStyle = FontStyle.Italic, fontWeight = FontWeight.Normal, color = gold, fontSize = 28.sp)) { append("everything") }
+                    },
+                    style = MaterialTheme.typography.headlineLarge,
+                )
+            }
 
             Spacer(Modifier.height(10.dp))
 

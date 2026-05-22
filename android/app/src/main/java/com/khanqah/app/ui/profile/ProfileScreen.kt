@@ -25,6 +25,8 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.khanqah.app.ui.theme.CrimsonProFontFamily
+import com.khanqah.app.ui.theme.NastaleeqFontFamily
+import com.khanqah.app.ui.utils.LocalIsUrdu
 import com.khanqah.app.ui.utils.ProfileStr
 
 @Composable
@@ -76,16 +78,20 @@ fun ProfileScreen(
                 Row(verticalAlignment = Alignment.Bottom) {
                     Text(
                         if (isUrdu) ProfileStr.TITLE_UR else ProfileStr.TITLE_EN,
-                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontFamily = if (isUrdu) NastaleeqFontFamily else null,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = if (isUrdu) 32.sp else 28.sp,
+                        ),
                         color = MaterialTheme.colorScheme.onBackground,
                     )
                     Text(
                         " ${if (isUrdu) ProfileStr.SETTINGS_UR else ProfileStr.SETTINGS_EN}",
                         style = MaterialTheme.typography.headlineMedium.copy(
-                            fontFamily = CrimsonProFontFamily,
-                            fontStyle = FontStyle.Italic,
+                            fontFamily = if (isUrdu) NastaleeqFontFamily else CrimsonProFontFamily,
+                            fontStyle = if (isUrdu) FontStyle.Normal else FontStyle.Italic,
                             fontWeight = FontWeight.Normal,
-                            fontSize = 22.sp,
+                            fontSize = if (isUrdu) 20.sp else 22.sp,
                         ),
                         color = gold,
                     )
@@ -132,12 +138,19 @@ fun ProfileScreen(
                 Column(Modifier.weight(1f)) {
                     Text(
                         if (isLoggedIn && displayName.isNotBlank()) displayName else if (isUrdu) ProfileStr.GUEST_UR else ProfileStr.GUEST_EN,
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontFamily = if (isUrdu && !(isLoggedIn && displayName.isNotBlank())) NastaleeqFontFamily else null,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = if (isUrdu && !(isLoggedIn && displayName.isNotBlank())) 20.sp else 16.sp,
+                        ),
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
                         if (isLoggedIn) phone else if (isUrdu) ProfileStr.NOT_SIGNED_UR else ProfileStr.NOT_SIGNED_EN,
-                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontFamily = if (isUrdu && !isLoggedIn) NastaleeqFontFamily else null,
+                            fontSize = if (isUrdu && !isLoggedIn) 14.sp else 11.sp,
+                        ),
                         color = MaterialTheme.colorScheme.secondary,
                     )
                     role?.let {
@@ -164,9 +177,10 @@ fun ProfileScreen(
                         Text(
                             if (isUrdu) ProfileStr.SIGN_OUT_UR else ProfileStr.SIGN_OUT_EN,
                             style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 9.sp,
+                                fontFamily = if (isUrdu) NastaleeqFontFamily else null,
+                                fontSize = if (isUrdu) 13.sp else 9.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                letterSpacing = 0.06.sp,
+                                letterSpacing = if (isUrdu) 0.sp else 0.06.sp,
                             ),
                         )
                     }
@@ -184,9 +198,10 @@ fun ProfileScreen(
                         Text(
                             if (isUrdu) ProfileStr.SIGN_IN_UR else ProfileStr.SIGN_IN_EN,
                             style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 9.sp,
+                                fontFamily = if (isUrdu) NastaleeqFontFamily else null,
+                                fontSize = if (isUrdu) 13.sp else 9.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                letterSpacing = 0.06.sp,
+                                letterSpacing = if (isUrdu) 0.sp else 0.06.sp,
                             ),
                         )
                     }
@@ -259,6 +274,7 @@ fun ProfileScreen(
 @Composable
 private fun SectionHeader(number: String, title: String, subtitle: String) {
     val gold = MaterialTheme.colorScheme.tertiary
+    val ur = LocalIsUrdu.current
     Row(
         modifier = Modifier.padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -280,9 +296,10 @@ private fun SectionHeader(number: String, title: String, subtitle: String) {
         Text(
             title,
             style = MaterialTheme.typography.labelSmall.copy(
+                fontFamily = if (ur) NastaleeqFontFamily else null,
                 fontWeight = FontWeight.Bold,
-                letterSpacing = 0.08.sp,
-                fontSize = 10.sp,
+                letterSpacing = if (ur) 0.sp else 0.08.sp,
+                fontSize = if (ur) 14.sp else 10.sp,
             ),
             color = MaterialTheme.colorScheme.onBackground,
         )
@@ -290,9 +307,9 @@ private fun SectionHeader(number: String, title: String, subtitle: String) {
         Text(
             subtitle,
             style = MaterialTheme.typography.bodySmall.copy(
-                fontFamily = CrimsonProFontFamily,
-                fontStyle = FontStyle.Italic,
-                fontSize = 11.sp,
+                fontFamily = if (ur) NastaleeqFontFamily else CrimsonProFontFamily,
+                fontStyle = if (ur) FontStyle.Normal else FontStyle.Italic,
+                fontSize = if (ur) 13.sp else 11.sp,
             ),
             color = MaterialTheme.colorScheme.secondary,
         )
@@ -316,7 +333,10 @@ private fun LanguageToggleRow(isUrdu: Boolean, onToggle: () -> Unit) {
         ) {
             Text(
                 if (isUrdu) ProfileStr.LANGUAGE_UR else ProfileStr.LANGUAGE_EN,
-                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontFamily = if (isUrdu) NastaleeqFontFamily else null,
+                    fontSize = if (isUrdu) 17.sp else 13.sp,
+                ),
                 color = MaterialTheme.colorScheme.onSurface,
             )
             // Pill toggle: EN | اردو
@@ -355,6 +375,7 @@ private fun LanguageToggleRow(isUrdu: Boolean, onToggle: () -> Unit) {
 @Composable
 private fun SettingRow(label: String, value: String) {
     val gold = MaterialTheme.colorScheme.tertiary
+    val ur = LocalIsUrdu.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -364,7 +385,10 @@ private fun SettingRow(label: String, value: String) {
     ) {
         Text(
             label,
-            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
+            style = MaterialTheme.typography.bodyMedium.copy(
+                fontFamily = if (ur) NastaleeqFontFamily else null,
+                fontSize = if (ur) 17.sp else 13.sp,
+            ),
             color = MaterialTheme.colorScheme.onSurface,
         )
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -389,6 +413,7 @@ private fun SettingRow(label: String, value: String) {
 
 @Composable
 private fun AboutRow(label: String) {
+    val ur = LocalIsUrdu.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -398,7 +423,10 @@ private fun AboutRow(label: String) {
     ) {
         Text(
             label,
-            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
+            style = MaterialTheme.typography.bodyMedium.copy(
+                fontFamily = if (ur) NastaleeqFontFamily else null,
+                fontSize = if (ur) 17.sp else 13.sp,
+            ),
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f),
         )
