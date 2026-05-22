@@ -37,6 +37,7 @@ import androidx.media3.ui.PlayerView
 import com.khanqah.app.data.model.Topic
 import com.khanqah.app.ui.components.TypeIconSquare
 import com.khanqah.app.ui.theme.CrimsonProFontFamily
+import com.khanqah.app.ui.utils.LocalIsUrdu
 import kotlinx.coroutines.delay
 
 private fun detectIsVideo(isVideoFlag: Boolean, type: String, url: String): Boolean {
@@ -62,21 +63,23 @@ fun PlayerScreen(
 
     LaunchedEffect(contentId) { viewModel.load(contentId) }
 
+    val isUrdu = LocalIsUrdu.current
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         content?.let { item ->
             val isBook  = detectIsBook(item.type, item.mediaUrl)
             val isVideo = !isBook && detectIsVideo(item.isVideo, item.type, item.mediaUrl)
+            val title = if (isUrdu && item.titleUr.isNotBlank()) item.titleUr else item.titleEn
 
             when {
                 isBook -> PdfViewerScreen(
                     url = item.mediaUrl,
-                    title = item.titleEn,
+                    title = title,
                     type = item.type,
                     onBack = onBack,
                 )
                 isVideo -> VideoPlayerScreen(
                     player = viewModel.player,
-                    title = item.titleEn,
+                    title = title,
                     type = item.type,
                     description = item.descriptionEn,
                     topics = item.topics,
@@ -85,7 +88,7 @@ fun PlayerScreen(
                 )
                 else -> AudioFullScreen(
                     player = viewModel.player,
-                    title = item.titleEn,
+                    title = title,
                     type = item.type,
                     onBack = onBack,
                 )

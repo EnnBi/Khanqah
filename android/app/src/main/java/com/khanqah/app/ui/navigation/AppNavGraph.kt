@@ -42,6 +42,8 @@ import com.khanqah.app.ui.player.PlayerScreen
 import com.khanqah.app.ui.player.PlayerViewModel
 import com.khanqah.app.ui.profile.ProfileScreen
 import com.khanqah.app.ui.schedule.ScheduleScreen
+import com.khanqah.app.ui.utils.LocalIsUrdu
+import com.khanqah.app.ui.utils.Tabs
 
 sealed class Screen(val route: String) {
     object Login        : Screen("login")
@@ -75,13 +77,17 @@ data class BottomNavItem(
     val categoryType: String? = null,
 )
 
-val bottomNavItems = listOf(
-    BottomNavItem(Screen.Home,     "Home",     Icons.Filled.Home,         Icons.Outlined.Home),
-    BottomNavItem(Screen.Library,  "Library",  Icons.Filled.LibraryBooks, Icons.Outlined.LibraryBooks),
-    BottomNavItem(Screen.BayanTab, "Bayaanat", Icons.Filled.Mic,          Icons.Outlined.MicNone),
-    BottomNavItem(Screen.ClipsTab, "Clips",    Icons.Filled.PlayCircle,   Icons.Outlined.PlayCircleOutline),
-    BottomNavItem(Screen.Profile,  "Profile",  Icons.Filled.Person,       Icons.Outlined.Person),
-)
+@Composable
+fun bottomNavItems(): List<BottomNavItem> {
+    val ur = LocalIsUrdu.current
+    return listOf(
+        BottomNavItem(Screen.Home,     if (ur) Tabs.HOME_UR     else Tabs.HOME_EN,     Icons.Filled.Home,         Icons.Outlined.Home),
+        BottomNavItem(Screen.Library,  if (ur) Tabs.LIBRARY_UR  else Tabs.LIBRARY_EN,  Icons.Filled.LibraryBooks, Icons.Outlined.LibraryBooks),
+        BottomNavItem(Screen.BayanTab, if (ur) Tabs.BAYAANAT_UR else Tabs.BAYAANAT_EN, Icons.Filled.Mic,          Icons.Outlined.MicNone),
+        BottomNavItem(Screen.ClipsTab, if (ur) Tabs.CLIPS_UR    else Tabs.CLIPS_EN,    Icons.Filled.PlayCircle,   Icons.Outlined.PlayCircleOutline),
+        BottomNavItem(Screen.Profile,  if (ur) Tabs.PROFILE_UR  else Tabs.PROFILE_EN,  Icons.Filled.Person,       Icons.Outlined.Person),
+    )
+}
 
 @Composable
 fun AppNavGraph(
@@ -97,6 +103,8 @@ fun AppNavGraph(
     displayName: String,
     phone: String,
     userRole: String?,
+    isUrdu: Boolean,
+    onLanguageToggle: () -> Unit,
     onLogout: () -> Unit,
 ) {
     val currentEntry by navController.currentBackStackEntryAsState()
@@ -129,7 +137,7 @@ fun AppNavGraph(
                         contentColor = inactiveColor,
                         tonalElevation = 0.dp,
                     ) {
-                        bottomNavItems.forEach { item ->
+                        bottomNavItems().forEach { item ->
                             val selected = currentRoute == item.screen.route
                             NavigationBarItem(
                                 selected = selected,
@@ -269,6 +277,8 @@ fun AppNavGraph(
                     displayName = displayName,
                     phone = phone,
                     role = userRole,
+                    isUrdu = isUrdu,
+                    onLanguageToggle = onLanguageToggle,
                     onLoginClick = { navController.navigate(Screen.Login.route) },
                     onLogout = onLogout,
                 )

@@ -1,6 +1,7 @@
 package com.khanqah.app.ui.profile
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -19,9 +20,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.khanqah.app.ui.theme.CrimsonProFontFamily
+import com.khanqah.app.ui.utils.ProfileStr
 
 @Composable
 fun ProfileScreen(
@@ -29,6 +33,8 @@ fun ProfileScreen(
     displayName: String,
     phone: String,
     role: String?,
+    isUrdu: Boolean,
+    onLanguageToggle: () -> Unit,
     onLoginClick: () -> Unit,
     onLogout: () -> Unit,
 ) {
@@ -69,12 +75,12 @@ fun ProfileScreen(
             ) {
                 Row(verticalAlignment = Alignment.Bottom) {
                     Text(
-                        "Profile",
+                        if (isUrdu) ProfileStr.TITLE_UR else ProfileStr.TITLE_EN,
                         style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onBackground,
                     )
                     Text(
-                        " & settings",
+                        " ${if (isUrdu) ProfileStr.SETTINGS_UR else ProfileStr.SETTINGS_EN}",
                         style = MaterialTheme.typography.headlineMedium.copy(
                             fontFamily = CrimsonProFontFamily,
                             fontStyle = FontStyle.Italic,
@@ -125,12 +131,12 @@ fun ProfileScreen(
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
                     Text(
-                        if (isLoggedIn && displayName.isNotBlank()) displayName else "Guest",
+                        if (isLoggedIn && displayName.isNotBlank()) displayName else if (isUrdu) ProfileStr.GUEST_UR else ProfileStr.GUEST_EN,
                         style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
-                        if (isLoggedIn) phone else "Not signed in",
+                        if (isLoggedIn) phone else if (isUrdu) ProfileStr.NOT_SIGNED_UR else ProfileStr.NOT_SIGNED_EN,
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
                         color = MaterialTheme.colorScheme.secondary,
                     )
@@ -156,7 +162,7 @@ fun ProfileScreen(
                         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                     ) {
                         Text(
-                            "SIGN OUT",
+                            if (isUrdu) ProfileStr.SIGN_OUT_UR else ProfileStr.SIGN_OUT_EN,
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontSize = 9.sp,
                                 fontWeight = FontWeight.SemiBold,
@@ -176,7 +182,7 @@ fun ProfileScreen(
                         elevation = ButtonDefaults.buttonElevation(0.dp),
                     ) {
                         Text(
-                            "SIGN IN",
+                            if (isUrdu) ProfileStr.SIGN_IN_UR else ProfileStr.SIGN_IN_EN,
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontSize = 9.sp,
                                 fontWeight = FontWeight.SemiBold,
@@ -191,7 +197,11 @@ fun ProfileScreen(
         Spacer(Modifier.height(20.dp))
 
         // ── Section 01: Preferences ──
-        SectionHeader(number = "01", title = "PREFERENCES", subtitle = "Personalise your experience")
+        SectionHeader(
+            number = "01",
+            title = if (isUrdu) ProfileStr.PREF_TAG_UR else ProfileStr.PREF_TAG_EN,
+            subtitle = if (isUrdu) ProfileStr.PREF_SUB_UR else ProfileStr.PREF_SUB_EN,
+        )
 
         Spacer(Modifier.height(8.dp))
 
@@ -204,22 +214,26 @@ fun ProfileScreen(
             tonalElevation = 0.dp,
         ) {
             Column {
-                SettingRow("Language",      "ENGLISH")
+                LanguageToggleRow(isUrdu = isUrdu, onToggle = onLanguageToggle)
                 RowDivider()
-                SettingRow("Appearance",    "DARK")
+                SettingRow(if (isUrdu) ProfileStr.APPEARANCE_UR  else ProfileStr.APPEARANCE_EN,  "DARK")
                 RowDivider()
-                SettingRow("Playback Speed","1.0×")
+                SettingRow(if (isUrdu) ProfileStr.SPEED_UR       else ProfileStr.SPEED_EN,       "1.0×")
                 RowDivider()
-                SettingRow("Notifications", "On")
+                SettingRow(if (isUrdu) ProfileStr.NOTIF_UR       else ProfileStr.NOTIF_EN,       "On")
                 RowDivider()
-                SettingRow("Skip Interval", "15s")
+                SettingRow(if (isUrdu) ProfileStr.SKIP_UR        else ProfileStr.SKIP_EN,        "15s")
             }
         }
 
         Spacer(Modifier.height(20.dp))
 
         // ── Section 02: About ──
-        SectionHeader(number = "02", title = "ABOUT", subtitle = "Learn more about us")
+        SectionHeader(
+            number = "02",
+            title = if (isUrdu) ProfileStr.ABOUT_TAG_UR else ProfileStr.ABOUT_TAG_EN,
+            subtitle = if (isUrdu) ProfileStr.ABOUT_SUB_UR else ProfileStr.ABOUT_SUB_EN,
+        )
 
         Spacer(Modifier.height(8.dp))
 
@@ -232,9 +246,9 @@ fun ProfileScreen(
             tonalElevation = 0.dp,
         ) {
             Column {
-                AboutRow("About the Khanqah")
+                AboutRow(if (isUrdu) ProfileStr.ABOUT_UR else ProfileStr.ABOUT_EN)
                 RowDivider()
-                AboutRow("Hazrat Mufti Abdur Rasheed Miftahi Sahab's Bio")
+                AboutRow(if (isUrdu) ProfileStr.BIO_UR else ProfileStr.BIO_EN)
             }
         }
 
@@ -282,6 +296,59 @@ private fun SectionHeader(number: String, title: String, subtitle: String) {
             ),
             color = MaterialTheme.colorScheme.secondary,
         )
+    }
+}
+
+@Composable
+private fun LanguageToggleRow(isUrdu: Boolean, onToggle: () -> Unit) {
+    val gold = MaterialTheme.colorScheme.tertiary
+    val card = MaterialTheme.colorScheme.surface
+    // Always render this row LTR so the EN/اردو pill doesn't mirror
+    androidx.compose.runtime.CompositionLocalProvider(
+        LocalLayoutDirection provides LayoutDirection.Ltr
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                if (isUrdu) ProfileStr.LANGUAGE_UR else ProfileStr.LANGUAGE_EN,
+                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            // Pill toggle: EN | اردو
+            Surface(
+                shape = RoundedCornerShape(50),
+                color = MaterialTheme.colorScheme.background,
+                tonalElevation = 0.dp,
+                modifier = Modifier.height(30.dp),
+            ) {
+                Row(modifier = Modifier.padding(2.dp)) {
+                    listOf("EN" to false, "اردو" to true).forEach { (label, isSelected) ->
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(50))
+                                .background(if (isSelected == isUrdu) gold else Color.Transparent)
+                                .clickable { if (isSelected != isUrdu) onToggle() }
+                                .padding(horizontal = 12.dp, vertical = 4.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                label,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                ),
+                                color = if (isSelected == isUrdu) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.secondary,
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

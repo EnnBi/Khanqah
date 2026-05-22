@@ -32,6 +32,8 @@ import com.khanqah.app.data.db.entities.CategoryEntity
 import com.khanqah.app.ui.components.ContentRow
 import com.khanqah.app.ui.components.TypeIconSquare
 import com.khanqah.app.ui.theme.CrimsonProFontFamily
+import com.khanqah.app.ui.utils.LibraryStr
+import com.khanqah.app.ui.utils.LocalIsUrdu
 
 @Composable
 fun LibraryScreen(
@@ -46,6 +48,7 @@ fun LibraryScreen(
     val isSearching = query.isNotBlank()
     val gold = MaterialTheme.colorScheme.tertiary
     val bg = MaterialTheme.colorScheme.background
+    val isUrdu = LocalIsUrdu.current
 
     Column(
         modifier = Modifier
@@ -95,7 +98,7 @@ fun LibraryScreen(
                     Spacer(Modifier.width(9.dp))
                     Box(Modifier.weight(1f)) {
                         if (query.isEmpty()) {
-                            Text("Search bayans, clips, books...", style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp), color = MaterialTheme.colorScheme.secondary)
+                            Text(if (isUrdu) LibraryStr.SEARCH_UR else LibraryStr.SEARCH_EN, style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp), color = MaterialTheme.colorScheme.secondary)
                         }
                         BasicTextField(
                             value = query,
@@ -112,7 +115,8 @@ fun LibraryScreen(
             Spacer(Modifier.height(10.dp))
 
             Text(
-                if (isSearching) "${searchResults.size} RESULTS" else "%02d · CATEGORIES".format(categories.size),
+                if (isSearching) "${searchResults.size} ${if (isUrdu) LibraryStr.RESULTS_UR else LibraryStr.RESULTS_EN}"
+                else "%02d · ${if (isUrdu) LibraryStr.CATEGORIES_UR else LibraryStr.CATEGORIES_EN}".format(categories.size),
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.08.sp),
                 color = MaterialTheme.colorScheme.secondary,
             )
@@ -160,6 +164,7 @@ fun LibraryScreen(
 @Composable
 private fun CategoryCard(cat: CategoryEntity, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val gold = MaterialTheme.colorScheme.tertiary
+    val isUrdu = LocalIsUrdu.current
     Surface(
         modifier = modifier.clickable(onClick = onClick),
         shape = RoundedCornerShape(20.dp),
@@ -174,7 +179,7 @@ private fun CategoryCard(cat: CategoryEntity, onClick: () -> Unit, modifier: Mod
             TypeIconSquare(cat.type.ifBlank { "bayan" }, size = 46.dp)
             Spacer(Modifier.height(10.dp))
             Text(
-                cat.nameEn,
+                if (isUrdu && cat.nameUr.isNotBlank()) cat.nameUr else cat.nameEn,
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp, lineHeight = 17.sp),
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 2,

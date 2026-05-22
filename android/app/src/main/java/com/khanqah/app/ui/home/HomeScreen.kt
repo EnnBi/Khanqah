@@ -40,6 +40,8 @@ import com.khanqah.app.R
 import com.khanqah.app.data.db.entities.ContentEntity
 import com.khanqah.app.ui.components.TypeIconSquare
 import com.khanqah.app.ui.theme.CrimsonProFontFamily
+import com.khanqah.app.ui.utils.HomeStr
+import com.khanqah.app.ui.utils.LocalIsUrdu
 
 @Composable
 fun HomeScreen(
@@ -59,9 +61,13 @@ fun HomeScreen(
     val cardBg = MaterialTheme.colorScheme.surface
     val bg = MaterialTheme.colorScheme.background
     val heroBg = MaterialTheme.colorScheme.primary
+    val isUrdu = LocalIsUrdu.current
 
     val statusCard = live?.let { Triple(true, it.titleEn, "") }
-        ?: schedule.firstOrNull()?.let { Triple(false, it.titleEn, formatRelativeTime(it.scheduledAt)) }
+        ?: schedule.firstOrNull()?.let { s ->
+            val title = if (isUrdu && s.titleUr.isNotBlank()) s.titleUr else s.titleEn
+            Triple(false, title, formatRelativeTime(s.scheduledAt))
+        }
 
     Column(
         modifier = Modifier
@@ -115,7 +121,7 @@ fun HomeScreen(
                 Text("✦", color = gold.copy(alpha = 0.55f), fontSize = 8.sp)
                 Text(" ", fontSize = 10.sp)
                 Text(
-                    "Khanqah Maseeh-ul-Ummah",
+                    if (isUrdu) HomeStr.TITLE_UR else HomeStr.TITLE_EN,
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontFamily = CrimsonProFontFamily,
                         fontStyle = FontStyle.Italic,
@@ -194,14 +200,14 @@ fun HomeScreen(
         // ── Feature grid — 2 rows × 3 cols ──
         data class FeatureItem(val label: String, val icon: ImageVector, val onClick: () -> Unit)
         val row1 = listOf(
-            FeatureItem("Mamulat",  Icons.Filled.Star,     { onCategoryTypeClick("mamulat") }),
-            FeatureItem("Majalis",  Icons.Filled.Groups,   { onCategoryTypeClick("majalis") }),
-            FeatureItem("Salah Times", Icons.Filled.Schedule, { onComingSoonClick("Salah Timings") }),
+            FeatureItem(if (isUrdu) HomeStr.MAMULAT_UR      else HomeStr.MAMULAT_EN,      Icons.Filled.Star,     { onCategoryTypeClick("mamulat") }),
+            FeatureItem(if (isUrdu) HomeStr.MAJALIS_UR      else HomeStr.MAJALIS_EN,      Icons.Filled.Groups,   { onCategoryTypeClick("majalis") }),
+            FeatureItem(if (isUrdu) HomeStr.SALAH_UR        else HomeStr.SALAH_EN,        Icons.Filled.Schedule, { onComingSoonClick("Salah Timings") }),
         )
         val row2 = listOf(
-            FeatureItem("Majlis Times",  Icons.Filled.Event,                  onScheduleClick),
-            FeatureItem("All Content",   Icons.Filled.GridView,               onLibraryClick),
-            FeatureItem("Ask Hazrat",    Icons.AutoMirrored.Filled.Chat,      { onComingSoonClick("Ask Hazrat") }),
+            FeatureItem(if (isUrdu) HomeStr.MAJLIS_TIMES_UR else HomeStr.MAJLIS_TIMES_EN, Icons.Filled.Event,               onScheduleClick),
+            FeatureItem(if (isUrdu) HomeStr.CATEGORIES_UR  else HomeStr.CATEGORIES_EN,   Icons.Filled.GridView,            onLibraryClick),
+            FeatureItem(if (isUrdu) HomeStr.ASK_HAZRAT_UR  else HomeStr.ASK_HAZRAT_EN,   Icons.AutoMirrored.Filled.Chat,   { onComingSoonClick("Ask Hazrat") }),
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
             row1.forEach { FeatureTile(it.label, it.icon, it.onClick, Modifier.weight(1f)) }
@@ -220,7 +226,7 @@ fun HomeScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    "Recents",
+                    if (isUrdu) HomeStr.RECENTS_UR else HomeStr.RECENTS_EN,
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontFamily = CrimsonProFontFamily,
                         fontStyle = FontStyle.Italic,
@@ -307,8 +313,9 @@ private fun RecentCard(item: ContentEntity, onClick: () -> Unit) {
             TypeIconSquare(item.type, size = 40.dp)
             Spacer(Modifier.width(8.dp))
             Column(Modifier.weight(1f)) {
+                val ur = LocalIsUrdu.current
                 Text(
-                    item.titleEn,
+                    if (ur && item.titleUr.isNotBlank()) item.titleUr else item.titleEn,
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 11.sp,

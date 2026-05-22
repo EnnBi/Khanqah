@@ -16,9 +16,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.khanqah.app.data.model.ScheduledSession
 import com.khanqah.app.ui.theme.NastaleeqFontFamily
+import com.khanqah.app.ui.utils.LocalIsUrdu
+import com.khanqah.app.ui.utils.ScheduleStr
 
 @Composable
 fun ScheduleScreen(sessions: List<ScheduledSession>) {
+    val isUrdu = LocalIsUrdu.current
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 20.dp),
@@ -26,13 +29,13 @@ fun ScheduleScreen(sessions: List<ScheduledSession>) {
     ) {
         item {
             Text(
-                "SCHEDULE",
+                if (isUrdu) ScheduleStr.TITLE_UR else ScheduleStr.TITLE_EN,
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, letterSpacing = 0.12.sp),
                 color = MaterialTheme.colorScheme.tertiary,
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                "Upcoming sessions",
+                if (isUrdu) ScheduleStr.UPCOMING_UR else ScheduleStr.UPCOMING_EN,
                 style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
                 modifier = Modifier.padding(bottom = 8.dp),
             )
@@ -45,7 +48,7 @@ fun ScheduleScreen(sessions: List<ScheduledSession>) {
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        "No upcoming sessions.",
+                        if (isUrdu) ScheduleStr.NO_SCHED_UR else ScheduleStr.NO_SCHED_EN,
                         style = MaterialTheme.typography.bodyLarge.copy(fontStyle = FontStyle.Italic),
                         color = MaterialTheme.colorScheme.secondary,
                     )
@@ -59,6 +62,7 @@ fun ScheduleScreen(sessions: List<ScheduledSession>) {
 
 @Composable
 private fun ScheduleCard(session: ScheduledSession) {
+    val isUrdu = LocalIsUrdu.current
     val (day, mon, weekdayTime) = parseDateParts(session.scheduledAt)
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -117,7 +121,7 @@ private fun ScheduleCard(session: ScheduledSession) {
                 )
                 if (session.isRecurring) {
                     Spacer(Modifier.height(6.dp))
-                    val label = when {
+                    val label = if (isUrdu) ScheduleStr.RECURRING_UR else when {
                         session.recurrenceRule?.contains("DAILY") == true -> "DAILY"
                         session.recurrenceRule?.contains("WEEKLY") == true -> "WEEKLY"
                         session.recurrenceRule?.contains("MONTHLY") == true -> "MONTHLY"
