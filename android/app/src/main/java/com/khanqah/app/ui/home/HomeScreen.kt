@@ -65,13 +65,13 @@ fun HomeScreen(
     val isUrdu = LocalIsUrdu.current
 
     val statusCard = live?.let { Triple(true, it.titleEn, "") }
-        ?: schedule.firstOrNull { s ->
-            try { java.time.Instant.parse(s.scheduledAt).isAfter(java.time.Instant.now()) }
-            catch (_: Exception) { false }
-        }?.let { s ->
-            val title = if (isUrdu && s.titleUr.isNotBlank()) s.titleUr else s.titleEn
-            Triple(false, title, formatRelativeTime(s.scheduledAt, isUrdu))
-        }
+        ?: schedule
+            .mapNotNull { s -> nextOccurrenceInstant(s)?.let { inst -> s to inst } }
+            .minByOrNull { (_, inst) -> inst }
+            ?.let { (s, inst) ->
+                val title = if (isUrdu && s.titleUr.isNotBlank()) s.titleUr else s.titleEn
+                Triple(false, title, formatRelativeTime(inst.toString(), isUrdu))
+            }
 
     Column(
         modifier = Modifier
@@ -380,6 +380,27 @@ private fun LiveDot() {
             color = MaterialTheme.colorScheme.error,
         )
     }
+}
+
+private fun nextOccurrenceInstant(session: com.khanqah.app.data.model.ScheduledSession): java.time.Instant? {
+    return try {
+        val base = java.time.Instant.parse(session.scheduledAt)
+        val now  = java.time.Instant.now()
+        if (!session.isRecurring || session.recurrenceRule == null) {
+            return if (base.isAfter(now)) base else null
+        }
+        if (base.isAfter(now)) return base
+        val zdt = base.atZone(java.time.ZoneId.systemDefault())
+        val rule = session.recurrenceRule
+        var d = zdt
+        when {
+            rule.contains("DAILY")   -> { while (!d.toInstant().isAfter(now)) d = d.plusDays(1) }
+            rule.contains("WEEKLY")  -> { while (!d.toInstant().isAfter(now)) d = d.plusWeeks(1) }
+            rule.contains("MONTHLY") -> { while (!d.toInstant().isAfter(now)) d = d.plusMonths(1) }
+            else -> return if (base.isAfter(now)) base else null
+        }
+        d.toInstant()
+    } catch (_: Exception) { null }
 }
 
 private fun formatRelativeTime(scheduledAt: String, isUrdu: Boolean): String { return try {
