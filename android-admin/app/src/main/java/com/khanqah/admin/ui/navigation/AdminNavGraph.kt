@@ -21,13 +21,17 @@ fun AdminNavGraph(app: AdminApp, startDestination: String) {
             }
         }
         composable("live") {
-            val session  by app.liveViewModel.currentSession.collectAsState()
-            val sessions by app.scheduleViewModel.sessions.collectAsState()
+            val session     by app.liveViewModel.currentSession.collectAsState()
+            val sessions    by app.scheduleViewModel.sessions.collectAsState()
+            val categories  by app.liveViewModel.categories.collectAsState()
+            val isStreaming by app.liveViewModel.isStreaming.collectAsState()
             LiveScreen(
                 currentSession = session,
-                sessions = sessions,
-                onStart = { en, ur -> app.liveViewModel.start(en, ur) },
-                onEnd   = { id -> app.liveViewModel.end(id) },
+                sessions       = sessions,
+                categories     = categories,
+                isStreaming    = isStreaming,
+                onStart        = { categoryId -> app.liveViewModel.start(categoryId) },
+                onEnd          = { id -> app.liveViewModel.end(id) },
             )
         }
     }

@@ -1,47 +1,59 @@
 package com.khanqah.admin.ui.live
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.KeyboardArrowDown
+import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import com.khanqah.admin.data.model.Category
 import com.khanqah.admin.data.model.LiveSession
 import com.khanqah.admin.data.model.ScheduledSession
-import androidx.compose.animation.core.*
 
-// Colors pulled from theme at call sites via MaterialTheme.colorScheme
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LiveScreen(
     currentSession: LiveSession?,
     sessions: List<ScheduledSession>,
-    onStart: (titleEn: String, titleUr: String) -> Unit,
+    categories: List<Category>,
+    isStreaming: Boolean,
+    onStart: (categoryId: String) -> Unit,
     onEnd: (id: String) -> Unit,
 ) {
     val nextSession = remember(sessions) { sessions.nextUpcoming() }
+    var selectedCategory by remember(categories) { mutableStateOf(categories.firstOrNull()) }
+    var dropdownExpanded by remember { mutableStateOf(false) }
 
-    var titleEn by remember { mutableStateOf("") }
-    var titleUr by remember { mutableStateOf("") }
+    val ctx = LocalContext.current
+    val permLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) selectedCategory?.let { onStart(it.id) }
+    }
 
-    // Pre-fill from next session when it loads
-    LaunchedEffect(nextSession) {
-        if (nextSession != null && titleEn.isBlank()) {
-            titleEn = nextSession.titleEn
-            titleUr = nextSession.titleUr
+    fun goLive() {
+        val cat = selectedCategory ?: return
+        if (ContextCompat.checkSelfPermission(ctx, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+            onStart(cat.id)
+        } else {
+            permLauncher.launch(Manifest.permission.RECORD_AUDIO)
         }
     }
 
@@ -55,7 +67,6 @@ fun LiveScreen(
     ) {
         Spacer(Modifier.height(16.dp))
 
-        // Header
         Text(
             "LIVE CONTROL",
             style = MaterialTheme.typography.labelSmall.copy(
@@ -75,22 +86,13 @@ fun LiveScreen(
         Spacer(Modifier.height(32.dp))
 
         if (currentSession != null) {
-            // ── Currently LIVE ──
-            LiveActiveCard(session = currentSession, onEnd = onEnd)
+            LiveActiveCard(session = currentSession, isStreaming = isStreaming, onEnd = onEnd)
         } else {
-            // ── Next scheduled session ──
             if (nextSession != null) {
-                NextSessionCard(
-                    session = nextSession,
-                    onUse = {
-                        titleEn = nextSession.titleEn
-                        titleUr = nextSession.titleUr
-                    },
-                )
+                NextSessionCard(session = nextSession)
                 Spacer(Modifier.height(24.dp))
             }
 
-            // ── Start Live form ──
             Text(
                 "START A LIVE SESSION",
                 style = MaterialTheme.typography.labelSmall.copy(
@@ -103,35 +105,52 @@ fun LiveScreen(
             )
             Spacer(Modifier.height(10.dp))
 
-            OutlinedTextField(
-                value = titleEn,
-                onValueChange = { titleEn = it },
-                label = { Text("Title (English)") },
-                placeholder = { Text("e.g. Monday Majlis") },
-                singleLine = true,
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(10.dp))
+            ExposedDropdownMenuBox(
+                expanded = dropdownExpanded,
+                onExpandedChange = { dropdownExpanded = !dropdownExpanded },
+            ) {
+                OutlinedTextField(
+                    value = selectedCategory?.nameEn ?: if (categories.isEmpty()) "Loading…" else "Select category",
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Stream type") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(dropdownExpanded) },
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth().menuAnchor(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    ),
+                )
+                ExposedDropdownMenu(
+                    expanded = dropdownExpanded,
+                    onDismissRequest = { dropdownExpanded = false },
+                ) {
+                    categories.forEach { cat ->
+                        DropdownMenuItem(
+                            text = {
+                                Column {
+                                    Text(cat.nameEn, style = MaterialTheme.typography.bodyMedium)
+                                    if (cat.nameUr.isNotBlank()) {
+                                        Text(
+                                            cat.nameUr,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.primary,
+                                        )
+                                    }
+                                }
+                            },
+                            onClick = { selectedCategory = cat; dropdownExpanded = false },
+                        )
+                    }
+                }
+            }
 
-            OutlinedTextField(
-                value = titleUr,
-                onValueChange = { titleUr = it },
-                label = { Text("عنوان (اردو)") },
-                placeholder = { Text("مثلاً پیر مجلس") },
-                singleLine = true,
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(10.dp))
-
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(24.dp))
 
             Button(
-                onClick = {
-                    if (titleEn.isNotBlank()) onStart(titleEn, titleUr)
-                },
-                enabled = titleEn.isNotBlank(),
+                onClick = ::goLive,
+                enabled = selectedCategory != null,
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(
@@ -141,6 +160,8 @@ fun LiveScreen(
                     disabledContentColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.5f),
                 ),
             ) {
+                Icon(Icons.Outlined.Mic, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
                 Text(
                     "Go Live",
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
@@ -153,7 +174,7 @@ fun LiveScreen(
 }
 
 @Composable
-private fun NextSessionCard(session: ScheduledSession, onUse: () -> Unit) {
+private fun NextSessionCard(session: ScheduledSession) {
     val (day, mon, time) = parseDateParts(session.scheduledAt, session.isRecurring, session.recurrenceRule)
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -211,25 +232,17 @@ private fun NextSessionCard(session: ScheduledSession, onUse: () -> Unit) {
                     )
                 }
             }
-            Spacer(Modifier.height(12.dp))
-            OutlinedButton(
-                onClick = onUse,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp),
-            ) {
-                Text("Use this session's title", style = MaterialTheme.typography.bodySmall)
-            }
         }
     }
 }
 
 @Composable
-private fun LiveActiveCard(session: LiveSession, onEnd: (String) -> Unit) {
+private fun LiveActiveCard(session: LiveSession, isStreaming: Boolean, onEnd: (String) -> Unit) {
     val infiniteTransition = rememberInfiniteTransition(label = "livePulse")
-    val dotAlpha by infiniteTransition.animateFloat(
+    val pulseAlpha by infiniteTransition.animateFloat(
         initialValue = 1f, targetValue = 0.2f,
         animationSpec = infiniteRepeatable(tween(700), RepeatMode.Reverse),
-        label = "dot",
+        label = "pulse",
     )
 
     Surface(
@@ -246,7 +259,7 @@ private fun LiveActiveCard(session: LiveSession, onEnd: (String) -> Unit) {
                 Box(
                     Modifier
                         .size(10.dp)
-                        .alpha(dotAlpha)
+                        .alpha(pulseAlpha)
                         .background(MaterialTheme.colorScheme.error, CircleShape)
                 )
                 Spacer(Modifier.width(8.dp))
@@ -259,14 +272,39 @@ private fun LiveActiveCard(session: LiveSession, onEnd: (String) -> Unit) {
                     color = MaterialTheme.colorScheme.error,
                 )
             }
+
             Spacer(Modifier.height(12.dp))
+
             Text(
                 session.titleEn,
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onErrorContainer,
                 textAlign = TextAlign.Center,
             )
-            Spacer(Modifier.height(24.dp))
+
+            Spacer(Modifier.height(16.dp))
+
+            // Mic streaming indicator
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                Icon(
+                    Icons.Outlined.Mic,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp).alpha(if (isStreaming) pulseAlpha else 0.4f),
+                    tint = if (isStreaming) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onErrorContainer,
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    if (isStreaming) "Streaming audio" else "Connecting…",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (isStreaming) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.6f),
+                )
+            }
+
+            Spacer(Modifier.height(20.dp))
+
             Button(
                 onClick = { onEnd(session.id) },
                 modifier = Modifier.fillMaxWidth().height(50.dp),
@@ -282,7 +320,6 @@ private fun LiveActiveCard(session: LiveSession, onEnd: (String) -> Unit) {
     }
 }
 
-// Compute next actual occurrence for recurring sessions
 private fun List<ScheduledSession>.nextUpcoming(): ScheduledSession? {
     val now = java.time.Instant.now()
     return mapNotNull { s ->

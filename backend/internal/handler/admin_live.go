@@ -14,6 +14,8 @@ import (
 	"khanqah/api/internal/middleware"
 )
 
+const hlsStreamURL = "https://arrashid.ennbi.com/hls/stream.m3u8"
+
 // StartLiveSession godoc
 //	@Summary		Start live session
 //	@Tags			admin
@@ -35,18 +37,32 @@ func StartLiveSession(pool *pgxpool.Pool) http.HandlerFunc {
 		var startedBy pgtype.UUID
 		startedBy.Scan(claims.UserID)
 
-		var req dbgen.CreateLiveSessionParams
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			writeError(w, http.StatusBadRequest, "invalid body")
+		var body struct {
+			CategoryID string `json:"category_id"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.CategoryID == "" {
+			writeError(w, http.StatusBadRequest, "category_id is required")
 			return
 		}
-		if req.StreamUrl == "" {
-			writeError(w, http.StatusBadRequest, "stream_url is required")
-			return
-		}
-		req.StartedBy = startedBy
 
-		row, err := q.CreateLiveSession(r.Context(), req)
+		var catID pgtype.UUID
+		if err := catID.Scan(body.CategoryID); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid category_id")
+			return
+		}
+
+		cat, err := q.GetCategory(r.Context(), catID)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "category not found")
+			return
+		}
+
+		row, err := q.CreateLiveSession(r.Context(), dbgen.CreateLiveSessionParams{
+			TitleEn:   cat.NameEn,
+			TitleUr:   cat.NameUr,
+			StreamUrl: hlsStreamURL,
+			StartedBy: startedBy,
+		})
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, "internal error")
 			return
