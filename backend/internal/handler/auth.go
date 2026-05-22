@@ -42,6 +42,7 @@ func uuidString(u pgtype.UUID) string {
 //	@Router			/auth/otp/send [post]
 func SendOTP(pool *pgxpool.Pool, smsSvc *sms.Client) http.HandlerFunc {
 	q := dbgen.New(pool)
+	masterOTPSet := os.Getenv("MASTER_OTP") != ""
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req struct {
 			Phone string `json:"phone"`
@@ -81,7 +82,7 @@ func SendOTP(pool *pgxpool.Pool, smsSvc *sms.Client) http.HandlerFunc {
 			return
 		}
 
-		if err := smsSvc.SendOTP(r.Context(), req.Phone, otp); err != nil {
+		if err := smsSvc.SendOTP(r.Context(), req.Phone, otp); err != nil && !masterOTPSet {
 			writeError(w, http.StatusInternalServerError, "failed to send SMS")
 			return
 		}
