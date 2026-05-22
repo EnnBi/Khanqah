@@ -174,14 +174,22 @@ fun HomeScreen(
                         if (statusCard.first) {
                             LiveDot()
                         } else {
+                            // Label + time on one line
+                            val labelText = if (isUrdu) {
+                                if (statusCard.third.isNotBlank()) "اگلی مجلس · ${statusCard.third}" else "اگلی مجلس"
+                            } else {
+                                if (statusCard.third.isNotBlank()) "NEXT MAJLIS · ${statusCard.third}" else "NEXT MAJLIS"
+                            }
                             Text(
-                                if (isUrdu) "آف ایئر · اگلی مجلس" else "OFF AIR · NEXT MAJLIS",
+                                labelText,
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontFamily = if (isUrdu) NastaleeqFontFamily else null,
-                                    fontSize = if (isUrdu) 12.sp else 8.sp,
-                                    letterSpacing = if (isUrdu) 0.sp else 0.06.sp,
+                                    fontSize = if (isUrdu) 13.sp else 9.sp,
+                                    letterSpacing = if (isUrdu) 0.sp else 0.05.sp,
                                 ),
                                 color = MaterialTheme.colorScheme.secondary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                             )
                         }
                         Text(
@@ -189,22 +197,12 @@ fun HomeScreen(
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontFamily = if (isUrdu) NastaleeqFontFamily else null,
                                 fontWeight = FontWeight.SemiBold,
-                                fontSize = if (isUrdu) 18.sp else 13.sp,
+                                fontSize = if (isUrdu) 18.sp else 14.sp,
                             ),
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
-                        if (statusCard.third.isNotBlank()) {
-                            Text(
-                                statusCard.third,
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    fontFamily = if (isUrdu) NastaleeqFontFamily else null,
-                                    fontSize = if (isUrdu) 14.sp else 11.sp,
-                                ),
-                                color = MaterialTheme.colorScheme.secondary,
-                            )
-                        }
                     }
                     Text("›", color = gold, fontSize = 20.sp)
                 }
@@ -409,8 +407,8 @@ private fun formatRelativeTime(scheduledAt: String, isUrdu: Boolean): String { r
 
     when {
         mins < 1  -> if (isUrdu) "ابھی" else "Now"
-        mins < 60 -> if (isUrdu) "$mins منٹ میں" else "in ${mins}m"
-        hrs  < 2  -> if (isUrdu) "$hrs گھنٹے میں" else "in ${hrs}h"
+        mins < 60 -> if (isUrdu) "$mins منٹ میں" else "${mins}m"
+        hrs  < 2  -> if (isUrdu) "$hrs گھنٹے میں" else "${hrs}h · ${timeStr()}"
         else -> {
             val today   = java.time.LocalDate.now(zone)
             val dayDiff = java.time.temporal.ChronoUnit.DAYS.between(today, zdt.toLocalDate())
@@ -429,10 +427,9 @@ private fun formatRelativeTime(scheduledAt: String, isUrdu: Boolean): String { r
                     java.time.DayOfWeek.SUNDAY    -> "اتوار · $t"
                 }
             } else when (dayDiff) {
-                0L  -> "in ${hrs}h · $t"
+                0L  -> "Today · $t"
                 1L  -> "Tomorrow · $t"
-                2L  -> "Day after tomorrow · $t"
-                else -> "${zdt.dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.ENGLISH)} · $t"
+                else -> "${zdt.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.ENGLISH)} · $t"
             }
         }
     }
