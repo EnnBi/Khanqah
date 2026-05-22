@@ -67,7 +67,7 @@ fun HomeScreen(
     val statusCard = live?.let { Triple(true, it.titleEn, "") }
         ?: schedule.firstOrNull()?.let { s ->
             val title = if (isUrdu && s.titleUr.isNotBlank()) s.titleUr else s.titleEn
-            Triple(false, title, formatRelativeTime(s.scheduledAt))
+            Triple(false, title, formatRelativeTime(s.scheduledAt, isUrdu))
         }
 
     Column(
@@ -195,7 +195,10 @@ fun HomeScreen(
                         if (statusCard.third.isNotBlank()) {
                             Text(
                                 statusCard.third,
-                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    fontFamily = if (isUrdu) NastaleeqFontFamily else null,
+                                    fontSize = if (isUrdu) 14.sp else 11.sp,
+                                ),
                                 color = MaterialTheme.colorScheme.secondary,
                             )
                         }
@@ -378,14 +381,26 @@ private fun LiveDot() {
     }
 }
 
-private fun formatRelativeTime(scheduledAt: String): String = try {
-    val instant = java.time.Instant.parse(scheduledAt)
-    val now = java.time.Instant.now()
-    val diff = java.time.Duration.between(now, instant)
+private fun formatRelativeTime(scheduledAt: String, isUrdu: Boolean): String = try {
+    val diff = java.time.Duration.between(java.time.Instant.now(), java.time.Instant.parse(scheduledAt))
+    val abs = diff.abs()
+    val past = diff.isNegative
     when {
-        diff.isNegative -> "Soon"
-        diff.toHours() < 1 -> "in ${diff.toMinutes()} min"
-        diff.toHours() < 24 -> "in ${diff.toHours()} hr"
-        else -> "in ${diff.toDays()} days"
+        abs.toMinutes() < 1 -> if (isUrdu) "ابھی" else "Now"
+        abs.toHours() < 1 -> {
+            val m = abs.toMinutes()
+            if (isUrdu) if (past) "$m منٹ پہلے" else "$m منٹ میں"
+            else         if (past) "${m}m ago"      else "in ${m}m"
+        }
+        abs.toDays() < 1 -> {
+            val h = abs.toHours()
+            if (isUrdu) if (past) "$h گھنٹے پہلے" else "$h گھنٹے میں"
+            else         if (past) "${h}h ago"       else "in ${h}h"
+        }
+        else -> {
+            val d = abs.toDays()
+            if (isUrdu) if (past) "$d دن پہلے" else "$d دن میں"
+            else         if (past) "${d}d ago"   else "in ${d}d"
+        }
     }
 } catch (_: Exception) { "" }
