@@ -65,7 +65,10 @@ fun HomeScreen(
     val isUrdu = LocalIsUrdu.current
 
     val statusCard = live?.let { Triple(true, it.titleEn, "") }
-        ?: schedule.firstOrNull()?.let { s ->
+        ?: schedule.firstOrNull { s ->
+            try { java.time.Instant.parse(s.scheduledAt).isAfter(java.time.Instant.now()) }
+            catch (_: Exception) { false }
+        }?.let { s ->
             val title = if (isUrdu && s.titleUr.isNotBlank()) s.titleUr else s.titleEn
             Triple(false, title, formatRelativeTime(s.scheduledAt, isUrdu))
         }
