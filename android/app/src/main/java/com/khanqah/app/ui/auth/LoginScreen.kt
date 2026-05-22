@@ -33,10 +33,15 @@ fun LoginScreen(viewModel: AuthViewModel, onSuccess: () -> Unit) {
     var name by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var otp by remember { mutableStateOf("") }
-    val isOtpStep = state is AuthState.OtpSent
+    var isOtpStep by remember { mutableStateOf(false) }
 
     LaunchedEffect(state) {
-        if (state is AuthState.Success) onSuccess()
+        when (state) {
+            is AuthState.OtpSent -> isOtpStep = true
+            is AuthState.Success -> onSuccess()
+            is AuthState.Idle    -> isOtpStep = false
+            else -> {}
+        }
     }
 
     Column(
@@ -205,7 +210,7 @@ fun LoginScreen(viewModel: AuthViewModel, onSuccess: () -> Unit) {
 
                     if (isOtpStep) {
                         TextButton(
-                            onClick = { viewModel.reset(); otp = "" },
+                            onClick = { viewModel.reset(); otp = ""; isOtpStep = false },
                             modifier = Modifier.fillMaxWidth(),
                         ) {
                             Text(

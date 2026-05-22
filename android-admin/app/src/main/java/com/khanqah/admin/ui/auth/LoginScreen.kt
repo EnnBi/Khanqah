@@ -26,11 +26,18 @@ import com.khanqah.admin.R
 @Composable
 fun LoginScreen(viewModel: AuthViewModel, onSuccess: () -> Unit) {
     val state by viewModel.state.collectAsState()
-    var phone by remember { mutableStateOf("") }
-    var otp   by remember { mutableStateOf("") }
-    val isOtpStep = state is AuthState.OtpSent
+    var phone     by remember { mutableStateOf("") }
+    var otp       by remember { mutableStateOf("") }
+    var isOtpStep by remember { mutableStateOf(false) }
 
-    LaunchedEffect(state) { if (state is AuthState.Success) onSuccess() }
+    LaunchedEffect(state) {
+        when (state) {
+            is AuthState.OtpSent -> isOtpStep = true
+            is AuthState.Success -> onSuccess()
+            is AuthState.Idle    -> isOtpStep = false
+            else -> {} // Error / Loading — stay on current step
+        }
+    }
 
     val gold  = MaterialTheme.colorScheme.primary
     val bg    = MaterialTheme.colorScheme.background
@@ -173,7 +180,7 @@ fun LoginScreen(viewModel: AuthViewModel, onSuccess: () -> Unit) {
 
         if (isOtpStep) {
             TextButton(
-                onClick = { viewModel.reset(); otp = "" },
+                onClick = { viewModel.reset(); otp = ""; isOtpStep = false },
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(
