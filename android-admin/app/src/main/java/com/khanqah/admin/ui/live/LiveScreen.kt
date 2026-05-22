@@ -29,14 +29,13 @@ import androidx.compose.animation.core.*
 fun LiveScreen(
     currentSession: LiveSession?,
     sessions: List<ScheduledSession>,
-    onStart: (titleEn: String, titleUr: String, streamUrl: String) -> Unit,
+    onStart: (titleEn: String, titleUr: String) -> Unit,
     onEnd: (id: String) -> Unit,
 ) {
     val nextSession = remember(sessions) { sessions.nextUpcoming() }
 
-    var titleEn   by remember { mutableStateOf("") }
-    var titleUr   by remember { mutableStateOf("") }
-    var streamUrl by remember { mutableStateOf("") }
+    var titleEn by remember { mutableStateOf("") }
+    var titleUr by remember { mutableStateOf("") }
 
     // Pre-fill from next session when it loads
     LaunchedEffect(nextSession) {
@@ -126,24 +125,13 @@ fun LiveScreen(
             )
             Spacer(Modifier.height(10.dp))
 
-            OutlinedTextField(
-                value = streamUrl,
-                onValueChange = { streamUrl = it },
-                label = { Text("Stream URL (HLS)") },
-                placeholder = { Text("https://…") },
-                singleLine = true,
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier.fillMaxWidth(),
-            )
-
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(14.dp))
 
             Button(
                 onClick = {
-                    if (titleEn.isNotBlank() && streamUrl.isNotBlank())
-                        onStart(titleEn, titleUr, streamUrl)
+                    if (titleEn.isNotBlank()) onStart(titleEn, titleUr)
                 },
-                enabled = titleEn.isNotBlank() && streamUrl.isNotBlank(),
+                enabled = titleEn.isNotBlank(),
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(

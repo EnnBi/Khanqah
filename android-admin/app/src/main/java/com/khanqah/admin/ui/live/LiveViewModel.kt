@@ -18,8 +18,8 @@ class LiveViewModel(private val repo: LiveRepository) : ViewModel() {
         try { _currentSession.value = repo.getCurrent() } catch (_: Exception) {}
     }
 
-    fun start(titleEn: String, titleUr: String, streamUrl: String) = viewModelScope.launch {
-        try { _currentSession.value = repo.start(titleEn, titleUr, streamUrl) } catch (_: Exception) {}
+    fun start(titleEn: String, titleUr: String) = viewModelScope.launch {
+        try { _currentSession.value = repo.start(titleEn, titleUr) } catch (_: Exception) {}
     }
 
     fun end(id: String) = viewModelScope.launch {

@@ -26,7 +26,7 @@ fun AdminNavGraph(app: AdminApp, startDestination: String) {
             LiveScreen(
                 currentSession = session,
                 sessions = sessions,
-                onStart = { en, ur, url -> app.liveViewModel.start(en, ur, url) },
+                onStart = { en, ur -> app.liveViewModel.start(en, ur) },
                 onEnd   = { id -> app.liveViewModel.end(id) },
             )
         }
