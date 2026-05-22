@@ -36,6 +36,7 @@ fun LiveScreen(
     sessions: List<ScheduledSession>,
     categories: List<Category>,
     isStreaming: Boolean,
+    error: String?,
     onStart: (categoryId: String, titleEn: String, titleUr: String) -> Unit,
     onEnd: (id: String) -> Unit,
 ) {
@@ -185,6 +186,22 @@ fun LiveScreen(
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier.fillMaxWidth(),
             )
+
+            if (error != null) {
+                Spacer(Modifier.height(12.dp))
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        error,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
 
             Spacer(Modifier.height(24.dp))
 

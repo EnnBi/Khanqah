@@ -26,10 +26,16 @@ class ApiClient(private val tokenManager: TokenManager) {
                     buildBase().create(AdminApiService::class.java)
                         .refreshToken(mapOf("refresh_token" to rt))
                 }
-                val newAccess = newTokens["access_token"] ?: return null
+                val newAccess = newTokens["access_token"] ?: run {
+                    runBlocking { tokenManager.clear() }
+                    return null
+                }
                 runBlocking { tokenManager.saveAccessToken(newAccess) }
                 response.request.newBuilder().header("Authorization", "Bearer $newAccess").build()
-            } catch (e: Exception) { null }
+            } catch (e: Exception) {
+                runBlocking { tokenManager.clear() }
+                null
+            }
         }
     }
 
