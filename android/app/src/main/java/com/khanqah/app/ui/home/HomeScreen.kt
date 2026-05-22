@@ -384,26 +384,41 @@ private fun LiveDot() {
     }
 }
 
-private fun formatRelativeTime(scheduledAt: String, isUrdu: Boolean): String = try {
-    val diff = java.time.Duration.between(java.time.Instant.now(), java.time.Instant.parse(scheduledAt))
-    val abs = diff.abs()
-    val past = diff.isNegative
+private fun formatRelativeTime(scheduledAt: String, isUrdu: Boolean): String { return try {
+    val zone    = java.time.ZoneId.systemDefault()
+    val instant = java.time.Instant.parse(scheduledAt)
+    val diff    = java.time.Duration.between(java.time.Instant.now(), instant)
+    if (diff.isNegative) return ""
+    val mins = diff.toMinutes()
+    val hrs  = diff.toHours()
     when {
-        abs.toMinutes() < 1 -> if (isUrdu) "ابھی" else "Now"
-        abs.toHours() < 1 -> {
-            val m = abs.toMinutes()
-            if (isUrdu) if (past) "$m منٹ پہلے" else "$m منٹ میں"
-            else         if (past) "${m}m ago"      else "in ${m}m"
-        }
-        abs.toDays() < 1 -> {
-            val h = abs.toHours()
-            if (isUrdu) if (past) "$h گھنٹے پہلے" else "$h گھنٹے میں"
-            else         if (past) "${h}h ago"       else "in ${h}h"
-        }
+        mins < 1  -> if (isUrdu) "ابھی" else "Now"
+        mins < 60 -> if (isUrdu) "$mins منٹ میں" else "in ${mins}m"
+        hrs  < 2  -> if (isUrdu) "$hrs گھنٹے میں" else "in ${hrs}h"
         else -> {
-            val d = abs.toDays()
-            if (isUrdu) if (past) "$d دن پہلے" else "$d دن میں"
-            else         if (past) "${d}d ago"   else "in ${d}d"
+            val today   = java.time.LocalDate.now(zone)
+            val sessDay = instant.atZone(zone).toLocalDate()
+            val dayDiff = java.time.temporal.ChronoUnit.DAYS.between(today, sessDay)
+            if (isUrdu) when (dayDiff) {
+                0L  -> "$hrs گھنٹے میں"
+                1L  -> "کل"
+                2L  -> "پرسوں"
+                else -> when (instant.atZone(zone).dayOfWeek) {
+                    java.time.DayOfWeek.MONDAY    -> "پیر"
+                    java.time.DayOfWeek.TUESDAY   -> "منگل"
+                    java.time.DayOfWeek.WEDNESDAY -> "بدھ"
+                    java.time.DayOfWeek.THURSDAY  -> "جمعرات"
+                    java.time.DayOfWeek.FRIDAY    -> "جمعہ"
+                    java.time.DayOfWeek.SATURDAY  -> "ہفتہ"
+                    java.time.DayOfWeek.SUNDAY    -> "اتوار"
+                }
+            } else when (dayDiff) {
+                0L  -> "in ${hrs}h"
+                1L  -> "Tomorrow"
+                2L  -> "Day after tomorrow"
+                else -> instant.atZone(zone).dayOfWeek
+                    .getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.ENGLISH)
+            }
         }
     }
-} catch (_: Exception) { "" }
+} catch (_: Exception) { "" } }
