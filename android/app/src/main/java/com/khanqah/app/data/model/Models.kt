@@ -22,6 +22,7 @@ data class Content(
     val type: String,
     @SerializedName("category_id") val categoryId: String,
     val topics: List<Topic>?,
+    @SerializedName("created_at") val createdAt: String? = null,
 )
 
 data class Topic(

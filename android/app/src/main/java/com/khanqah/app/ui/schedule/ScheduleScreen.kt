@@ -1,37 +1,151 @@
 package com.khanqah.app.ui.schedule
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.khanqah.app.data.model.ScheduledSession
+import com.khanqah.app.ui.theme.NastaleeqFontFamily
 
 @Composable
 fun ScheduleScreen(sessions: List<ScheduledSession>) {
-    LazyColumn(Modifier.fillMaxSize().padding(16.dp)) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
         item {
-            Text("Schedule", style = MaterialTheme.typography.headlineLarge,
-                modifier = Modifier.padding(bottom = 16.dp))
+            Text(
+                "SCHEDULE",
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, letterSpacing = 0.12.sp),
+                color = MaterialTheme.colorScheme.tertiary,
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "Upcoming sessions",
+                style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
+                modifier = Modifier.padding(bottom = 8.dp),
+            )
         }
+
         if (sessions.isEmpty()) {
-            item { Text("No upcoming sessions.", color = MaterialTheme.colorScheme.outline) }
+            item {
+                Box(
+                    Modifier.fillParentMaxWidth().padding(top = 48.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        "No upcoming sessions.",
+                        style = MaterialTheme.typography.bodyLarge.copy(fontStyle = FontStyle.Italic),
+                        color = MaterialTheme.colorScheme.secondary,
+                    )
+                }
+            }
         }
-        items(sessions) { s ->
-            Card(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-                Column(Modifier.padding(16.dp)) {
-                    Text(s.titleEn, style = MaterialTheme.typography.titleLarge)
-                    Text(s.scheduledAt, style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.outline)
-                    if (s.isRecurring) {
-                        Spacer(Modifier.height(4.dp))
-                        Text("Recurring", style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary)
+
+        items(sessions) { s -> ScheduleCard(session = s) }
+    }
+}
+
+@Composable
+private fun ScheduleCard(session: ScheduledSession) {
+    val (day, mon, weekdayTime) = parseDateParts(session.scheduledAt)
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 0.dp,
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.Top,
+        ) {
+            // Date block
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f),
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp).widthIn(min = 48.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        day,
+                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.tertiary,
+                        lineHeight = 28.sp,
+                    )
+                    Text(
+                        mon,
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold, fontSize = 10.sp, letterSpacing = 0.06.sp),
+                        color = MaterialTheme.colorScheme.tertiary,
+                    )
+                }
+            }
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    session.titleEn,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                if (session.titleUr.isNotBlank()) {
+                    Text(
+                        session.titleUr,
+                        fontFamily = NastaleeqFontFamily,
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.tertiary,
+                        textAlign = TextAlign.End,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    weekdayTime,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary,
+                )
+                if (session.isRecurring) {
+                    Spacer(Modifier.height(6.dp))
+                    val label = when {
+                        session.recurrenceRule?.contains("DAILY") == true -> "DAILY"
+                        session.recurrenceRule?.contains("WEEKLY") == true -> "WEEKLY"
+                        session.recurrenceRule?.contains("MONTHLY") == true -> "MONTHLY"
+                        else -> "RECURRING"
+                    }
+                    Surface(
+                        shape = RoundedCornerShape(4.dp),
+                        color = MaterialTheme.colorScheme.tertiaryContainer,
+                    ) {
+                        Text(
+                            label,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.06.sp),
+                            color = MaterialTheme.colorScheme.tertiary,
+                        )
                     }
                 }
             }
         }
     }
 }
+
+private fun parseDateParts(scheduledAt: String): Triple<String, String, String> = try {
+    val instant = java.time.Instant.parse(scheduledAt)
+    val zdt = instant.atZone(java.time.ZoneId.systemDefault())
+    Triple(
+        zdt.dayOfMonth.toString(),
+        zdt.month.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.ENGLISH).uppercase(),
+        zdt.format(java.time.format.DateTimeFormatter.ofPattern("EEEE, h:mm a")),
+    )
+} catch (_: Exception) { Triple("?", "???", scheduledAt) }

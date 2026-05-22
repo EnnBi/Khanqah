@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import com.khanqah.app.data.model.Content
 import com.khanqah.app.data.repository.ContentRepository
@@ -24,12 +25,27 @@ class PlayerViewModel(
     private val _content = MutableStateFlow<Content?>(null)
     val content = _content.asStateFlow()
 
-    val player: ExoPlayer = ExoPlayer.Builder(context).build()
+    val player: ExoPlayer = ExoPlayer.Builder(context)
+        .setLoadControl(
+            DefaultLoadControl.Builder()
+                .setBufferDurationsMs(
+                    DefaultLoadControl.DEFAULT_MIN_BUFFER_MS,
+                    DefaultLoadControl.DEFAULT_MAX_BUFFER_MS,
+                    1_500,
+                    DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS,
+                )
+                .build()
+        )
+        .build()
     private var progressJob: Job? = null
 
     fun load(id: String) = viewModelScope.launch {
         val c = contentRepo.getContent(id)
         _content.value = c
+
+        val isBook = c.type.lowercase() in setOf("book", "books") ||
+                     c.mediaUrl.lowercase().endsWith(".pdf")
+        if (isBook) return@launch
 
         val saved = progressRepo.getLocal(id) ?: run {
             progressRepo.loadAll()

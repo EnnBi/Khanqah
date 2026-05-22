@@ -1,71 +1,361 @@
 package com.khanqah.app.ui.home
 
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
+import androidx.compose.ui.unit.sp
+import com.khanqah.app.R
+import com.khanqah.app.data.db.entities.ContentEntity
+import com.khanqah.app.ui.components.TypeIconSquare
+import com.khanqah.app.ui.theme.CrimsonProFontFamily
 
 @Composable
-fun HomeScreen(viewModel: HomeViewModel, onContentClick: (String) -> Unit) {
+fun HomeScreen(
+    viewModel: HomeViewModel,
+    onContentClick: (String) -> Unit,
+    onLiveClick: () -> Unit = {},
+    onLibraryClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {},
+    onScheduleClick: () -> Unit = {},
+    onComingSoonClick: (String) -> Unit = {},
+    onCategoryTypeClick: (String) -> Unit = {},
+) {
     val content by viewModel.content.collectAsState(emptyList())
     val live by viewModel.live.collectAsState()
     val schedule by viewModel.schedule.collectAsState()
+    val gold = MaterialTheme.colorScheme.tertiary
+    val cardBg = MaterialTheme.colorScheme.surface
+    val bg = MaterialTheme.colorScheme.background
+    val heroBg = MaterialTheme.colorScheme.primary
 
-    LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        live?.let { session ->
-            item {
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp).clickable { onContentClick("live") }
+    val statusCard = live?.let { Triple(true, it.titleEn, "") }
+        ?: schedule.firstOrNull()?.let { Triple(false, it.titleEn, formatRelativeTime(it.scheduledAt)) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(bg)
+            .padding(horizontal = 16.dp),
+    ) {
+
+        Spacer(Modifier.height(8.dp))
+
+        // ── Hero banner — fills slack space, future carousel slot ──
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .clip(RoundedCornerShape(22.dp))
+                .drawBehind {
+                    drawRect(color = heroBg)
+                    val cx = size.width - 16f
+                    val cy = -16f
+                    for (r in listOf(80f, 130f, 188f, 255f)) {
+                        drawCircle(
+                            color = Color(0xFFD4AF37).copy(alpha = 0.09f),
+                            radius = r,
+                            center = Offset(cx, cy),
+                            style = Stroke(width = 1f),
+                        )
+                    }
+                },
+        ) {
+            // Calligraphy logo — centred, fills ~60% of card width
+            Image(
+                painter = painterResource(R.drawable.khanqah_logo),
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxWidth(0.58f)
+                    .aspectRatio(1f)
+                    .align(Alignment.Center),
+                contentScale = ContentScale.Fit,
+            )
+
+            // Subtitle pinned to bottom centre
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 14.dp),
+            ) {
+                Text("— ", color = gold.copy(alpha = 0.45f), fontSize = 10.sp)
+                Text("✦", color = gold.copy(alpha = 0.55f), fontSize = 8.sp)
+                Text(" ", fontSize = 10.sp)
+                Text(
+                    "Khanqah Maseeh-ul-Ummah",
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        fontFamily = CrimsonProFontFamily,
+                        fontStyle = FontStyle.Italic,
+                        fontSize = 12.sp,
+                    ),
+                    color = gold,
+                )
+                Text(" ", fontSize = 10.sp)
+                Text("✦", color = gold.copy(alpha = 0.55f), fontSize = 8.sp)
+                Text(" —", color = gold.copy(alpha = 0.45f), fontSize = 10.sp)
+            }
+        }
+
+        Spacer(Modifier.height(8.dp))
+
+        // ── Event / status card ──
+        if (statusCard != null) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { if (statusCard.first) onLiveClick() },
+                shape = RoundedCornerShape(16.dp),
+                color = cardBg,
+                tonalElevation = 0.dp,
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text("● LIVE", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
-                        Spacer(Modifier.width(8.dp))
-                        Text(session.titleEn, style = MaterialTheme.typography.titleLarge)
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(gold.copy(alpha = 0.15f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            Icons.Outlined.CalendarMonth,
+                            contentDescription = null,
+                            tint = gold,
+                            modifier = Modifier.size(20.dp),
+                        )
                     }
+                    Spacer(Modifier.width(10.dp))
+                    Column(Modifier.weight(1f)) {
+                        if (statusCard.first) {
+                            LiveDot()
+                        } else {
+                            Text(
+                                "OFF AIR · NEXT MAJLIS",
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp, letterSpacing = 0.06.sp),
+                                color = MaterialTheme.colorScheme.secondary,
+                            )
+                        }
+                        Text(
+                            statusCard.second,
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        if (statusCard.third.isNotBlank()) {
+                            Text(
+                                statusCard.third,
+                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                                color = MaterialTheme.colorScheme.secondary,
+                            )
+                        }
+                    }
+                    Text("›", color = gold, fontSize = 20.sp)
                 }
             }
+            Spacer(Modifier.height(8.dp))
         }
 
-        if (schedule.isNotEmpty()) {
-            item {
-                Text("NEXT SESSION", style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(bottom = 8.dp))
-                Card(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
-                    Column(Modifier.padding(16.dp)) {
-                        Text(schedule[0].titleEn, style = MaterialTheme.typography.titleLarge)
-                        Text(schedule[0].scheduledAt, style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.outline)
-                    }
-                }
+        // ── Feature grid — 2 rows × 3 cols ──
+        data class FeatureItem(val label: String, val icon: ImageVector, val onClick: () -> Unit)
+        val row1 = listOf(
+            FeatureItem("Mamulat",  Icons.Filled.Star,     { onCategoryTypeClick("mamulat") }),
+            FeatureItem("Majalis",  Icons.Filled.Groups,   { onCategoryTypeClick("majalis") }),
+            FeatureItem("Salah Times", Icons.Filled.Schedule, { onComingSoonClick("Salah Timings") }),
+        )
+        val row2 = listOf(
+            FeatureItem("Majlis Times",  Icons.Filled.Event,                  onScheduleClick),
+            FeatureItem("All Content",   Icons.Filled.GridView,               onLibraryClick),
+            FeatureItem("Ask Hazrat",    Icons.AutoMirrored.Filled.Chat,      { onComingSoonClick("Ask Hazrat") }),
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            row1.forEach { FeatureTile(it.label, it.icon, it.onClick, Modifier.weight(1f)) }
+        }
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            row2.forEach { FeatureTile(it.label, it.icon, it.onClick, Modifier.weight(1f)) }
+        }
+
+        // ── Recents ──
+        if (content.isNotEmpty()) {
+            Spacer(Modifier.height(10.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "Recents",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontFamily = CrimsonProFontFamily,
+                        fontStyle = FontStyle.Italic,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 18.sp,
+                    ),
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+                Text(
+                    "→",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = gold,
+                    modifier = Modifier.clickable(onClick = onLibraryClick),
+                )
             }
-        }
-
-        item {
-            Text("RECENT", style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(bottom = 8.dp))
-        }
-
-        items(content) { item ->
-            Card(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp).clickable { onContentClick(item.id) }) {
-                Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    item.thumbnailUrl?.let {
-                        AsyncImage(model = it, contentDescription = null, modifier = Modifier.size(48.dp))
-                        Spacer(Modifier.width(12.dp))
-                    }
-                    Column {
-                        Text(item.titleEn, style = MaterialTheme.typography.titleLarge)
-                        Text(item.type, style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.outline)
-                    }
+            LazyRow(
+                contentPadding = PaddingValues(end = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                items(content) { item ->
+                    RecentCard(item = item, onClick = { onContentClick(item.id) })
                 }
             }
         }
     }
 }
+
+@Composable
+private fun FeatureTile(label: String, icon: ImageVector, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier.height(80.dp).clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 0.dp,
+    ) {
+        Column(
+            modifier = Modifier.padding(6.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(MaterialTheme.colorScheme.tertiaryContainer),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                    modifier = Modifier.size(18.dp),
+                )
+            }
+            Spacer(Modifier.height(5.dp))
+            Text(
+                label,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Medium,
+                    letterSpacing = 0.sp,
+                ),
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+@Composable
+private fun RecentCard(item: ContentEntity, onClick: () -> Unit) {
+    Surface(
+        modifier = Modifier.width(175.dp).clickable(onClick = onClick),
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 0.dp,
+    ) {
+        Row(
+            modifier = Modifier.padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            TypeIconSquare(item.type, size = 40.dp)
+            Spacer(Modifier.width(8.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    item.titleEn,
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 11.sp,
+                        lineHeight = 14.sp,
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Spacer(Modifier.height(3.dp))
+                Text(
+                    item.type.uppercase(),
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp, letterSpacing = 0.04.sp),
+                    color = MaterialTheme.colorScheme.secondary,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun LiveDot() {
+    val infiniteTransition = rememberInfiniteTransition(label = "liveDot")
+    val dotAlpha by infiniteTransition.animateFloat(
+        initialValue = 1f, targetValue = 0.3f,
+        animationSpec = infiniteRepeatable(tween(700), RepeatMode.Reverse),
+        label = "dotAlpha",
+    )
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(5.dp).alpha(dotAlpha).background(MaterialTheme.colorScheme.error, CircleShape))
+        Spacer(Modifier.width(3.dp))
+        Text(
+            "LIVE",
+            style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp, fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.error,
+        )
+    }
+}
+
+private fun formatRelativeTime(scheduledAt: String): String = try {
+    val instant = java.time.Instant.parse(scheduledAt)
+    val now = java.time.Instant.now()
+    val diff = java.time.Duration.between(now, instant)
+    when {
+        diff.isNegative -> "Soon"
+        diff.toHours() < 1 -> "in ${diff.toMinutes()} min"
+        diff.toHours() < 24 -> "in ${diff.toHours()} hr"
+        else -> "in ${diff.toDays()} days"
+    }
+} catch (_: Exception) { "" }

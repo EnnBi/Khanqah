@@ -22,7 +22,7 @@ class HomeViewModel(
 
     init {
         viewModelScope.launch { contentRepo.refreshContent() }
-        viewModelScope.launch { _live.value = api.getCurrentLive() }
-        viewModelScope.launch { _schedule.value = api.listSchedule() }
+        viewModelScope.launch { try { _live.value = api.getCurrentLive() } catch (_: Exception) {} }
+        viewModelScope.launch { try { _schedule.value = api.listSchedule() } catch (_: Exception) {} }
     }
 }

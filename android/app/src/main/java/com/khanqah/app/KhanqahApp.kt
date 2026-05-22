@@ -35,7 +35,7 @@ class KhanqahApp : Application() {
         progressRepo = ProgressRepository(apiClient.service)
         authViewModel = AuthViewModel(authRepo)
         homeViewModel = HomeViewModel(contentRepo, apiClient.service)
-        libraryViewModel = LibraryViewModel(categoryRepo)
+        libraryViewModel = LibraryViewModel(categoryRepo, contentRepo)
     }
 
     fun makePlayerViewModel(contentId: String) =

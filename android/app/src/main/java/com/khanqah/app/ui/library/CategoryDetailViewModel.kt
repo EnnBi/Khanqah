@@ -24,7 +24,7 @@ class CategoryDetailViewModel(
     val progressMap = _progressMap.asStateFlow()
 
     init {
-        viewModelScope.launch { contentRepo.refreshContent(categoryId) }
-        viewModelScope.launch { _progressMap.value = progressRepo.loadAll() }
+        viewModelScope.launch { try { contentRepo.refreshContent(categoryId) } catch (_: Exception) {} }
+        viewModelScope.launch { try { _progressMap.value = progressRepo.loadAll() } catch (_: Exception) {} }
     }
 }

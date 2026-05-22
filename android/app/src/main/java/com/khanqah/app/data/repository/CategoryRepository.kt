@@ -12,7 +12,11 @@ class CategoryRepository(private val api: ApiService, private val db: AppDatabas
 
     suspend fun refresh() {
         val cats = api.listCategories()
-        db.categoryDao().upsertAll(cats.map { it.toEntity() })
+        val entities = cats.map { it.toEntity() }
+        db.categoryDao().upsertAll(entities)
+        if (entities.isNotEmpty()) {
+            db.categoryDao().deleteNotIn(entities.map { it.id })
+        }
     }
 
     private fun Category.toEntity() = CategoryEntity(

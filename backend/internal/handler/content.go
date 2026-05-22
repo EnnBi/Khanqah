@@ -74,6 +74,9 @@ func ListContent(pool *pgxpool.Pool) http.HandlerFunc {
 				writeError(w, http.StatusInternalServerError, "internal error")
 				return
 			}
+			if rows == nil {
+				rows = []dbgen.Content{}
+			}
 			writeJSON(w, http.StatusOK, rows)
 			return
 		}
@@ -93,6 +96,9 @@ func ListContent(pool *pgxpool.Pool) http.HandlerFunc {
 				writeError(w, http.StatusInternalServerError, "internal error")
 				return
 			}
+			if rows == nil {
+				rows = []dbgen.Content{}
+			}
 			writeJSON(w, http.StatusOK, rows)
 			return
 		}
@@ -104,6 +110,9 @@ func ListContent(pool *pgxpool.Pool) http.HandlerFunc {
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, "internal error")
 			return
+		}
+		if rows == nil {
+			rows = []dbgen.Content{}
 		}
 		writeJSON(w, http.StatusOK, rows)
 	}

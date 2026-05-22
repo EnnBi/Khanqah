@@ -17,7 +17,7 @@ interface ApiService {
     suspend fun listContent(
         @Query("type") type: String? = null,
         @Query("category_id") categoryId: String? = null,
-    ): List<Content>
+    ): List<Content>?
 
     @GET("content/{id}")
     suspend fun getContent(@Path("id") id: String): Content

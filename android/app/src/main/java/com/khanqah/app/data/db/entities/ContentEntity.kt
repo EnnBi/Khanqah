@@ -14,5 +14,6 @@ data class ContentEntity(
     val categoryId: String,
     val isVideo: Boolean,
     val duration: Int?,
+    val createdAt: String = "",
     val cachedAt: Long = System.currentTimeMillis(),
 )

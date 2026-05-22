@@ -2,12 +2,15 @@ package com.khanqah.app.ui.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
+import androidx.compose.ui.unit.sp
 import com.khanqah.app.data.db.entities.ContentEntity
 import com.khanqah.app.data.model.Progress
 
@@ -18,47 +21,55 @@ fun ContentRow(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(bottom = 8.dp)
-            .clickable(onClick = onClick),
+    Surface(
+        modifier = modifier.fillMaxWidth().clickable(onClick = onClick),
+        color = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(0.dp),
+        tonalElevation = 0.dp,
     ) {
         Column {
             Row(
-                modifier = Modifier.padding(12.dp),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                item.thumbnailUrl?.let { url ->
-                    AsyncImage(
-                        model = url,
-                        contentDescription = null,
-                        modifier = Modifier.size(52.dp),
-                    )
-                    Spacer(Modifier.width(12.dp))
-                }
+                TypeIconSquare(item.type, size = 52.dp)
+                Spacer(Modifier.width(14.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(item.titleEn, style = MaterialTheme.typography.titleLarge, maxLines = 2)
-                    item.duration?.let { dur ->
-                        val mins = dur / 60
-                        val secs = dur % 60
+                    Text(
+                        item.titleEn,
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    if (item.titleUr.isNotBlank()) {
                         Text(
-                            "%d:%02d".format(mins, secs),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            item.titleUr,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontFamily = com.khanqah.app.ui.theme.NastaleeqFontFamily,
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.secondary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                         )
                     }
+                    Text(
+                        item.type.uppercase(),
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, letterSpacing = 0.06.sp),
+                        color = MaterialTheme.colorScheme.secondary,
+                    )
                 }
             }
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
             if (progress != null && progress.positionSeconds > 0) {
                 val fraction = if (item.duration != null && item.duration > 0)
                     (progress.positionSeconds.toFloat() / item.duration).coerceIn(0f, 1f)
                 else 0f
                 LinearProgressIndicator(
                     progress = { fraction },
-                    modifier = Modifier.fillMaxWidth().height(3.dp),
+                    modifier = Modifier.fillMaxWidth().height(2.dp),
                     color = MaterialTheme.colorScheme.tertiary,
-                    trackColor = MaterialTheme.colorScheme.tertiaryContainer,
+                    trackColor = MaterialTheme.colorScheme.outline,
                 )
             }
         }
