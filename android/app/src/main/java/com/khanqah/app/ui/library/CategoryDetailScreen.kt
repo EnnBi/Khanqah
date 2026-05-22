@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.khanqah.app.ui.components.ContentRow
 import com.khanqah.app.ui.theme.NastaleeqFontFamily
+import com.khanqah.app.ui.utils.LocalIsUrdu
 
 @Composable
 fun CategoryDetailScreen(
@@ -37,6 +38,7 @@ fun CategoryDetailScreen(
     val progressMap by viewModel.progressMap.collectAsState()
     var query by remember { mutableStateOf("") }
     val isDark = isSystemInDarkTheme()
+    val isUrdu = LocalIsUrdu.current
 
     // Header bg: gold in dark, cream/off-white in light
     val headerBg = if (isDark) Color(0xFFD4A853) else Color(0xFFEEEAE0)
@@ -85,21 +87,34 @@ fun CategoryDetailScreen(
                 Spacer(Modifier.height(4.dp))
             }
 
-            // Title
-            Text(
-                categoryNameEn,
-                style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
-                color = headerFg,
-            )
-
-            // Urdu name
-            if (categoryNameUr.isNotBlank()) {
+            // Title — Urdu is primary when in Urdu mode
+            if (isUrdu && categoryNameUr.isNotBlank()) {
                 Text(
                     categoryNameUr,
                     fontFamily = NastaleeqFontFamily,
-                    fontSize = 22.sp,
-                    color = if (isDark) Color(0xFF0F2E24) else Color(0xFFD4A853),
+                    fontSize = 34.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = headerFg,
                 )
+                Text(
+                    categoryNameEn,
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                    color = headerMuted,
+                )
+            } else {
+                Text(
+                    categoryNameEn,
+                    style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
+                    color = headerFg,
+                )
+                if (categoryNameUr.isNotBlank()) {
+                    Text(
+                        categoryNameUr,
+                        fontFamily = NastaleeqFontFamily,
+                        fontSize = 22.sp,
+                        color = if (isDark) Color(0xFF0F2E24) else Color(0xFFD4A853),
+                    )
+                }
             }
 
             Spacer(Modifier.height(8.dp))

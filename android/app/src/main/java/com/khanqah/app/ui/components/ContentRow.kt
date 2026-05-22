@@ -13,6 +13,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.khanqah.app.data.db.entities.ContentEntity
 import com.khanqah.app.data.model.Progress
+import com.khanqah.app.ui.theme.NastaleeqFontFamily
+import com.khanqah.app.ui.utils.LocalIsUrdu
 
 @Composable
 fun ContentRow(
@@ -35,23 +37,42 @@ fun ContentRow(
                 TypeIconSquare(item.type, size = 52.dp)
                 Spacer(Modifier.width(14.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(
-                        item.titleEn,
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    if (item.titleUr.isNotBlank()) {
+                    val isUrdu = LocalIsUrdu.current
+                    if (isUrdu && item.titleUr.isNotBlank()) {
                         Text(
                             item.titleUr,
-                            style = MaterialTheme.typography.bodySmall,
-                            fontFamily = com.khanqah.app.ui.theme.NastaleeqFontFamily,
-                            fontSize = 13.sp,
+                            fontFamily = NastaleeqFontFamily,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            item.titleEn,
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
                             color = MaterialTheme.colorScheme.secondary,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
+                    } else {
+                        Text(
+                            item.titleEn,
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        if (item.titleUr.isNotBlank()) {
+                            Text(
+                                item.titleUr,
+                                fontFamily = NastaleeqFontFamily,
+                                fontSize = 13.sp,
+                                color = MaterialTheme.colorScheme.secondary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
                     }
                     Text(
                         item.type.uppercase(),

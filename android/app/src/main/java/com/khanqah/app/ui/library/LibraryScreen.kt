@@ -32,6 +32,7 @@ import com.khanqah.app.data.db.entities.CategoryEntity
 import com.khanqah.app.ui.components.ContentRow
 import com.khanqah.app.ui.components.TypeIconSquare
 import com.khanqah.app.ui.theme.CrimsonProFontFamily
+import com.khanqah.app.ui.theme.NastaleeqFontFamily
 import com.khanqah.app.ui.utils.LibraryStr
 import com.khanqah.app.ui.utils.LocalIsUrdu
 
@@ -178,13 +179,25 @@ private fun CategoryCard(cat: CategoryEntity, onClick: () -> Unit, modifier: Mod
         ) {
             TypeIconSquare(cat.type.ifBlank { "bayan" }, size = 46.dp)
             Spacer(Modifier.height(10.dp))
-            Text(
-                if (isUrdu && cat.nameUr.isNotBlank()) cat.nameUr else cat.nameEn,
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp, lineHeight = 17.sp),
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
+            if (isUrdu && cat.nameUr.isNotBlank()) {
+                Text(
+                    cat.nameUr,
+                    fontFamily = NastaleeqFontFamily,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            } else {
+                Text(
+                    cat.nameEn,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp, lineHeight = 17.sp),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
             if (cat.type.isNotBlank()) {
                 Spacer(Modifier.height(2.dp))
                 Text(cat.type.uppercase(), style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp, letterSpacing = 0.08.sp), color = MaterialTheme.colorScheme.secondary)

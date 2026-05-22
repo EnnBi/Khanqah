@@ -40,6 +40,7 @@ import com.khanqah.app.R
 import com.khanqah.app.data.db.entities.ContentEntity
 import com.khanqah.app.ui.components.TypeIconSquare
 import com.khanqah.app.ui.theme.CrimsonProFontFamily
+import com.khanqah.app.ui.theme.NastaleeqFontFamily
 import com.khanqah.app.ui.utils.HomeStr
 import com.khanqah.app.ui.utils.LocalIsUrdu
 
@@ -314,17 +315,29 @@ private fun RecentCard(item: ContentEntity, onClick: () -> Unit) {
             Spacer(Modifier.width(8.dp))
             Column(Modifier.weight(1f)) {
                 val ur = LocalIsUrdu.current
-                Text(
-                    if (ur && item.titleUr.isNotBlank()) item.titleUr else item.titleEn,
-                    style = MaterialTheme.typography.bodySmall.copy(
+                if (ur && item.titleUr.isNotBlank()) {
+                    Text(
+                        item.titleUr,
+                        fontFamily = NastaleeqFontFamily,
+                        fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
-                        fontSize = 11.sp,
-                        lineHeight = 14.sp,
-                    ),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                } else {
+                    Text(
+                        item.titleEn,
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 11.sp,
+                            lineHeight = 14.sp,
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
                 Spacer(Modifier.height(3.dp))
                 Text(
                     item.type.uppercase(),
