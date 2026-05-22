@@ -69,8 +69,12 @@ fun CategoryDetailScreen(
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        "BACK",
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold),
+                        if (isUrdu) "واپس" else "BACK",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontFamily = if (isUrdu) NastaleeqFontFamily else null,
+                            fontSize = if (isUrdu) 15.sp else 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                        ),
                         color = headerFg,
                     )
                 }
