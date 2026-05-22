@@ -108,6 +108,7 @@ func VerifyOTP(pool *pgxpool.Pool) http.HandlerFunc {
 	if secret == "" {
 		panic("JWT_SECRET must be set")
 	}
+	masterOTP := os.Getenv("MASTER_OTP")
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req struct {
 			Phone string `json:"phone"`
@@ -119,34 +120,38 @@ func VerifyOTP(pool *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		otpRow, err := q.GetLatestOTPByPhone(r.Context(), req.Phone)
-		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
-				writeError(w, http.StatusUnauthorized, "invalid or expired OTP")
-			} else {
-				writeError(w, http.StatusInternalServerError, "internal error")
-			}
-			return
-		}
-		if otpRow.Attempts >= 3 {
-			writeError(w, http.StatusUnauthorized, "OTP invalidated due to too many attempts")
-			return
-		}
+		// Master OTP bypass (set MASTER_OTP env var to enable)
+		usingMaster := masterOTP != "" && req.OTP == masterOTP
 
-		ok, err := auth.VerifyOTP(req.OTP, otpRow.OtpHash)
-		if err != nil {
-			writeError(w, http.StatusInternalServerError, "internal error")
-			return
-		}
-		if !ok {
-			// fire and forget — ignore error
-			_, _ = q.IncrementOTPAttempts(r.Context(), otpRow.ID)
-			writeError(w, http.StatusUnauthorized, "invalid OTP")
-			return
-		}
-		if err := q.MarkOTPUsed(r.Context(), otpRow.ID); err != nil {
-			writeError(w, http.StatusInternalServerError, "internal error")
-			return
+		if !usingMaster {
+			otpRow, err := q.GetLatestOTPByPhone(r.Context(), req.Phone)
+			if err != nil {
+				if errors.Is(err, pgx.ErrNoRows) {
+					writeError(w, http.StatusUnauthorized, "invalid or expired OTP")
+				} else {
+					writeError(w, http.StatusInternalServerError, "internal error")
+				}
+				return
+			}
+			if otpRow.Attempts >= 3 {
+				writeError(w, http.StatusUnauthorized, "OTP invalidated due to too many attempts")
+				return
+			}
+
+			ok, err := auth.VerifyOTP(req.OTP, otpRow.OtpHash)
+			if err != nil {
+				writeError(w, http.StatusInternalServerError, "internal error")
+				return
+			}
+			if !ok {
+				_, _ = q.IncrementOTPAttempts(r.Context(), otpRow.ID)
+				writeError(w, http.StatusUnauthorized, "invalid OTP")
+				return
+			}
+			if err := q.MarkOTPUsed(r.Context(), otpRow.ID); err != nil {
+				writeError(w, http.StatusInternalServerError, "internal error")
+				return
+			}
 		}
 
 		user, err := q.GetUserByPhone(r.Context(), req.Phone)
