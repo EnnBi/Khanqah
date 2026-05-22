@@ -12,10 +12,16 @@ class TeamViewModel(private val repo: TeamRepository) : ViewModel() {
     private val _users = MutableStateFlow<List<User>>(emptyList())
     val users = _users.asStateFlow()
 
-    init { viewModelScope.launch { _users.value = repo.list() } }
+    init { refresh() }
+
+    fun refresh() = viewModelScope.launch {
+        try { _users.value = repo.list() } catch (_: Exception) {}
+    }
 
     fun updateRole(id: String, role: String) = viewModelScope.launch {
-        val updated = repo.updateRole(id, role)
-        _users.value = _users.value.map { if (it.id == id) updated else it }
+        try {
+            val updated = repo.updateRole(id, role)
+            _users.value = _users.value.map { if (it.id == id) updated else it }
+        } catch (_: Exception) {}
     }
 }

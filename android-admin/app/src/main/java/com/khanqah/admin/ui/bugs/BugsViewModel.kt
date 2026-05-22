@@ -12,5 +12,9 @@ class BugsViewModel(private val repo: BugRepository) : ViewModel() {
     private val _reports = MutableStateFlow<List<BugReport>>(emptyList())
     val reports = _reports.asStateFlow()
 
-    init { viewModelScope.launch { _reports.value = repo.list() } }
+    init { refresh() }
+
+    fun refresh() = viewModelScope.launch {
+        try { _reports.value = repo.list() } catch (_: Exception) {}
+    }
 }

@@ -12,14 +12,20 @@ class LiveViewModel(private val repo: LiveRepository) : ViewModel() {
     private val _currentSession = MutableStateFlow<LiveSession?>(null)
     val currentSession = _currentSession.asStateFlow()
 
-    init { viewModelScope.launch { _currentSession.value = repo.getCurrent() } }
+    init { refresh() }
+
+    fun refresh() = viewModelScope.launch {
+        try { _currentSession.value = repo.getCurrent() } catch (_: Exception) {}
+    }
 
     fun start(titleEn: String, titleUr: String, streamUrl: String) = viewModelScope.launch {
-        _currentSession.value = repo.start(titleEn, titleUr, streamUrl)
+        try { _currentSession.value = repo.start(titleEn, titleUr, streamUrl) } catch (_: Exception) {}
     }
 
     fun end(id: String) = viewModelScope.launch {
-        repo.end(id)
-        _currentSession.value = null
+        try {
+            repo.end(id)
+            _currentSession.value = null
+        } catch (_: Exception) {}
     }
 }

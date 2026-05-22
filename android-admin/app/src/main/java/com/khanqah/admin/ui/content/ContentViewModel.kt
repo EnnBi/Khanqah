@@ -15,13 +15,17 @@ class ContentViewModel(private val repo: ContentAdminRepository) : ViewModel() {
     private val _categories = MutableStateFlow<List<Category>>(emptyList())
     val categories = _categories.asStateFlow()
 
-    init {
-        viewModelScope.launch { _items.value = repo.listContent() }
-        viewModelScope.launch { _categories.value = repo.listCategories() }
+    init { refresh() }
+
+    fun refresh() {
+        viewModelScope.launch { try { _items.value = repo.listContent() } catch (_: Exception) {} }
+        viewModelScope.launch { try { _categories.value = repo.listCategories() } catch (_: Exception) {} }
     }
 
     fun delete(id: String) = viewModelScope.launch {
-        repo.deleteContent(id)
-        _items.value = _items.value.filter { it.id != id }
+        try {
+            repo.deleteContent(id)
+            _items.value = _items.value.filter { it.id != id }
+        } catch (_: Exception) {}
     }
 }

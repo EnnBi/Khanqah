@@ -75,6 +75,11 @@ fun AdminNavGraph(app: AdminApp, startDestination: String) {
         ) {
             composable("login") {
                 LoginScreen(viewModel = app.authViewModel) {
+                    app.contentViewModel.refresh()
+                    app.scheduleViewModel.refresh()
+                    app.liveViewModel.refresh()
+                    app.teamViewModel.refresh()
+                    app.bugsViewModel.refresh()
                     navController.navigate("content") { popUpTo("login") { inclusive = true } }
                 }
             }

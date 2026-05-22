@@ -12,15 +12,23 @@ class ScheduleViewModel(private val repo: ScheduleRepository) : ViewModel() {
     private val _sessions = MutableStateFlow<List<ScheduledSession>>(emptyList())
     val sessions = _sessions.asStateFlow()
 
-    init { viewModelScope.launch { _sessions.value = repo.list() } }
+    init { refresh() }
+
+    fun refresh() = viewModelScope.launch {
+        try { _sessions.value = repo.list() } catch (_: Exception) {}
+    }
 
     fun create(titleEn: String, titleUr: String, scheduledAt: String) = viewModelScope.launch {
-        val new = repo.create(titleEn, titleUr, scheduledAt)
-        _sessions.value = _sessions.value + new
+        try {
+            val new = repo.create(titleEn, titleUr, scheduledAt)
+            _sessions.value = _sessions.value + new
+        } catch (_: Exception) {}
     }
 
     fun delete(id: String) = viewModelScope.launch {
-        repo.delete(id)
-        _sessions.value = _sessions.value.filter { it.id != id }
+        try {
+            repo.delete(id)
+            _sessions.value = _sessions.value.filter { it.id != id }
+        } catch (_: Exception) {}
     }
 }
