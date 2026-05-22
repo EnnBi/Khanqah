@@ -31,4 +31,6 @@ class AuthViewModel(private val repo: AuthRepository) : ViewModel() {
             .onSuccess { _state.value = AuthState.Success }
             .onFailure { _state.value = AuthState.Error(it.message ?: "Failed") }
     }
+
+    fun reset() { _state.value = AuthState.Idle }
 }

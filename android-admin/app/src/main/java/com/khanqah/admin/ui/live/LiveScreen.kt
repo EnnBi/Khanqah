@@ -15,7 +15,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -24,8 +23,7 @@ import com.khanqah.admin.data.model.LiveSession
 import com.khanqah.admin.data.model.ScheduledSession
 import androidx.compose.animation.core.*
 
-private val GOLD       = Color(0xFFD4A853)
-private val DARK_GREEN = Color(0xFF0F2E24)
+// Colors pulled from theme at call sites via MaterialTheme.colorScheme
 
 @Composable
 fun LiveScreen(
@@ -66,7 +64,7 @@ fun LiveScreen(
                 letterSpacing = 0.12.sp,
                 fontWeight = FontWeight.Bold,
             ),
-            color = GOLD,
+            color = MaterialTheme.colorScheme.primary,
         )
         Spacer(Modifier.height(4.dp))
         Text(
@@ -149,8 +147,10 @@ fun LiveScreen(
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = DARK_GREEN,
-                    contentColor = GOLD,
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                    disabledContentColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.5f),
                 ),
             ) {
                 Text(
@@ -177,13 +177,13 @@ private fun NextSessionCard(session: ScheduledSession, onUse: () -> Unit) {
             Text(
                 "NEXT SCHEDULED",
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, letterSpacing = 0.08.sp),
-                color = GOLD,
+                color = MaterialTheme.colorScheme.primary,
             )
             Spacer(Modifier.height(10.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Surface(
                     shape = RoundedCornerShape(10.dp),
-                    color = GOLD.copy(alpha = 0.15f),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
                 ) {
                     Column(
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp).widthIn(min = 48.dp),
@@ -192,13 +192,13 @@ private fun NextSessionCard(session: ScheduledSession, onUse: () -> Unit) {
                         Text(
                             day,
                             style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                            color = GOLD,
+                            color = MaterialTheme.colorScheme.primary,
                             lineHeight = 28.sp,
                         )
                         Text(
                             mon,
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
-                            color = GOLD,
+                            color = MaterialTheme.colorScheme.primary,
                         )
                     }
                 }
@@ -213,7 +213,7 @@ private fun NextSessionCard(session: ScheduledSession, onUse: () -> Unit) {
                         Text(
                             session.titleUr,
                             fontSize = 15.sp,
-                            color = GOLD,
+                            color = MaterialTheme.colorScheme.primary,
                         )
                     }
                     Text(

@@ -2,22 +2,17 @@ package com.khanqah.admin.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Light theme
-val BackgroundLight = Color(0xFFF5F0E8)
-val SurfaceLight = Color(0xFFFFFFFF)
-val PrimaryLight = Color(0xFF2D6A4F)
-val OnPrimaryLight = Color(0xFFFFFFFF)
-val SecondaryLight = Color(0xFF52796F)
-val TextPrimaryLight = Color(0xFF1A1A1A)
-val TextSecondaryLight = Color(0xFF6B6B6B)
-val BorderLight = Color(0xFFE8E0D0)
-
-// Dark theme
-val BackgroundDark = Color(0xFF1A1A1A)
-val SurfaceDark = Color(0xFF2A2A2A)
-val PrimaryDark = Color(0xFF52B788)
-val OnPrimaryDark = Color(0xFF1A1A1A)
-val SecondaryDark = Color(0xFF74C69D)
-val TextPrimaryDark = Color(0xFFF0EAD6)
-val TextSecondaryDark = Color(0xFF9E9E9E)
-val BorderDark = Color(0xFF3A3A3A)
+// Admin palette — deep green + gold
+val AdminBackground    = Color(0xFF0A1F16)   // deepest green
+val AdminSurface       = Color(0xFF0F2E24)   // icon green
+val AdminSurfaceVar    = Color(0xFF163D30)   // slightly lighter green
+val AdminGold          = Color(0xFFD4A853)   // gold accent
+val AdminGoldMuted     = Color(0xFF8B6914)   // darker gold for secondary text
+val AdminGoldContainer = Color(0xFF1E3828)   // gold-tinted surface
+val AdminOnGold        = Color(0xFF0A1F16)   // text on gold buttons
+val AdminCream         = Color(0xFFF5EDD5)   // warm white text
+val AdminCreamMuted    = Color(0xFFB8A882)   // muted cream
+val AdminBorder        = Color(0xFF234D3A)   // subtle green border
+val AdminError         = Color(0xFFCF6679)
+val AdminErrorContainer = Color(0xFF3D1A20)
+val AdminOnError       = Color(0xFFFAEBD7)
