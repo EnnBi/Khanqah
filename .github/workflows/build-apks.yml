@@ -114,14 +114,14 @@ jobs:
             local path="$1"
             git log --pretty=format:"%s" -50 -- "$path" | grep -E "^(feat|fix)" | head -15 | while IFS= read -r line; do
               if echo "$line" | grep -q "^feat"; then
-                label="New"; color="#1a6b4a"
+                cls="tag tag-new"; label="NEW"
                 msg=$(echo "$line" | sed -E 's/^feat(\([^)]*\))?: //')
               else
-                label="Fix"; color="#7a3030"
+                cls="tag tag-fix"; label="FIX"
                 msg=$(echo "$line" | sed -E 's/^fix(\([^)]*\))?: //')
               fi
               msg="$(echo "${msg:0:1}" | tr '[:lower:]' '[:upper:]')${msg:1}"
-              echo "<li style=\"font-size:0.8rem;line-height:1.5;\"><span style=\"background:${color};color:#fff;font-size:0.6rem;font-weight:700;letter-spacing:0.06em;padding:2px 7px;border-radius:50px;margin-right:7px;white-space:nowrap;\">${label}</span>${msg}</li>"
+              echo "<li><span class=\"${cls}\">${label}</span>${msg}</li>"
             done
           }
 
@@ -135,121 +135,234 @@ jobs:
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <title>Khanqah — Test Builds</title>
+            <link rel="preconnect" href="https://fonts.googleapis.com">
+            <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
             <style>
-              * { box-sizing: border-box; margin: 0; padding: 0; }
+              :root {
+                --bg: #011E1B;
+                --surface: #0A3530;
+                --gold: #C9A84C;
+                --gold-bright: #E4C06A;
+                --gold-dim: #7A6332;
+                --text: #EDE8DE;
+                --muted: #7A7060;
+              }
+              *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
               body {
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-                background: #022F2B;
-                color: #F4EFE7;
+                font-family: 'DM Mono', 'Courier New', monospace;
+                background: var(--bg);
+                color: var(--text);
                 min-height: 100vh;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
-                padding: 40px 16px;
+                padding: 64px 20px 80px;
+                position: relative;
+                overflow-x: hidden;
               }
+              body::before {
+                content: '';
+                position: fixed;
+                inset: 0;
+                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cg fill='none' stroke='%23C9A84C' stroke-width='0.4' opacity='0.15'%3E%3Crect x='10' y='10' width='60' height='60' transform='rotate(45 40 40)'/%3E%3Crect x='20' y='20' width='40' height='40' transform='rotate(45 40 40)'/%3E%3Ccircle cx='40' cy='40' r='28'/%3E%3Cline x1='40' y1='0' x2='40' y2='80'/%3E%3Cline x1='0' y1='40' x2='80' y2='40'/%3E%3C/g%3E%3C/svg%3E");
+                pointer-events: none;
+                z-index: 0;
+              }
+              body::after {
+                content: '';
+                position: fixed;
+                inset: 0;
+                background: radial-gradient(ellipse 80% 60% at 50% 0%, transparent 40%, var(--bg) 100%);
+                pointer-events: none;
+                z-index: 0;
+              }
+              .wrap {
+                position: relative;
+                z-index: 1;
+                width: 100%;
+                max-width: 880px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+              }
+              .header {
+                text-align: center;
+                margin-bottom: 52px;
+                animation: up 0.9s cubic-bezier(0.16,1,0.3,1) both;
+              }
+              .orn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 14px;
+                margin-bottom: 22px;
+              }
+              .orn-line { width: 56px; height: 1px; }
+              .orn-line-l { background: linear-gradient(90deg, transparent, var(--gold)); }
+              .orn-line-r { background: linear-gradient(90deg, var(--gold), transparent); }
+              .orn-dot { width: 5px; height: 5px; background: var(--gold); transform: rotate(45deg); }
               h1 {
-                font-size: 1.4rem;
-                font-weight: 700;
-                letter-spacing: 0.08em;
-                color: #D4AF37;
-                margin-bottom: 6px;
+                font-family: 'Cormorant Garamond', Georgia, serif;
+                font-size: clamp(3.2rem, 9vw, 6rem);
+                font-weight: 300;
+                letter-spacing: 0.3em;
+                color: var(--gold);
+                line-height: 1;
+                margin-bottom: 12px;
               }
-              .subtitle {
-                font-size: 0.8rem;
-                color: #A89674;
-                letter-spacing: 0.1em;
-                margin-bottom: 40px;
+              .sub {
+                font-size: 0.6rem;
+                letter-spacing: 0.38em;
+                color: var(--muted);
+                text-transform: uppercase;
               }
               .grid {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
                 gap: 20px;
                 width: 100%;
-                max-width: 860px;
+                animation: up 0.9s 0.12s cubic-bezier(0.16,1,0.3,1) both;
               }
-              @media (max-width: 600px) {
-                .grid { grid-template-columns: 1fr; }
-              }
-              .col {
-                background: #0B4A43;
-                border-radius: 16px;
-                padding: 24px;
+              @media (max-width: 620px) { .grid { grid-template-columns: 1fr; } }
+              .card {
+                background: var(--surface);
+                border: 1px solid #C9A84C14;
+                border-top: 2px solid var(--gold-dim);
+                border-radius: 2px;
+                padding: 26px 24px;
                 display: flex;
                 flex-direction: column;
+                position: relative;
+                overflow: hidden;
+                transition: transform 0.35s cubic-bezier(0.16,1,0.3,1), border-top-color 0.3s, box-shadow 0.35s;
               }
-              .col-title {
-                font-size: 1rem;
+              .card::before {
+                content: '';
+                position: absolute;
+                top: 0; left: 0; right: 0; height: 70px;
+                background: linear-gradient(180deg, #C9A84C09, transparent);
+                pointer-events: none;
+              }
+              .card:hover {
+                transform: translateY(-4px);
+                border-top-color: var(--gold);
+                box-shadow: 0 24px 64px #00000060, 0 0 0 1px #C9A84C18;
+              }
+              .app-eyebrow {
+                font-size: 0.52rem;
+                letter-spacing: 0.28em;
+                color: var(--gold-dim);
+                text-transform: uppercase;
+                margin-bottom: 5px;
+              }
+              .app-name {
+                font-family: 'Cormorant Garamond', Georgia, serif;
+                font-size: 1.65rem;
                 font-weight: 600;
-                color: #F4EFE7;
-                margin-bottom: 6px;
+                color: var(--text);
+                margin-bottom: 18px;
+                line-height: 1.2;
               }
-              .meta {
-                font-size: 0.72rem;
-                color: #A89674;
-                line-height: 1.8;
-                margin-bottom: 16px;
-              }
-              .meta span { display: block; }
+              .meta { margin-bottom: 20px; display: flex; flex-direction: column; gap: 4px; }
+              .meta-row { display: flex; gap: 10px; font-size: 0.62rem; color: var(--muted); }
+              .meta-key { color: var(--gold-dim); min-width: 44px; letter-spacing: 0.06em; }
               .btn {
                 display: block;
-                background: #D4AF37;
-                color: #022F2B;
+                position: relative;
+                overflow: hidden;
+                background: var(--gold);
+                color: #011E1B;
                 text-decoration: none;
-                font-weight: 700;
-                font-size: 0.85rem;
-                letter-spacing: 0.06em;
+                font-family: 'DM Mono', monospace;
+                font-size: 0.68rem;
+                font-weight: 400;
+                letter-spacing: 0.2em;
                 text-align: center;
-                padding: 12px;
-                border-radius: 50px;
-                margin-bottom: 20px;
+                text-transform: uppercase;
+                padding: 13px;
+                border-radius: 1px;
+                margin-bottom: 22px;
+                transition: background 0.2s;
               }
-              .changes-label {
-                font-size: 0.65rem;
-                letter-spacing: 0.12em;
-                color: #A89674;
-                margin-bottom: 10px;
+              .btn::after {
+                content: '';
+                position: absolute;
+                top: 0; left: -120%;
+                width: 50%; height: 100%;
+                background: linear-gradient(90deg, transparent, #ffffff35, transparent);
+                transition: left 0.55s ease;
               }
-              .changes {
-                list-style: none;
-                display: flex;
-                flex-direction: column;
-                gap: 8px;
-                flex: 1;
+              .btn:hover { background: var(--gold-bright); }
+              .btn:hover::after { left: 170%; }
+              .sep { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+              .sep-line { flex: 1; height: 1px; background: #C9A84C14; }
+              .sep-text { font-size: 0.5rem; letter-spacing: 0.28em; color: var(--muted); text-transform: uppercase; }
+              .changes { list-style: none; display: flex; flex-direction: column; gap: 9px; flex: 1; }
+              .changes li { display: flex; align-items: flex-start; gap: 8px; font-size: 0.68rem; line-height: 1.5; color: #B0A898; }
+              .tag {
+                font-size: 0.48rem;
+                font-weight: 400;
+                letter-spacing: 0.14em;
+                padding: 2px 6px;
+                border-radius: 1px;
+                white-space: nowrap;
+                flex-shrink: 0;
+                margin-top: 3px;
+                text-transform: uppercase;
               }
+              .tag-new { background: #0B3520; color: #5DB87A; border: 1px solid #5DB87A28; }
+              .tag-fix { background: #2A1515; color: #C47A7A; border: 1px solid #C47A7A28; }
               .footer {
-                margin-top: 32px;
-                font-size: 0.7rem;
-                color: #A89674;
-                opacity: 0.6;
+                margin-top: 44px;
+                font-size: 0.57rem;
+                letter-spacing: 0.22em;
+                color: var(--muted);
+                opacity: 0.5;
+                animation: up 0.9s 0.25s cubic-bezier(0.16,1,0.3,1) both;
+              }
+              @keyframes up {
+                from { opacity: 0; transform: translateY(20px); }
+                to   { opacity: 1; transform: translateY(0); }
               }
             </style>
           </head>
           <body>
-            <h1>KHANQAH</h1>
-            <p class="subtitle">TEST BUILDS</p>
-            <div class="grid">
-              <div class="col">
-                <div class="col-title">Khanqah — User App</div>
-                <div class="meta">
-                  <span>Built: ${BUILD_DATE}</span>
-                  <span>Commit: ${COMMIT_SHORT}</span>
+            <div class="wrap">
+              <header class="header">
+                <div class="orn">
+                  <div class="orn-line orn-line-l"></div>
+                  <div class="orn-dot"></div>
+                  <div class="orn-line orn-line-r"></div>
                 </div>
-                <a class="btn" href="/downloads/khanqah-user.apk">Download APK</a>
-                <p class="changes-label">WHAT'S CHANGED</p>
-                <ul class="changes">${USER_CHANGES}</ul>
-              </div>
-              <div class="col">
-                <div class="col-title">Khanqah Admin</div>
-                <div class="meta">
-                  <span>Built: ${BUILD_DATE}</span>
-                  <span>Commit: ${COMMIT_SHORT}</span>
+                <h1>KHANQAH</h1>
+                <p class="sub">Test Builds &nbsp;&middot;&nbsp; Internal Distribution</p>
+              </header>
+              <div class="grid">
+                <div class="card">
+                  <div class="app-eyebrow">User App</div>
+                  <div class="app-name">Khanqah</div>
+                  <div class="meta">
+                    <div class="meta-row"><span class="meta-key">Built</span>${BUILD_DATE}</div>
+                    <div class="meta-row"><span class="meta-key">Commit</span>${COMMIT_SHORT}</div>
+                  </div>
+                  <a class="btn" href="/downloads/khanqah-user.apk">&#8595; &nbsp; Download APK</a>
+                  <div class="sep"><div class="sep-line"></div><span class="sep-text">Changes</span><div class="sep-line"></div></div>
+                  <ul class="changes">${USER_CHANGES}</ul>
                 </div>
-                <a class="btn" href="/downloads/khanqah-admin.apk">Download APK</a>
-                <p class="changes-label">WHAT'S CHANGED</p>
-                <ul class="changes">${ADMIN_CHANGES}</ul>
+                <div class="card">
+                  <div class="app-eyebrow">Admin App</div>
+                  <div class="app-name">Khanqah Admin</div>
+                  <div class="meta">
+                    <div class="meta-row"><span class="meta-key">Built</span>${BUILD_DATE}</div>
+                    <div class="meta-row"><span class="meta-key">Commit</span>${COMMIT_SHORT}</div>
+                  </div>
+                  <a class="btn" href="/downloads/khanqah-admin.apk">&#8595; &nbsp; Download APK</a>
+                  <div class="sep"><div class="sep-line"></div><span class="sep-text">Changes</span><div class="sep-line"></div></div>
+                  <ul class="changes">${ADMIN_CHANGES}</ul>
+                </div>
               </div>
+              <p class="footer">Debug builds &nbsp;&middot;&nbsp; For testing only</p>
             </div>
-            <p class="footer">Debug builds — for testing only</p>
           </body>
           </html>
           HTML
