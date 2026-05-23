@@ -70,3 +70,154 @@ jobs:
           name: khanqah-admin-debug
           path: android-admin/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 14
+
+  deploy-downloads:
+    name: Deploy APK download page
+    runs-on: ubuntu-latest
+    needs: [build-user-app, build-admin-app]
+    timeout-minutes: 10
+
+    env:
+      DEPLOY_HOST: 165.22.208.103
+      DEPLOY_USER: root
+      DEPLOY_DIR: /var/www/downloads
+
+    steps:
+      - name: Download user APK
+        uses: actions/download-artifact@v4
+        with:
+          name: khanqah-user-debug
+          path: artifacts/user
+
+      - name: Download admin APK
+        uses: actions/download-artifact@v4
+        with:
+          name: khanqah-admin-debug
+          path: artifacts/admin
+
+      - name: Rename APKs
+        run: |
+          cp artifacts/user/app-debug.apk khanqah-user.apk
+          cp artifacts/admin/app-debug.apk khanqah-admin.apk
+
+      - name: Generate index.html
+        run: |
+          BUILD_DATE=$(date -u '+%d %b %Y, %H:%M UTC')
+          COMMIT_SHORT="${GITHUB_SHA::7}"
+          cat > index.html <<HTML
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>Khanqah — Test Builds</title>
+            <style>
+              * { box-sizing: border-box; margin: 0; padding: 0; }
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                background: #022F2B;
+                color: #F4EFE7;
+                min-height: 100vh;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                padding: 40px 16px;
+              }
+              h1 {
+                font-size: 1.4rem;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                color: #D4AF37;
+                margin-bottom: 6px;
+              }
+              .subtitle {
+                font-size: 0.8rem;
+                color: #A89674;
+                letter-spacing: 0.1em;
+                margin-bottom: 40px;
+              }
+              .cards {
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+                width: 100%;
+                max-width: 420px;
+              }
+              .card {
+                background: #0B4A43;
+                border-radius: 16px;
+                padding: 24px;
+              }
+              .card-title {
+                font-size: 1.1rem;
+                font-weight: 600;
+                color: #F4EFE7;
+                margin-bottom: 10px;
+              }
+              .meta {
+                font-size: 0.75rem;
+                color: #A89674;
+                line-height: 1.8;
+                margin-bottom: 20px;
+              }
+              .meta span { display: block; }
+              .btn {
+                display: block;
+                background: #D4AF37;
+                color: #022F2B;
+                text-decoration: none;
+                font-weight: 700;
+                font-size: 0.9rem;
+                letter-spacing: 0.06em;
+                text-align: center;
+                padding: 14px;
+                border-radius: 50px;
+              }
+              .footer {
+                margin-top: 40px;
+                font-size: 0.7rem;
+                color: #A89674;
+                opacity: 0.6;
+              }
+            </style>
+          </head>
+          <body>
+            <h1>KHANQAH</h1>
+            <p class="subtitle">TEST BUILDS</p>
+            <div class="cards">
+              <div class="card">
+                <div class="card-title">Khanqah — User App</div>
+                <div class="meta">
+                  <span>Built: ${BUILD_DATE}</span>
+                  <span>Commit: ${COMMIT_SHORT}</span>
+                </div>
+                <a class="btn" href="/downloads/khanqah-user.apk">Download APK</a>
+              </div>
+              <div class="card">
+                <div class="card-title">Khanqah Admin</div>
+                <div class="meta">
+                  <span>Built: ${BUILD_DATE}</span>
+                  <span>Commit: ${COMMIT_SHORT}</span>
+                </div>
+                <a class="btn" href="/downloads/khanqah-admin.apk">Download APK</a>
+              </div>
+            </div>
+            <p class="footer">Debug builds — for testing only</p>
+          </body>
+          </html>
+          HTML
+
+      - name: Configure SSH
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Deploy to server
+        run: |
+          scp -i ~/.ssh/deploy_key \
+            index.html \
+            khanqah-user.apk \
+            khanqah-admin.apk \
+            "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_DIR/"
