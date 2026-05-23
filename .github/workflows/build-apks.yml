@@ -83,6 +83,11 @@ jobs:
       DEPLOY_DIR: /var/www/downloads
 
     steps:
+      - name: Checkout repo for git log
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+
       - name: Download user APK
         uses: actions/download-artifact@v4
         with:
@@ -99,11 +104,6 @@ jobs:
         run: |
           cp artifacts/user/app-debug.apk khanqah-user.apk
           cp artifacts/admin/app-debug.apk khanqah-admin.apk
-
-      - name: Checkout repo for git log
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 50
 
       - name: Generate index.html
         run: |
