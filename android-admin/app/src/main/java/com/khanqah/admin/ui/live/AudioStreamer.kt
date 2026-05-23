@@ -26,8 +26,22 @@ class AudioStreamer {
         .readTimeout(0, TimeUnit.MILLISECONDS)
         .build()
 
-    fun start(onReady: () -> Unit, onError: (String) -> Unit) {
-        val request = Request.Builder().url(WS_URL).build()
+    fun start(
+        sessionId: String = "",
+        categoryId: String = "",
+        record: Boolean = false,
+        onReady: () -> Unit,
+        onError: (String) -> Unit,
+    ) {
+        val url = buildString {
+            append(WS_URL)
+            val params = mutableListOf<String>()
+            if (sessionId.isNotBlank()) params += "session_id=$sessionId"
+            if (categoryId.isNotBlank()) params += "category_id=$categoryId"
+            if (record) params += "record=true"
+            if (params.isNotEmpty()) append("?${params.joinToString("&")}")
+        }
+        val request = Request.Builder().url(url).build()
         webSocket = client.newWebSocket(request, object : WebSocketListener() {
             override fun onOpen(ws: WebSocket, response: Response) {
                 ws.send("""{"format":"pcm","sampleRate":$SAMPLE_RATE}""")

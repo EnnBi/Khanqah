@@ -64,6 +64,7 @@ const (
 	ContentTypeHamdNaat ContentType = "hamd_naat"
 	ContentTypeBook     ContentType = "book"
 	ContentTypeMamulat  ContentType = "mamulat"
+	ContentTypeMajalis  ContentType = "majalis"
 )
 
 func (e *ContentType) Scan(src interface{}) error {

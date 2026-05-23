@@ -1,5 +1,6 @@
 package com.khanqah.app
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -15,6 +16,18 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 class MainActivity : ComponentActivity() {
+
+    private var openLiveState   = mutableStateOf(false)
+    private var openPlayerState = mutableStateOf(false)
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        when (intent.action) {
+            ListeningForegroundService.ACTION_OPEN_LIVE -> openLiveState.value = true
+            PlaybackNotificationService.ACTION_OPEN_PLAYER -> openPlayerState.value = true
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
@@ -25,6 +38,12 @@ class MainActivity : ComponentActivity() {
         val initialName     = runBlocking { app.authRepo.getDisplayName() }
         val initialPhone    = runBlocking { app.authRepo.getPhone() }
         val initialLanguage = runBlocking { app.tokenManager.getLanguage() }
+        if (intent?.action == ListeningForegroundService.ACTION_OPEN_LIVE) {
+            openLiveState.value = true
+        }
+        if (intent?.action == PlaybackNotificationService.ACTION_OPEN_PLAYER) {
+            openPlayerState.value = true
+        }
 
         setContent {
             KhanqahTheme {
@@ -43,6 +62,8 @@ class MainActivity : ComponentActivity() {
                     LocalLayoutDirection provides layoutDirection,
                     LocalIsUrdu provides (language == "ur"),
                 ) {
+                    val openLive   by openLiveState
+                    val openPlayer by openPlayerState
                     AppNavGraph(
                         authViewModel                  = app.authViewModel,
                         homeViewModel                  = app.homeViewModel,
@@ -56,6 +77,8 @@ class MainActivity : ComponentActivity() {
                         phone                          = phone,
                         userRole                       = userRole,
                         isUrdu                         = language == "ur",
+                        openLive                       = openLive,
+                        openPlayer                     = openPlayer,
                         onLanguageToggle               = {
                             scope.launch {
                                 app.tokenManager.setLanguage(if (language == "ur") "en" else "ur")

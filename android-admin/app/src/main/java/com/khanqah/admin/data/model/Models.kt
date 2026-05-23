@@ -39,6 +39,7 @@ data class ScheduledSession(
 data class LiveSession(
     val id: String,
     @SerializedName("title_en") val titleEn: String,
+    @SerializedName("title_ur") val titleUr: String = "",
     @SerializedName("stream_url") val streamUrl: String,
     val status: String,
 )

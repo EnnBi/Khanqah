@@ -31,6 +31,15 @@ interface ApiService {
     @GET("live/current")
     suspend fun getCurrentLive(): LiveSession?
 
+    @POST("live/ping")
+    suspend fun pingLive(): Map<String, Int>
+
+    @POST("live/leave")
+    suspend fun leaveLive(): retrofit2.Response<Unit>
+
+    @GET("live/listeners")
+    suspend fun getListeners(): Map<String, Int>
+
     @GET("me/progress")
     suspend fun getProgress(): List<Progress>
 

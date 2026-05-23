@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -49,4 +50,20 @@ func (c *R2Client) GenerateUploadURL(ctx context.Context, fileKey, contentType s
 // CDNUrl converts a file key to the public CDN URL.
 func (c *R2Client) CDNUrl(fileKey string) string {
 	return c.cdnBase + "/" + fileKey
+}
+
+// UploadFile streams a reader directly to R2.
+func (c *R2Client) UploadFile(ctx context.Context, fileKey, contentType string, body io.Reader, size int64) error {
+	input := &s3.PutObjectInput{
+		Bucket:        aws.String(c.bucket),
+		Key:           aws.String(fileKey),
+		Body:          body,
+		ContentType:   aws.String(contentType),
+		ContentLength: aws.Int64(size),
+	}
+	_, err := c.s3.PutObject(ctx, input)
+	if err != nil {
+		return fmt.Errorf("storage.UploadFile: %w", err)
+	}
+	return nil
 }

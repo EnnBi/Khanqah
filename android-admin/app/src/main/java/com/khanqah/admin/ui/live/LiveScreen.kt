@@ -5,21 +5,29 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -28,6 +36,8 @@ import androidx.core.content.ContextCompat
 import com.khanqah.admin.data.model.Category
 import com.khanqah.admin.data.model.LiveSession
 import com.khanqah.admin.data.model.ScheduledSession
+import com.khanqah.admin.ui.theme.*
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,353 +47,549 @@ fun LiveScreen(
     categories: List<Category>,
     isStreaming: Boolean,
     error: String?,
-    onStart: (categoryId: String, titleEn: String, titleUr: String) -> Unit,
+    listenerCount: Int = 0,
+    onStart: (categoryId: String, titleEn: String, titleUr: String, record: Boolean) -> Unit,
     onEnd: (id: String) -> Unit,
 ) {
+    if (currentSession != null) {
+        LiveOnAirScreen(session = currentSession, isStreaming = isStreaming, listenerCount = listenerCount, onEnd = onEnd)
+        return
+    }
+
+    // ── Setup screen ─────────────────────────────────────────────────────────
     val nextSession = remember(sessions) { sessions.nextUpcoming() }
     var selectedCategory by remember(categories) { mutableStateOf(categories.firstOrNull()) }
     var dropdownExpanded by remember { mutableStateOf(false) }
     var titleEn by remember { mutableStateOf("") }
     var titleUr by remember { mutableStateOf("") }
-
-    // Pre-fill from next session when it loads
-    LaunchedEffect(nextSession) {
-        if (nextSession != null && titleEn.isBlank()) {
-            titleEn = nextSession.titleEn
-            titleUr = nextSession.titleUr
-        }
-    }
+    var recordBroadcast by remember { mutableStateOf(false) }
 
     val ctx = LocalContext.current
     val permLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted) selectedCategory?.let { onStart(it.id, titleEn, titleUr) }
+        if (granted) selectedCategory?.let { onStart(it.id, titleEn, titleUr, recordBroadcast) }
     }
 
     fun goLive() {
         val cat = selectedCategory ?: return
         if (titleEn.isBlank()) return
         if (ContextCompat.checkSelfPermission(ctx, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-            onStart(cat.id, titleEn, titleUr)
+            onStart(cat.id, titleEn, titleUr, recordBroadcast)
         } else {
             permLauncher.launch(Manifest.permission.RECORD_AUDIO)
         }
     }
+
+    val canStart = selectedCategory != null && titleEn.isNotBlank()
+
+    val fieldColors = OutlinedTextFieldDefaults.colors(
+        focusedContainerColor     = AdminSurfaceVar,
+        unfocusedContainerColor   = AdminSurfaceVar,
+        focusedBorderColor        = AdminGold,
+        unfocusedBorderColor      = AdminGold.copy(alpha = 0.35f),
+        focusedLabelColor         = AdminGold,
+        unfocusedLabelColor       = AdminGold.copy(alpha = 0.55f),
+        focusedTextColor          = AdminCream,
+        unfocusedTextColor        = AdminCream,
+        cursorColor               = AdminGold,
+        focusedPlaceholderColor   = AdminCream.copy(alpha = 0.30f),
+        unfocusedPlaceholderColor = AdminCream.copy(alpha = 0.30f),
+        focusedTrailingIconColor   = AdminGold,
+        unfocusedTrailingIconColor = AdminGold.copy(alpha = 0.55f),
+    )
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
-            .padding(24.dp),
+            .padding(horizontal = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(52.dp))
 
         Text(
-            "LIVE CONTROL",
+            "◆  BROADCAST CONTROL",
             style = MaterialTheme.typography.labelSmall.copy(
                 fontSize = 10.sp,
-                letterSpacing = 0.12.sp,
+                letterSpacing = 0.16.sp,
                 fontWeight = FontWeight.Bold,
             ),
-            color = MaterialTheme.colorScheme.primary,
+            color = AdminGold,
         )
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(8.dp))
         Text(
-            "Khanqah Admin",
-            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onBackground,
+            "Ready to Broadcast",
+            style = MaterialTheme.typography.headlineMedium.copy(
+                fontWeight = FontWeight.Bold,
+                letterSpacing = (-0.5).sp,
+            ),
+            color = AdminCream,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "Fill in the session details below,\nthen tap the button to go live.",
+            style = MaterialTheme.typography.bodySmall.copy(lineHeight = 19.sp),
+            color = AdminCream.copy(alpha = 0.48f),
+            textAlign = TextAlign.Center,
         )
 
         Spacer(Modifier.height(32.dp))
 
-        if (currentSession != null) {
-            LiveActiveCard(session = currentSession, isStreaming = isStreaming, onEnd = onEnd)
-        } else {
-            if (nextSession != null) {
-                NextSessionCard(
-                    session = nextSession,
-                    onUse = {
-                        titleEn = nextSession.titleEn
-                        titleUr = nextSession.titleUr
-                    },
-                )
-                Spacer(Modifier.height(24.dp))
-            }
-
-            Text(
-                "START A LIVE SESSION",
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontSize = 10.sp,
-                    letterSpacing = 0.10.sp,
-                    fontWeight = FontWeight.SemiBold,
-                ),
-                color = MaterialTheme.colorScheme.secondary,
-                modifier = Modifier.fillMaxWidth(),
+        if (nextSession != null) {
+            NextSessionCard(
+                session = nextSession,
+                onUse = {
+                    titleEn = nextSession.titleEn
+                    titleUr = nextSession.titleUr
+                },
             )
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(28.dp))
+        }
 
-            // Category dropdown
-            ExposedDropdownMenuBox(
+        Text(
+            "SESSION DETAILS",
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontSize = 10.sp,
+                letterSpacing = 0.14.sp,
+                fontWeight = FontWeight.SemiBold,
+            ),
+            color = AdminGold.copy(alpha = 0.7f),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(10.dp))
+
+        ExposedDropdownMenuBox(
+            expanded = dropdownExpanded,
+            onExpandedChange = { dropdownExpanded = !dropdownExpanded },
+        ) {
+            OutlinedTextField(
+                value = selectedCategory?.nameEn
+                    ?: if (categories.isEmpty()) "Loading…" else "Select stream type",
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Stream Type") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(dropdownExpanded) },
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth().menuAnchor(),
+                colors = fieldColors,
+            )
+            ExposedDropdownMenu(
                 expanded = dropdownExpanded,
-                onExpandedChange = { dropdownExpanded = !dropdownExpanded },
+                onDismissRequest = { dropdownExpanded = false },
+                modifier = Modifier.background(AdminSurface),
             ) {
-                OutlinedTextField(
-                    value = selectedCategory?.nameEn ?: if (categories.isEmpty()) "Loading…" else "Select category",
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Stream type") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(dropdownExpanded) },
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.fillMaxWidth().menuAnchor(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                    ),
-                )
-                ExposedDropdownMenu(
-                    expanded = dropdownExpanded,
-                    onDismissRequest = { dropdownExpanded = false },
-                ) {
-                    categories.forEach { cat ->
-                        DropdownMenuItem(
-                            text = {
-                                Column {
-                                    Text(cat.nameEn, style = MaterialTheme.typography.bodyMedium)
-                                    if (cat.nameUr.isNotBlank()) {
-                                        Text(
-                                            cat.nameUr,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.primary,
-                                        )
-                                    }
+                categories.forEach { cat ->
+                    DropdownMenuItem(
+                        text = {
+                            Column {
+                                Text(cat.nameEn, style = MaterialTheme.typography.bodyMedium, color = AdminCream)
+                                if (cat.nameUr.isNotBlank()) {
+                                    Text(cat.nameUr, style = MaterialTheme.typography.bodySmall, color = AdminGold)
                                 }
-                            },
-                            onClick = { selectedCategory = cat; dropdownExpanded = false },
-                        )
-                    }
-                }
-            }
-            Spacer(Modifier.height(10.dp))
-
-            OutlinedTextField(
-                value = titleEn,
-                onValueChange = { titleEn = it },
-                label = { Text("Title (English)") },
-                placeholder = { Text("e.g. Monday Majlis") },
-                singleLine = true,
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(10.dp))
-
-            OutlinedTextField(
-                value = titleUr,
-                onValueChange = { titleUr = it },
-                label = { Text("عنوان (اردو)") },
-                placeholder = { Text("مثلاً پیر مجلس") },
-                singleLine = true,
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier.fillMaxWidth(),
-            )
-
-            if (error != null) {
-                Spacer(Modifier.height(12.dp))
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.errorContainer,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(
-                        error,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
+                            }
+                        },
+                        onClick = { selectedCategory = cat; dropdownExpanded = false },
                     )
                 }
             }
+        }
+        Spacer(Modifier.height(12.dp))
 
-            Spacer(Modifier.height(24.dp))
+        OutlinedTextField(
+            value = titleEn,
+            onValueChange = { titleEn = it },
+            label = { Text("Session Title (English)") },
+            placeholder = { Text("e.g. Monday Majlis") },
+            singleLine = true,
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.fillMaxWidth(),
+            colors = fieldColors,
+        )
+        Spacer(Modifier.height(12.dp))
 
-            Button(
-                onClick = ::goLive,
-                enabled = selectedCategory != null && titleEn.isNotBlank(),
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape = RoundedCornerShape(10.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                    disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                    disabledContentColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.5f),
-                ),
-            ) {
-                Icon(Icons.Outlined.Mic, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
+        OutlinedTextField(
+            value = titleUr,
+            onValueChange = { titleUr = it },
+            label = { Text("عنوان (اردو)") },
+            placeholder = { Text("مثلاً پیر مجلس") },
+            singleLine = true,
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.fillMaxWidth(),
+            colors = fieldColors,
+        )
+
+        Spacer(Modifier.height(20.dp))
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .background(AdminSurfaceVar)
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
                 Text(
-                    "Go Live",
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                    "Record Broadcast",
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = AdminCream,
+                )
+                Text(
+                    "Save recording as content after broadcast ends",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = AdminCream.copy(alpha = 0.48f),
+                )
+            }
+            Switch(
+                checked = recordBroadcast,
+                onCheckedChange = { recordBroadcast = it },
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = AdminBackground,
+                    checkedTrackColor = AdminGold,
+                    uncheckedThumbColor = AdminCream.copy(alpha = 0.55f),
+                    uncheckedTrackColor = AdminSurface,
+                    uncheckedBorderColor = AdminGold.copy(alpha = 0.30f),
+                ),
+            )
+        }
+
+        if (error != null) {
+            Spacer(Modifier.height(14.dp))
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = Color(0xFF3D1825),
+                border = BorderStroke(1.dp, AdminError.copy(alpha = 0.45f)),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    error,
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = AdminError,
                 )
             }
         }
 
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(28.dp))
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(58.dp)
+                .clip(RoundedCornerShape(30.dp))
+                .background(
+                    Brush.horizontalGradient(
+                        if (canStart)
+                            listOf(AdminCoral, Color(0xFFD45B55))
+                        else
+                            listOf(AdminCoral.copy(alpha = 0.30f), Color(0xFFD45B55).copy(alpha = 0.30f)),
+                    ),
+                )
+                .clickable(enabled = canStart) { goLive() },
+            contentAlignment = Alignment.Center,
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Outlined.Mic,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = Color.White.copy(alpha = if (canStart) 1f else 0.45f),
+                )
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    "START BROADCAST",
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.06.sp,
+                    ),
+                    color = Color.White.copy(alpha = if (canStart) 1f else 0.45f),
+                )
+            }
+        }
+
+        Spacer(Modifier.height(48.dp))
     }
 }
+
+// ── Live on-air full-screen ───────────────────────────────────────────────────
+
+@Composable
+private fun LiveOnAirScreen(session: LiveSession, isStreaming: Boolean, listenerCount: Int, onEnd: (String) -> Unit) {
+    var elapsedSeconds by remember { mutableIntStateOf(0) }
+    LaunchedEffect(session.id) {
+        elapsedSeconds = 0
+        while (true) {
+            delay(1000)
+            elapsedSeconds++
+        }
+    }
+
+    val timerText = if (elapsedSeconds < 3600) {
+        "%02d:%02d".format(elapsedSeconds / 60, elapsedSeconds % 60)
+    } else {
+        "%02d:%02d:%02d".format(elapsedSeconds / 3600, (elapsedSeconds % 3600) / 60, elapsedSeconds % 60)
+    }
+
+    val infiniteTransition = rememberInfiniteTransition(label = "livePulse")
+    val dotAlpha by infiniteTransition.animateFloat(
+        initialValue = 1f, targetValue = 0.15f,
+        animationSpec = infiniteRepeatable(tween(900, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "dot",
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(AdminBackground),
+    ) {
+        // ── Center content ──
+        Column(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .padding(horizontal = 36.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            // ON AIR indicator
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    Modifier
+                        .size(9.dp)
+                        .alpha(dotAlpha)
+                        .background(AdminCoral, CircleShape),
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    "ON AIR",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 12.sp,
+                        letterSpacing = 0.20.sp,
+                        fontWeight = FontWeight.Medium,
+                    ),
+                    color = AdminCoral,
+                )
+            }
+
+            Spacer(Modifier.height(28.dp))
+
+            // Session title
+            Text(
+                session.titleEn,
+                style = MaterialTheme.typography.headlineLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Serif,
+                    letterSpacing = (-0.5).sp,
+                    lineHeight = 42.sp,
+                ),
+                color = AdminCream,
+                textAlign = TextAlign.Center,
+            )
+
+            // Urdu subtitle
+            if (session.titleUr.isNotBlank()) {
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    session.titleUr,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontStyle = FontStyle.Italic,
+                        fontFamily = FontFamily.Serif,
+                        letterSpacing = 0.sp,
+                    ),
+                    color = AdminGold.copy(alpha = 0.75f),
+                    textAlign = TextAlign.Center,
+                )
+            }
+
+            Spacer(Modifier.height(44.dp))
+
+            // Timer
+            Text(
+                timerText,
+                style = MaterialTheme.typography.displayMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Serif,
+                    letterSpacing = 2.sp,
+                ),
+                color = AdminGold,
+            )
+
+            Spacer(Modifier.height(10.dp))
+
+            // Listeners
+            Text(
+                "$listenerCount ${if (listenerCount == 1) "LISTENER" else "LISTENERS"}",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontSize = 11.sp,
+                    letterSpacing = 0.16.sp,
+                ),
+                color = AdminCream.copy(alpha = 0.38f),
+            )
+        }
+
+        // ── Stop button ──
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(horizontal = 24.dp, vertical = 52.dp)
+                .fillMaxWidth()
+                .height(60.dp)
+                .shadow(
+                    elevation = 12.dp,
+                    shape = RoundedCornerShape(30.dp),
+                    ambientColor = AdminCoral.copy(alpha = 0.35f),
+                    spotColor = AdminCoral.copy(alpha = 0.45f),
+                )
+                .clip(RoundedCornerShape(30.dp))
+                .background(AdminCoral)
+                .clickable { onEnd(session.id) },
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                "STOP BROADCAST",
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.10.sp,
+                ),
+                color = Color.White,
+            )
+        }
+    }
+}
+
+// ── Next session card ─────────────────────────────────────────────────────────
 
 @Composable
 private fun NextSessionCard(session: ScheduledSession, onUse: () -> Unit) {
     val (day, mon, time) = parseDateParts(session.scheduledAt, session.isRecurring, session.recurrenceRule)
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 0.dp,
-    ) {
-        Column(Modifier.padding(16.dp)) {
-            Text(
-                "NEXT SCHEDULED",
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, letterSpacing = 0.08.sp),
-                color = MaterialTheme.colorScheme.primary,
+    val recurrenceLabel = when {
+        session.recurrenceRule?.contains("DAILY") == true   -> "DAILY"
+        session.recurrenceRule?.contains("WEEKLY") == true  -> "WEEKLY"
+        session.recurrenceRule?.contains("MONTHLY") == true -> "MONTHLY"
+        else -> null
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = 18.dp,
+                shape = RoundedCornerShape(16.dp),
+                ambientColor = AdminGold.copy(alpha = 0.22f),
+                spotColor = AdminGold.copy(alpha = 0.30f),
             )
-            Spacer(Modifier.height(10.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            .clip(RoundedCornerShape(16.dp))
+            .background(AdminSurface)
+            .border(1.dp, AdminGold.copy(alpha = 0.60f), RoundedCornerShape(16.dp))
+            .clickable { onUse() }
+            .padding(18.dp),
+    ) {
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(6.dp).background(AdminGold, CircleShape))
+                    Spacer(Modifier.width(7.dp))
+                    Text(
+                        "NEXT SCHEDULED  •  TAP TO USE",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 9.sp,
+                            letterSpacing = 0.12.sp,
+                            fontWeight = FontWeight.Bold,
+                        ),
+                        color = AdminGold,
+                    )
+                }
+                if (recurrenceLabel != null) {
+                    Surface(
+                        shape = RoundedCornerShape(4.dp),
+                        color = AdminGold.copy(alpha = 0.12f),
+                        border = BorderStroke(0.5.dp, AdminGold.copy(alpha = 0.45f)),
+                    ) {
+                        Text(
+                            recurrenceLabel,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.08.sp,
+                            ),
+                            color = AdminGold,
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Surface(
                     shape = RoundedCornerShape(10.dp),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                    color = AdminGold.copy(alpha = 0.10f),
+                    border = BorderStroke(0.5.dp, AdminGold.copy(alpha = 0.40f)),
                 ) {
                     Column(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp).widthIn(min = 48.dp),
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp).widthIn(min = 50.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Text(
                             day,
                             style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.primary,
-                            lineHeight = 28.sp,
+                            color = AdminGold,
+                            lineHeight = 30.sp,
                         )
                         Text(
                             mon,
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
-                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.SemiBold,
+                            ),
+                            color = AdminGold.copy(alpha = 0.75f),
                         )
                     }
                 }
+
                 Spacer(Modifier.width(14.dp))
+
                 Column(Modifier.weight(1f)) {
                     Text(
                         session.titleEn,
                         style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = AdminCream,
                     )
                     if (session.titleUr.isNotBlank()) {
-                        Text(
-                            session.titleUr,
-                            fontSize = 15.sp,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
+                        Spacer(Modifier.height(2.dp))
+                        Text(session.titleUr, fontSize = 15.sp, color = AdminGold.copy(alpha = 0.90f))
                     }
+                    Spacer(Modifier.height(4.dp))
                     Text(
                         time,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.secondary,
+                        color = AdminCream.copy(alpha = 0.45f),
                     )
                 }
             }
-            Spacer(Modifier.height(12.dp))
-            OutlinedButton(
-                onClick = onUse,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp),
-            ) {
-                Text("Use this session's title", style = MaterialTheme.typography.bodySmall)
-            }
-        }
-    }
-}
 
-@Composable
-private fun LiveActiveCard(session: LiveSession, isStreaming: Boolean, onEnd: (String) -> Unit) {
-    val infiniteTransition = rememberInfiniteTransition(label = "livePulse")
-    val pulseAlpha by infiniteTransition.animateFloat(
-        initialValue = 1f, targetValue = 0.2f,
-        animationSpec = infiniteRepeatable(tween(700), RepeatMode.Reverse),
-        label = "pulse",
-    )
-
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.errorContainer,
-        tonalElevation = 0.dp,
-    ) {
-        Column(
-            modifier = Modifier.padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    Modifier
-                        .size(10.dp)
-                        .alpha(pulseAlpha)
-                        .background(MaterialTheme.colorScheme.error, CircleShape)
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    "LIVE NOW",
-                    style = MaterialTheme.typography.labelMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.08.sp,
-                    ),
-                    color = MaterialTheme.colorScheme.error,
-                )
-            }
-
-            Spacer(Modifier.height(12.dp))
-
+            Spacer(Modifier.height(14.dp))
+            HorizontalDivider(color = AdminGold.copy(alpha = 0.18f), thickness = 0.5.dp)
+            Spacer(Modifier.height(10.dp))
             Text(
-                session.titleEn,
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onErrorContainer,
+                "Tap to prefill session details  →",
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                color = AdminGold.copy(alpha = 0.55f),
+                modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center,
             )
-
-            Spacer(Modifier.height(16.dp))
-
-            // Mic streaming indicator
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
-            ) {
-                Icon(
-                    Icons.Outlined.Mic,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp).alpha(if (isStreaming) pulseAlpha else 0.4f),
-                    tint = if (isStreaming) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onErrorContainer,
-                )
-                Spacer(Modifier.width(6.dp))
-                Text(
-                    if (isStreaming) "Streaming audio" else "Connecting…",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (isStreaming) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.6f),
-                )
-            }
-
-            Spacer(Modifier.height(20.dp))
-
-            Button(
-                onClick = { onEnd(session.id) },
-                modifier = Modifier.fillMaxWidth().height(50.dp),
-                shape = RoundedCornerShape(10.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.error,
-                    contentColor = MaterialTheme.colorScheme.onError,
-                ),
-            ) {
-                Text("End Live Session", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold))
-            }
         }
     }
 }
+
+// ── Utilities ─────────────────────────────────────────────────────────────────
 
 private fun List<ScheduledSession>.nextUpcoming(): ScheduledSession? {
     val now = java.time.Instant.now()

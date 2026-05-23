@@ -24,6 +24,7 @@ class AdminApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        BroadcastForegroundService.createChannel(this)
         val tokenManager = TokenManager(this)
         val api = ApiClient(tokenManager).service
 

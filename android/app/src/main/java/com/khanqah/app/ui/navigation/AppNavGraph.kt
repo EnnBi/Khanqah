@@ -1,5 +1,6 @@
 package com.khanqah.app.ui.navigation
 
+import android.content.Intent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -23,6 +24,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.khanqah.app.KhanqahApp
+import com.khanqah.app.PlaybackNotificationService
 import com.khanqah.app.ui.theme.NastaleeqFontFamily
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -40,6 +43,7 @@ import com.khanqah.app.ui.library.CategoryDetailViewModel
 import com.khanqah.app.ui.library.LibraryScreen
 import com.khanqah.app.ui.library.LibraryViewModel
 import com.khanqah.app.ui.live.LiveScreen
+import com.khanqah.app.ui.player.MiniPlayerBar
 import com.khanqah.app.ui.player.PlayerScreen
 import com.khanqah.app.ui.player.PlayerViewModel
 import com.khanqah.app.ui.profile.ProfileScreen
@@ -106,15 +110,64 @@ fun AppNavGraph(
     phone: String,
     userRole: String?,
     isUrdu: Boolean,
+    openLive: Boolean = false,
+    openPlayer: Boolean = false,
     onLanguageToggle: () -> Unit,
     onLogout: () -> Unit,
 ) {
     val currentEntry by navController.currentBackStackEntryAsState()
     val currentRoute = currentEntry?.destination?.route
+    val context = LocalContext.current
+    val app = context.applicationContext as KhanqahApp
+    val nowPlaying by app.nowPlayingManager.info.collectAsState()
+
+    // Navigate to live screen when notification is tapped
+    LaunchedEffect(openLive) {
+        if (openLive && liveSession != null) {
+            navController.navigate(Screen.Live.route) { launchSingleTop = true }
+        }
+    }
+
+    // Navigate back to player when playback notification is tapped
+    LaunchedEffect(openPlayer) {
+        if (openPlayer) {
+            val info = app.nowPlayingManager.info.value
+            if (info != null) {
+                navController.navigate(Screen.Player.route(info.contentId)) { launchSingleTop = true }
+            }
+        }
+    }
+
+    // PlaybackNotificationService: start when content is playing, stop when cleared
+    LaunchedEffect(nowPlaying) {
+        val svc = Intent(context, PlaybackNotificationService::class.java)
+        if (nowPlaying != null) {
+            svc.putExtra(PlaybackNotificationService.EXTRA_TITLE, nowPlaying!!.title)
+            svc.putExtra(PlaybackNotificationService.EXTRA_TYPE, nowPlaying!!.type)
+            context.startForegroundService(svc)
+        } else {
+            context.stopService(svc)
+        }
+    }
+
+    // Live player + notification: follow the session, not the route
+    LaunchedEffect(liveSession) {
+        if (liveSession != null) {
+            app.liveStreamPlayer.ensure(liveSession.streamUrl, context)
+            context.startForegroundService(
+                Intent(context, com.khanqah.app.ListeningForegroundService::class.java)
+                    .putExtra(com.khanqah.app.ListeningForegroundService.EXTRA_TITLE, liveSession.titleEn)
+            )
+        } else {
+            app.liveStreamPlayer.release()
+            context.stopService(Intent(context, com.khanqah.app.ListeningForegroundService::class.java))
+        }
+    }
     val noBottomNavRoutes = setOf(
         Screen.Login.route,
         Screen.Player.route,
         Screen.CategoryDetail.route,
+        Screen.Live.route,
     )
     val showBottomNav = currentRoute !in noBottomNavRoutes
     val pillColor    = Color(0xFFD4AF37)           // gold background
@@ -124,6 +177,26 @@ fun AppNavGraph(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
+            val showMiniPlayer = nowPlaying != null &&
+                currentRoute != Screen.Player.route &&
+                currentRoute != Screen.Live.route &&
+                currentRoute != Screen.Login.route
+            Column {
+                if (showMiniPlayer) {
+                    val info = nowPlaying!!
+                    val player = app.nowPlayingManager.player
+                    if (player != null) {
+                        MiniPlayerBar(
+                            info = info,
+                            player = player,
+                            onClick = {
+                                navController.navigate(Screen.Player.route(info.contentId)) {
+                                    launchSingleTop = true
+                                }
+                            },
+                        )
+                    }
+                }
             if (showBottomNav) {
                 Box(
                     modifier = Modifier
@@ -199,6 +272,7 @@ fun AppNavGraph(
                     }
                 }
             }
+            }
         }
     ) { padding ->
         NavHost(
@@ -273,8 +347,20 @@ fun AppNavGraph(
                 ScheduleScreen(sessions = scheduleList)
             }
             composable(Screen.Live.route) {
-                val context = LocalContext.current
-                LiveScreen(session = liveSession, context = context)
+                val ctx = LocalContext.current
+                LiveScreen(
+                    session    = liveSession,
+                    player     = app.liveStreamPlayer.player,
+                    context    = ctx,
+                    onExitLive = {
+                        app.liveStreamPlayer.release()
+                        ctx.stopService(Intent(ctx, com.khanqah.app.ListeningForegroundService::class.java))
+                        navController.popBackStack()
+                    },
+                    pingLive   = { homeViewModel.pingLive() },
+                    leaveLive  = { homeViewModel.leaveLive() },
+                    checkLive  = { homeViewModel.isLiveActive() },
+                )
             }
             composable(Screen.Profile.route) {
                 ProfileScreen(

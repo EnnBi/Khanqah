@@ -11,4 +11,5 @@ class LiveRepository(private val api: AdminApiService) {
     suspend fun start(categoryId: String, titleEn: String, titleUr: String) =
         api.startLive(mapOf("category_id" to categoryId, "title_en" to titleEn, "title_ur" to titleUr))
     suspend fun end(id: String) = api.endLive(id)
+    suspend fun getListeners(): Int = try { api.getListeners()["listeners"] ?: 0 } catch (_: Exception) { 0 }
 }

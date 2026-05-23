@@ -58,6 +58,9 @@ interface AdminApiService {
     @GET("live/current")
     suspend fun getCurrentLive(): LiveSession?
 
+    @GET("live/listeners")
+    suspend fun getListeners(): Map<String, Int>
+
     @GET("admin/team")
     suspend fun listTeam(): List<User>
 

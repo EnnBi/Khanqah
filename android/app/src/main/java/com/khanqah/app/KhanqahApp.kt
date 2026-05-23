@@ -23,9 +23,13 @@ class KhanqahApp : Application() {
     lateinit var authViewModel: AuthViewModel
     lateinit var homeViewModel: HomeViewModel
     lateinit var libraryViewModel: LibraryViewModel
+    val nowPlayingManager = NowPlayingManager()
+    val liveStreamPlayer = LiveStreamPlayer()
 
     override fun onCreate() {
         super.onCreate()
+        ListeningForegroundService.createChannel(this)
+        PlaybackNotificationService.createChannel(this)
         val db = AppDatabase.getInstance(this)
         tokenManager = TokenManager(this)
         val apiClient = ApiClient(tokenManager)

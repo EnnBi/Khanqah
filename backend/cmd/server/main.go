@@ -89,7 +89,12 @@ func main() {
 		r.Get("/categories", handler.ListCategories(pool))
 		r.Get("/schedule", handler.ListSchedule(pool))
 		r.Get("/live/current", handler.GetCurrentLive(pool))
+		r.Get("/live/listeners", handler.GetLiveListeners())
+		r.Post("/live/ping", handler.PingLiveListener())
+		r.Post("/live/leave", handler.LeaveLive())
 		r.Post("/bugs", handler.SubmitBugReport(pool))
+		// Internal — called by audio relay, secured with X-Internal-Secret header
+		r.Post("/internal/finalize-recording", handler.FinalizeRecording(pool, r2))
 
 		// Listener (any valid JWT)
 		r.Group(func(r chi.Router) {

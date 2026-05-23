@@ -87,3 +87,50 @@ func (q *Queries) GetCurrentLiveSession(ctx context.Context) (LiveSession, error
 	)
 	return i, err
 }
+
+const getLiveSessionByID = `-- name: GetLiveSessionByID :one
+SELECT id, title_en, title_ur, stream_url, started_by, started_at, ended_at, recording_url, status FROM live_sessions WHERE id = $1
+`
+
+func (q *Queries) GetLiveSessionByID(ctx context.Context, id pgtype.UUID) (LiveSession, error) {
+	row := q.db.QueryRow(ctx, getLiveSessionByID, id)
+	var i LiveSession
+	err := row.Scan(
+		&i.ID,
+		&i.TitleEn,
+		&i.TitleUr,
+		&i.StreamUrl,
+		&i.StartedBy,
+		&i.StartedAt,
+		&i.EndedAt,
+		&i.RecordingUrl,
+		&i.Status,
+	)
+	return i, err
+}
+
+const setLiveSessionRecordingURL = `-- name: SetLiveSessionRecordingURL :one
+UPDATE live_sessions SET recording_url = $2 WHERE id = $1 RETURNING id, title_en, title_ur, stream_url, started_by, started_at, ended_at, recording_url, status
+`
+
+type SetLiveSessionRecordingURLParams struct {
+	ID           pgtype.UUID `json:"id"`
+	RecordingUrl *string     `json:"recording_url"`
+}
+
+func (q *Queries) SetLiveSessionRecordingURL(ctx context.Context, arg SetLiveSessionRecordingURLParams) (LiveSession, error) {
+	row := q.db.QueryRow(ctx, setLiveSessionRecordingURL, arg.ID, arg.RecordingUrl)
+	var i LiveSession
+	err := row.Scan(
+		&i.ID,
+		&i.TitleEn,
+		&i.TitleUr,
+		&i.StreamUrl,
+		&i.StartedBy,
+		&i.StartedAt,
+		&i.EndedAt,
+		&i.RecordingUrl,
+		&i.Status,
+	)
+	return i, err
+}

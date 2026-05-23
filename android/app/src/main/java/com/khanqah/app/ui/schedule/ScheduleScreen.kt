@@ -22,6 +22,7 @@ import com.khanqah.app.ui.utils.ScheduleStr
 @Composable
 fun ScheduleScreen(sessions: List<ScheduledSession>) {
     val isUrdu = LocalIsUrdu.current
+    val sorted = remember(sessions) { sessions.sortedBy { nextOccurrence(it.scheduledAt, it.isRecurring, it.recurrenceRule) } }
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 20.dp),
@@ -64,14 +65,14 @@ fun ScheduleScreen(sessions: List<ScheduledSession>) {
             }
         }
 
-        items(sessions) { s -> ScheduleCard(session = s) }
+        items(sorted) { s -> ScheduleCard(session = s) }
     }
 }
 
 @Composable
 private fun ScheduleCard(session: ScheduledSession) {
     val isUrdu = LocalIsUrdu.current
-    val (day, mon, weekdayTime) = parseDateParts(session.scheduledAt)
+    val (day, mon, weekdayTime) = parseDateParts(session.scheduledAt, session.isRecurring, session.recurrenceRule)
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -152,9 +153,26 @@ private fun ScheduleCard(session: ScheduledSession) {
     }
 }
 
-private fun parseDateParts(scheduledAt: String): Triple<String, String, String> = try {
-    val instant = java.time.Instant.parse(scheduledAt)
-    val zdt = instant.atZone(java.time.ZoneId.systemDefault())
+private fun nextOccurrence(scheduledAt: String, isRecurring: Boolean, rule: String?): java.time.Instant {
+    return try {
+        val now  = java.time.Instant.now()
+        val base = java.time.Instant.parse(scheduledAt)
+        if (!isRecurring || rule == null || base.isAfter(now)) return base
+        val zone = java.time.ZoneId.systemDefault()
+        var d = base.atZone(zone)
+        when {
+            rule.contains("DAILY")   -> while (!d.toInstant().isAfter(now)) d = d.plusDays(1)
+            rule.contains("WEEKLY")  -> while (!d.toInstant().isAfter(now)) d = d.plusWeeks(1)
+            rule.contains("MONTHLY") -> while (!d.toInstant().isAfter(now)) d = d.plusMonths(1)
+            else -> return base
+        }
+        d.toInstant()
+    } catch (_: Exception) { java.time.Instant.now() }
+}
+
+private fun parseDateParts(scheduledAt: String, isRecurring: Boolean = false, rule: String? = null): Triple<String, String, String> = try {
+    val inst = nextOccurrence(scheduledAt, isRecurring, rule)
+    val zdt  = inst.atZone(java.time.ZoneId.systemDefault())
     Triple(
         zdt.dayOfMonth.toString(),
         zdt.month.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.ENGLISH).uppercase(),

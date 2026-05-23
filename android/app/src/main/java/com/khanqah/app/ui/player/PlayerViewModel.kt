@@ -7,6 +7,8 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
+import com.khanqah.app.KhanqahApp
+import com.khanqah.app.NowPlayingInfo
 import com.khanqah.app.data.model.Content
 import com.khanqah.app.data.repository.ContentRepository
 import com.khanqah.app.data.repository.ProgressRepository
@@ -60,6 +62,12 @@ class PlayerViewModel(
         }
         player.play()
 
+        val nowPlayingManager = (context.applicationContext as KhanqahApp).nowPlayingManager
+        nowPlayingManager.set(
+            NowPlayingInfo(contentId = id, title = c.titleEn, type = c.type),
+            player,
+        )
+
         player.addListener(object : Player.Listener {
             override fun onPlaybackStateChanged(state: Int) {
                 if (state == Player.STATE_ENDED) {
@@ -84,6 +92,7 @@ class PlayerViewModel(
 
     override fun onCleared() {
         progressJob?.cancel()
+        (context.applicationContext as KhanqahApp).nowPlayingManager.clear()
         player.release()
         super.onCleared()
     }
