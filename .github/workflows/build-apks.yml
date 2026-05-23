@@ -109,17 +109,25 @@ jobs:
         run: |
           BUILD_DATE=$(TZ='Asia/Kolkata' date '+%d %b %Y, %H:%M IST')
           COMMIT_SHORT="${GITHUB_SHA::7}"
-          CHANGES=$(git log --pretty=format:"%s" -50 | grep -E "^(feat|fix)" | head -20 | while IFS= read -r line; do
-            if echo "$line" | grep -q "^feat"; then
-              label="New"; color="#1a6b4a"
-              msg=$(echo "$line" | sed -E 's/^feat(\([^)]*\))?: //')
-            else
-              label="Fix"; color="#7a3030"
-              msg=$(echo "$line" | sed -E 's/^fix(\([^)]*\))?: //')
-            fi
-            msg="$(echo "${msg:0:1}" | tr '[:lower:]' '[:upper:]')${msg:1}"
-            echo "<li><span style=\"background:${color};color:#fff;font-size:0.65rem;font-weight:700;letter-spacing:0.06em;padding:2px 8px;border-radius:50px;margin-right:8px;\">${label}</span>${msg}</li>"
-          done)
+
+          make_items() {
+            local path="$1"
+            git log --pretty=format:"%s" -50 -- "$path" | grep -E "^(feat|fix)" | head -15 | while IFS= read -r line; do
+              if echo "$line" | grep -q "^feat"; then
+                label="New"; color="#1a6b4a"
+                msg=$(echo "$line" | sed -E 's/^feat(\([^)]*\))?: //')
+              else
+                label="Fix"; color="#7a3030"
+                msg=$(echo "$line" | sed -E 's/^fix(\([^)]*\))?: //')
+              fi
+              msg="$(echo "${msg:0:1}" | tr '[:lower:]' '[:upper:]')${msg:1}"
+              echo "<li style=\"font-size:0.8rem;line-height:1.5;\"><span style=\"background:${color};color:#fff;font-size:0.6rem;font-weight:700;letter-spacing:0.06em;padding:2px 7px;border-radius:50px;margin-right:7px;white-space:nowrap;\">${label}</span>${msg}</li>"
+            done
+          }
+
+          USER_CHANGES=$(make_items "android/")
+          ADMIN_CHANGES=$(make_items "android-admin/")
+
           cat > index.html <<HTML
           <!DOCTYPE html>
           <html lang="en">
@@ -152,29 +160,34 @@ jobs:
                 letter-spacing: 0.1em;
                 margin-bottom: 40px;
               }
-              .cards {
-                display: flex;
-                flex-direction: column;
+              .grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
                 gap: 20px;
                 width: 100%;
-                max-width: 420px;
+                max-width: 860px;
               }
-              .card {
+              @media (max-width: 600px) {
+                .grid { grid-template-columns: 1fr; }
+              }
+              .col {
                 background: #0B4A43;
                 border-radius: 16px;
                 padding: 24px;
+                display: flex;
+                flex-direction: column;
               }
-              .card-title {
-                font-size: 1.1rem;
+              .col-title {
+                font-size: 1rem;
                 font-weight: 600;
                 color: #F4EFE7;
-                margin-bottom: 10px;
+                margin-bottom: 6px;
               }
               .meta {
-                font-size: 0.75rem;
+                font-size: 0.72rem;
                 color: #A89674;
                 line-height: 1.8;
-                margin-bottom: 20px;
+                margin-bottom: 16px;
               }
               .meta span { display: block; }
               .btn {
@@ -183,14 +196,28 @@ jobs:
                 color: #022F2B;
                 text-decoration: none;
                 font-weight: 700;
-                font-size: 0.9rem;
+                font-size: 0.85rem;
                 letter-spacing: 0.06em;
                 text-align: center;
-                padding: 14px;
+                padding: 12px;
                 border-radius: 50px;
+                margin-bottom: 20px;
+              }
+              .changes-label {
+                font-size: 0.65rem;
+                letter-spacing: 0.12em;
+                color: #A89674;
+                margin-bottom: 10px;
+              }
+              .changes {
+                list-style: none;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                flex: 1;
               }
               .footer {
-                margin-top: 40px;
+                margin-top: 32px;
                 font-size: 0.7rem;
                 color: #A89674;
                 opacity: 0.6;
@@ -200,29 +227,27 @@ jobs:
           <body>
             <h1>KHANQAH</h1>
             <p class="subtitle">TEST BUILDS</p>
-            <div class="cards">
-              <div class="card">
-                <div class="card-title">Khanqah — User App</div>
+            <div class="grid">
+              <div class="col">
+                <div class="col-title">Khanqah — User App</div>
                 <div class="meta">
                   <span>Built: ${BUILD_DATE}</span>
                   <span>Commit: ${COMMIT_SHORT}</span>
                 </div>
                 <a class="btn" href="/downloads/khanqah-user.apk">Download APK</a>
+                <p class="changes-label">WHAT'S CHANGED</p>
+                <ul class="changes">${USER_CHANGES}</ul>
               </div>
-              <div class="card">
-                <div class="card-title">Khanqah Admin</div>
+              <div class="col">
+                <div class="col-title">Khanqah Admin</div>
                 <div class="meta">
                   <span>Built: ${BUILD_DATE}</span>
                   <span>Commit: ${COMMIT_SHORT}</span>
                 </div>
                 <a class="btn" href="/downloads/khanqah-admin.apk">Download APK</a>
+                <p class="changes-label">WHAT'S CHANGED</p>
+                <ul class="changes">${ADMIN_CHANGES}</ul>
               </div>
-            </div>
-            <div style="width:100%;max-width:420px;margin-top:32px;">
-              <p style="font-size:0.7rem;letter-spacing:0.12em;color:#A89674;margin-bottom:12px;">WHAT'S CHANGED</p>
-              <ul style="list-style:none;display:flex;flex-direction:column;gap:10px;">
-                ${CHANGES}
-              </ul>
             </div>
             <p class="footer">Debug builds — for testing only</p>
           </body>
