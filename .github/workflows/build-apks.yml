@@ -100,10 +100,26 @@ jobs:
           cp artifacts/user/app-debug.apk khanqah-user.apk
           cp artifacts/admin/app-debug.apk khanqah-admin.apk
 
+      - name: Checkout repo for git log
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+
       - name: Generate index.html
         run: |
           BUILD_DATE=$(TZ='Asia/Kolkata' date '+%d %b %Y, %H:%M IST')
           COMMIT_SHORT="${GITHUB_SHA::7}"
+          CHANGES=$(git log --pretty=format:"%s" -50 | grep -E "^(feat|fix)" | head -20 | while IFS= read -r line; do
+            if echo "$line" | grep -q "^feat"; then
+              label="New"; color="#1a6b4a"
+              msg=$(echo "$line" | sed -E 's/^feat(\([^)]*\))?: //')
+            else
+              label="Fix"; color="#7a3030"
+              msg=$(echo "$line" | sed -E 's/^fix(\([^)]*\))?: //')
+            fi
+            msg="$(echo "${msg:0:1}" | tr '[:lower:]' '[:upper:]')${msg:1}"
+            echo "<li><span style=\"background:${color};color:#fff;font-size:0.65rem;font-weight:700;letter-spacing:0.06em;padding:2px 8px;border-radius:50px;margin-right:8px;\">${label}</span>${msg}</li>"
+          done)
           cat > index.html <<HTML
           <!DOCTYPE html>
           <html lang="en">
@@ -201,6 +217,12 @@ jobs:
                 </div>
                 <a class="btn" href="/downloads/khanqah-admin.apk">Download APK</a>
               </div>
+            </div>
+            <div style="width:100%;max-width:420px;margin-top:32px;">
+              <p style="font-size:0.7rem;letter-spacing:0.12em;color:#A89674;margin-bottom:12px;">WHAT'S CHANGED</p>
+              <ul style="list-style:none;display:flex;flex-direction:column;gap:10px;">
+                ${CHANGES}
+              </ul>
             </div>
             <p class="footer">Debug builds — for testing only</p>
           </body>
