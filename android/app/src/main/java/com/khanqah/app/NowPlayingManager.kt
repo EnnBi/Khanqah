@@ -18,11 +18,18 @@ class NowPlayingManager {
         private set
 
     fun set(info: NowPlayingInfo, player: ExoPlayer) {
+        if (this.player !== player) this.player?.pause()
         _info.value = info
         this.player = player
     }
 
     fun clear() {
+        _info.value = null
+        player = null
+    }
+
+    fun stopAndClear() {
+        player?.stop()
         _info.value = null
         player = null
     }

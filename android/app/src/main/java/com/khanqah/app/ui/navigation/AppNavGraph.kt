@@ -194,6 +194,7 @@ fun AppNavGraph(
                                     launchSingleTop = true
                                 }
                             },
+                            onClose = { app.nowPlayingManager.stopAndClear() },
                         )
                     }
                 }

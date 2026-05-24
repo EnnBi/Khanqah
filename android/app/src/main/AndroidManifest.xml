@@ -30,6 +30,7 @@
             android:exported="false">
             <intent-filter>
                 <action android:name="com.khanqah.app.PLAYBACK_TOGGLE" />
+                <action android:name="com.khanqah.app.PLAYBACK_STOP" />
             </intent-filter>
         </receiver>
 

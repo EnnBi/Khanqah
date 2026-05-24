@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
@@ -26,6 +27,7 @@ fun MiniPlayerBar(
     info: NowPlayingInfo,
     player: ExoPlayer,
     onClick: () -> Unit,
+    onClose: () -> Unit,
 ) {
     val gold      = Color(0xFFD4AF37)
     val deepGreen = Color(0xFF0B2F27)
@@ -81,6 +83,15 @@ fun MiniPlayerBar(
                     modifier = Modifier.size(20.dp),
                 )
             }
+            Spacer(Modifier.width(8.dp))
+            Icon(
+                Icons.Filled.Close,
+                contentDescription = "Stop",
+                tint = gold.copy(alpha = 0.7f),
+                modifier = Modifier
+                    .size(22.dp)
+                    .clickable(onClick = onClose),
+            )
         }
     }
 }

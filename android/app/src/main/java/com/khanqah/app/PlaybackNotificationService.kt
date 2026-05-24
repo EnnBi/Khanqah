@@ -60,6 +60,12 @@ class PlaybackNotificationService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
+        val stopIntent = PendingIntent.getBroadcast(
+            this, 1,
+            Intent(PlaybackControlReceiver.ACTION_STOP),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+
         val playPauseIcon = if (isPlaying) R.drawable.ic_notif_pause else R.drawable.ic_notif_play
         val playPauseLabel = if (isPlaying) "Pause" else "Play"
 
@@ -69,6 +75,7 @@ class PlaybackNotificationService : Service() {
             .setContentText(type.replaceFirstChar { it.uppercase() })
             .setContentIntent(openIntent)
             .addAction(playPauseIcon, playPauseLabel, toggleIntent)
+            .addAction(R.drawable.ic_notif_stop, "Stop", stopIntent)
             .setOngoing(isPlaying)
             .setShowWhen(false)
             .setSilent(true)
