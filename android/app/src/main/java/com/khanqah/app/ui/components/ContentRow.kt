@@ -15,6 +15,21 @@ import com.khanqah.app.data.db.entities.ContentEntity
 import com.khanqah.app.data.model.Progress
 import com.khanqah.app.ui.theme.NastaleeqFontFamily
 import com.khanqah.app.ui.utils.LocalIsUrdu
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+
+private val majalisDateFmt = DateTimeFormatter
+    .ofPattern("d MMM yyyy  ·  h:mm a", Locale.ENGLISH)
+    .withZone(ZoneId.systemDefault())
+
+private fun formatMajalisDate(iso: String): String = try {
+    // DB sends "2026-05-23 23:18:22.534163+00" — normalize space→T for Instant.parse
+    majalisDateFmt.format(Instant.parse(iso.replace(" ", "T").let {
+        if (it.contains("+") || it.endsWith("Z")) it else "${it}Z"
+    }))
+} catch (_: Exception) { "" }
 
 @Composable
 fun ContentRow(
@@ -74,8 +89,10 @@ fun ContentRow(
                             )
                         }
                     }
+                    val dateLabel = if (item.type.equals("majalis", ignoreCase = true) && item.createdAt.isNotBlank())
+                        formatMajalisDate(item.createdAt) else ""
                     Text(
-                        item.type.uppercase(),
+                        if (dateLabel.isNotBlank()) dateLabel else item.type.uppercase(),
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, letterSpacing = 0.06.sp),
                         color = MaterialTheme.colorScheme.secondary,
                     )

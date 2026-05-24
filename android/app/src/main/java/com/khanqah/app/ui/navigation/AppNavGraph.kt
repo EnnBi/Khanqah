@@ -6,11 +6,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LibraryBooks
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.LibraryBooks
+import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material.icons.outlined.MicNone
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.PlayCircleOutline
@@ -70,6 +72,7 @@ sealed class Screen(val route: String) {
     }
     object BayanTab  : Screen("tab_bayan")
     object ClipsTab  : Screen("tab_clips")
+    object BooksTab  : Screen("tab_books")
 }
 
 private fun String.encodeUrl() = java.net.URLEncoder.encode(this, "UTF-8")
@@ -88,9 +91,9 @@ fun bottomNavItems(): List<BottomNavItem> {
     val ur = LocalIsUrdu.current
     return listOf(
         BottomNavItem(Screen.Home,     if (ur) Tabs.HOME_UR     else Tabs.HOME_EN,     Icons.Filled.Home,         Icons.Outlined.Home),
-        BottomNavItem(Screen.Library,  if (ur) Tabs.LIBRARY_UR  else Tabs.LIBRARY_EN,  Icons.Filled.LibraryBooks, Icons.Outlined.LibraryBooks),
         BottomNavItem(Screen.BayanTab, if (ur) Tabs.BAYAANAT_UR else Tabs.BAYAANAT_EN, Icons.Filled.Mic,          Icons.Outlined.MicNone),
         BottomNavItem(Screen.ClipsTab, if (ur) Tabs.CLIPS_UR    else Tabs.CLIPS_EN,    Icons.Filled.PlayCircle,   Icons.Outlined.PlayCircleOutline),
+        BottomNavItem(Screen.BooksTab, if (ur) Tabs.BOOKS_UR    else Tabs.BOOKS_EN,    Icons.Filled.MenuBook,     Icons.Outlined.MenuBook),
         BottomNavItem(Screen.Profile,  if (ur) Tabs.PROFILE_UR  else Tabs.PROFILE_EN,  Icons.Filled.Person,       Icons.Outlined.Person),
     )
 }
@@ -150,15 +153,9 @@ fun AppNavGraph(
         }
     }
 
-    // Live player + notification: follow the session, not the route
+    // Live player cleanup: release when session ends
     LaunchedEffect(liveSession) {
-        if (liveSession != null) {
-            app.liveStreamPlayer.ensure(liveSession.streamUrl, context)
-            context.startForegroundService(
-                Intent(context, com.khanqah.app.ListeningForegroundService::class.java)
-                    .putExtra(com.khanqah.app.ListeningForegroundService.EXTRA_TITLE, liveSession.titleEn)
-            )
-        } else {
+        if (liveSession == null) {
             app.liveStreamPlayer.release()
             context.stopService(Intent(context, com.khanqah.app.ListeningForegroundService::class.java))
         }
@@ -292,7 +289,17 @@ fun AppNavGraph(
                 HomeScreen(
                     viewModel = homeViewModel,
                     onContentClick = { id -> navController.navigate(Screen.Player.route(id)) },
-                    onLiveClick = { navController.navigate(Screen.Live.route) },
+                    onLiveClick = {
+                        val session = liveSession
+                        if (session != null) {
+                            app.liveStreamPlayer.ensure(session.streamUrl, context)
+                            context.startForegroundService(
+                                Intent(context, com.khanqah.app.ListeningForegroundService::class.java)
+                                    .putExtra(com.khanqah.app.ListeningForegroundService.EXTRA_TITLE, session.titleEn)
+                            )
+                        }
+                        navController.navigate(Screen.Live.route)
+                    },
                     onLibraryClick = { navController.navigate(Screen.Library.route) },
                     onProfileClick = { navController.navigate(Screen.Profile.route) },
                     onScheduleClick = {
@@ -407,6 +414,22 @@ fun AppNavGraph(
             composable(Screen.ClipsTab.route) {
                 val cats by libraryViewModel.categories.collectAsState()
                 val cat = cats.firstOrNull { it.type.equals("clip", ignoreCase = true) }
+                if (cat != null) {
+                    val vm = remember(cat.id) { categoryDetailViewModelFactory(cat.id) }
+                    CategoryDetailScreen(
+                        viewModel = vm,
+                        categoryNameEn = cat.nameEn,
+                        categoryNameUr = cat.nameUr,
+                        categoryType = cat.type,
+                        onContentClick = { id -> navController.navigate(Screen.Player.route(id)) },
+                        onBack = {},
+                        showBackButton = false,
+                    )
+                }
+            }
+            composable(Screen.BooksTab.route) {
+                val cats by libraryViewModel.categories.collectAsState()
+                val cat = cats.firstOrNull { it.type.equals("book", ignoreCase = true) }
                 if (cat != null) {
                     val vm = remember(cat.id) { categoryDetailViewModelFactory(cat.id) }
                     CategoryDetailScreen(

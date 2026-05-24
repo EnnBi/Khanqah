@@ -29,7 +29,7 @@ interface ApiService {
     suspend fun listSchedule(): List<ScheduledSession>
 
     @GET("live/current")
-    suspend fun getCurrentLive(): LiveSession?
+    suspend fun getCurrentLive(): retrofit2.Response<LiveSession?>
 
     @POST("live/ping")
     suspend fun pingLive(): Map<String, Int>

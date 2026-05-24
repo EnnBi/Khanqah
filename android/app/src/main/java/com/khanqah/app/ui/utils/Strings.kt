@@ -15,6 +15,7 @@ object Tabs {
     const val LIBRARY_EN   = "Library";     const val LIBRARY_UR   = "لائبریری"
     const val BAYAANAT_EN  = "Bayaanat";    const val BAYAANAT_UR  = "بیانات"
     const val CLIPS_EN     = "Clips";       const val CLIPS_UR     = "کلپس"
+    const val BOOKS_EN     = "Books";       const val BOOKS_UR     = "کتابیں"
     const val PROFILE_EN   = "Profile";     const val PROFILE_UR   = "پروفائل"
 }
 

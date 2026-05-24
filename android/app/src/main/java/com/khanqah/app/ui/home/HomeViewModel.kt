@@ -29,14 +29,13 @@ class HomeViewModel(
 
     private suspend fun pollLive() {
         while (true) {
-            _live.value = try {
-                api.getCurrentLive()
-            } catch (e: retrofit2.HttpException) {
-                if (e.code() == 404) null else _live.value
+            try {
+                val response = api.getCurrentLive()
+                if (response.isSuccessful) _live.value = response.body()
             } catch (_: Exception) {
-                _live.value
+                // network error — keep current value, try again next cycle
             }
-            delay(30_000)
+            delay(10_000)
         }
     }
 
@@ -44,9 +43,8 @@ class HomeViewModel(
     suspend fun leaveLive() { try { api.leaveLive() } catch (_: Exception) {} }
     suspend fun isLiveActive(): Boolean {
         return try {
-            api.getCurrentLive() != null
-        } catch (e: retrofit2.HttpException) {
-            e.code() != 404  // 404 = no active session
+            val response = api.getCurrentLive()
+            response.isSuccessful && response.body() != null
         } catch (_: Exception) {
             true  // network error — assume still live
         }

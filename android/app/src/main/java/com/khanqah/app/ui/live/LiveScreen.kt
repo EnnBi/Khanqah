@@ -32,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.khanqah.app.data.model.LiveSession
 import kotlinx.coroutines.delay
@@ -60,27 +61,54 @@ fun LiveScreen(
     leaveLive: suspend () -> Unit = {},
     checkLive: suspend () -> Boolean = { true },
 ) {
-    if (session == null) {
-        NoLiveScreen()
-        return
-    }
-
+    // Must be before any early return so state survives session→null transitions
+    var hadSession by remember { mutableStateOf(session != null) }
+    var sessionEnded by remember { mutableStateOf(false) }
+    var isPlaying by remember { mutableStateOf(player?.isPlaying ?: true) }
+    var elapsedSeconds by remember { mutableIntStateOf(
+        if (session != null) computeInitialElapsed(session.startedAt) else 0
+    ) }
+    var listenerCount by remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
 
-    var isPlaying by remember { mutableStateOf(player?.isPlaying ?: true) }
-    var sessionEnded by remember { mutableStateOf(false) }
+    // Detect session ending via HomeViewModel's null-out path
+    LaunchedEffect(session) {
+        if (session != null) hadSession = true
+        if (session == null && hadSession) {
+            sessionEnded = true
+            player?.pause()
+        }
+    }
 
-    // Sync isPlaying from actual player state
+    // Sync isPlaying; detect stream end via state transitions
     LaunchedEffect(player) {
+        var wasPlaying = false
         while (true) {
-            isPlaying = player?.isPlaying ?: false
+            val playing = player?.isPlaying ?: false
+            val state   = player?.playbackState ?: Player.STATE_IDLE
+            isPlaying = playing
+
+            when {
+                state == Player.STATE_ENDED -> {
+                    sessionEnded = true; break
+                }
+                // was playing, now stopped and not paused by user (STATE_READY = user pause)
+                wasPlaying && !playing && state != Player.STATE_READY -> {
+                    // Wait up to 8s for stream to recover before declaring ended
+                    delay(8_000)
+                    if (!(player?.isPlaying ?: false) && !sessionEnded) {
+                        sessionEnded = true; break
+                    }
+                }
+            }
+            wasPlaying = playing && state == Player.STATE_READY
             delay(500)
         }
     }
 
-    // Elapsed timer
-    var elapsedSeconds by remember { mutableIntStateOf(computeInitialElapsed(session.startedAt)) }
-    LaunchedEffect(session.id) {
+    // Elapsed timer — stops when session ends
+    LaunchedEffect(session?.id) {
+        if (session == null) return@LaunchedEffect
         while (!sessionEnded) {
             delay(1000)
             elapsedSeconds++
@@ -88,8 +116,8 @@ fun LiveScreen(
     }
 
     // Poll every 15s: check if session is still live, update listener count
-    var listenerCount by remember { mutableIntStateOf(0) }
-    LaunchedEffect(session.id) {
+    LaunchedEffect(session?.id) {
+        if (session == null) return@LaunchedEffect
         while (true) {
             delay(15_000)
             val isLive = checkLive()
@@ -103,8 +131,13 @@ fun LiveScreen(
         }
     }
 
-    if (sessionEnded) {
+    // Route to the right screen after all state is set up
+    if (sessionEnded || (session == null && hadSession)) {
         BroadcastEndedScreen(onBack = onExitLive)
+        return
+    }
+    if (session == null) {
+        NoLiveScreen()
         return
     }
 
