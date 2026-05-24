@@ -12,7 +12,10 @@ class PlaybackControlReceiver : BroadcastReceiver() {
                 val player = manager.player ?: return
                 if (player.isPlaying) player.pause() else player.play()
             }
-            ACTION_STOP -> manager.stopAndClear()
+            ACTION_STOP -> {
+                manager.stopAndClear()
+                context.stopService(Intent(context, PlaybackNotificationService::class.java))
+            }
         }
     }
 

@@ -38,6 +38,8 @@ class PlaybackNotificationService : Service() {
     }
 
     override fun onDestroy() {
+        @Suppress("DEPRECATION")
+        stopForeground(true)
         (application as KhanqahApp).nowPlayingManager.player?.removeListener(playerListener)
         super.onDestroy()
     }
