@@ -211,7 +211,7 @@ jobs:
                 margin-bottom: 12px;
               }
               .sub {
-                font-size: 0.6rem;
+                font-size: 0.75rem;
                 letter-spacing: 0.38em;
                 color: var(--muted);
                 text-transform: uppercase;
@@ -249,7 +249,7 @@ jobs:
                 box-shadow: 0 24px 64px #00000060, 0 0 0 1px #C9A84C18;
               }
               .app-eyebrow {
-                font-size: 0.52rem;
+                font-size: 0.65rem;
                 letter-spacing: 0.28em;
                 color: var(--gold-dim);
                 text-transform: uppercase;
@@ -257,15 +257,15 @@ jobs:
               }
               .app-name {
                 font-family: 'Cormorant Garamond', Georgia, serif;
-                font-size: 1.65rem;
+                font-size: 2rem;
                 font-weight: 600;
                 color: var(--text);
                 margin-bottom: 18px;
                 line-height: 1.2;
               }
               .meta { margin-bottom: 20px; display: flex; flex-direction: column; gap: 4px; }
-              .meta-row { display: flex; gap: 10px; font-size: 0.62rem; color: var(--muted); }
-              .meta-key { color: var(--gold-dim); min-width: 44px; letter-spacing: 0.06em; }
+              .meta-row { display: flex; gap: 10px; font-size: 0.8rem; color: var(--muted); }
+              .meta-key { color: var(--gold-dim); min-width: 54px; letter-spacing: 0.06em; }
               .btn {
                 display: block;
                 position: relative;
@@ -274,12 +274,12 @@ jobs:
                 color: #011E1B;
                 text-decoration: none;
                 font-family: 'DM Mono', monospace;
-                font-size: 0.68rem;
+                font-size: 0.85rem;
                 font-weight: 400;
                 letter-spacing: 0.2em;
                 text-align: center;
                 text-transform: uppercase;
-                padding: 13px;
+                padding: 14px;
                 border-radius: 1px;
                 margin-bottom: 22px;
                 transition: background 0.2s;
@@ -296,14 +296,14 @@ jobs:
               .btn:hover::after { left: 170%; }
               .sep { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
               .sep-line { flex: 1; height: 1px; background: #C9A84C14; }
-              .sep-text { font-size: 0.5rem; letter-spacing: 0.28em; color: var(--muted); text-transform: uppercase; }
+              .sep-text { font-size: 0.65rem; letter-spacing: 0.28em; color: var(--muted); text-transform: uppercase; }
               .changes { list-style: none; display: flex; flex-direction: column; gap: 9px; flex: 1; }
-              .changes li { display: flex; align-items: flex-start; gap: 8px; font-size: 0.68rem; line-height: 1.5; color: #B0A898; }
+              .changes li { display: flex; align-items: flex-start; gap: 8px; font-size: 0.85rem; line-height: 1.5; color: #B0A898; }
               .tag {
-                font-size: 0.48rem;
+                font-size: 0.6rem;
                 font-weight: 400;
                 letter-spacing: 0.14em;
-                padding: 2px 6px;
+                padding: 2px 7px;
                 border-radius: 1px;
                 white-space: nowrap;
                 flex-shrink: 0;
@@ -314,7 +314,7 @@ jobs:
               .tag-fix { background: #2A1515; color: #C47A7A; border: 1px solid #C47A7A28; }
               .footer {
                 margin-top: 44px;
-                font-size: 0.57rem;
+                font-size: 0.72rem;
                 letter-spacing: 0.22em;
                 color: var(--muted);
                 opacity: 0.5;
