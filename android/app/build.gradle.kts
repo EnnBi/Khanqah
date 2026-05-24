@@ -51,6 +51,7 @@ dependencies {
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.ui)
     implementation(libs.media3.exoplayer.hls)
+    implementation(libs.androidx.media)
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.lifecycle.runtime.ktx)
     implementation(libs.coil.compose)

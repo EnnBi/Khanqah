@@ -60,41 +60,42 @@ fun PlayerScreen(
     onBack: () -> Unit = {},
 ) {
     val content by viewModel.content.collectAsState()
+    val player  by viewModel.playerState.collectAsState()
 
     LaunchedEffect(contentId) { viewModel.load(contentId) }
 
     val isUrdu = LocalIsUrdu.current
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        content?.let { item ->
-            val isBook  = detectIsBook(item.type, item.mediaUrl)
-            val isVideo = !isBook && detectIsVideo(item.isVideo, item.type, item.mediaUrl)
-            val title = if (isUrdu && item.titleUr.isNotBlank()) item.titleUr else item.titleEn
-
-            when {
-                isBook -> PdfViewerScreen(
-                    url = item.mediaUrl,
-                    title = title,
-                    type = item.type,
-                    onBack = onBack,
-                )
-                isVideo -> VideoPlayerScreen(
-                    player = viewModel.player,
-                    title = title,
-                    type = item.type,
-                    description = item.descriptionEn,
-                    topics = item.topics,
-                    onBack = onBack,
-                    onSeekTo = { viewModel.player.seekTo(it) },
-                )
-                else -> AudioFullScreen(
-                    player = viewModel.player,
-                    title = title,
-                    type = item.type,
-                    onBack = onBack,
-                )
+        val item = content
+        val p = player
+        when {
+            item == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.tertiary)
             }
-        } ?: Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = MaterialTheme.colorScheme.tertiary)
+            detectIsBook(item.type, item.mediaUrl) -> PdfViewerScreen(
+                url = item.mediaUrl,
+                title = if (isUrdu && item.titleUr.isNotBlank()) item.titleUr else item.titleEn,
+                type = item.type,
+                onBack = onBack,
+            )
+            p == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.tertiary)
+            }
+            detectIsVideo(item.isVideo, item.type, item.mediaUrl) -> VideoPlayerScreen(
+                player = p,
+                title = if (isUrdu && item.titleUr.isNotBlank()) item.titleUr else item.titleEn,
+                type = item.type,
+                description = item.descriptionEn,
+                topics = item.topics,
+                onBack = onBack,
+                onSeekTo = { p.seekTo(it) },
+            )
+            else -> AudioFullScreen(
+                player = p,
+                title = if (isUrdu && item.titleUr.isNotBlank()) item.titleUr else item.titleEn,
+                type = item.type,
+                onBack = onBack,
+            )
         }
     }
 }

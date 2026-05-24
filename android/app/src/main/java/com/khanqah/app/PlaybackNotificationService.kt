@@ -8,6 +8,7 @@ import android.app.Service
 import android.content.Intent
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import androidx.media.app.NotificationCompat.MediaStyle
 import androidx.media3.common.Player
 
 class PlaybackNotificationService : Service() {
@@ -31,7 +32,6 @@ class PlaybackNotificationService : Service() {
         val isPlaying = player?.isPlaying ?: true
 
         startForeground(NOTIF_ID, buildNotification(title, type, isPlaying))
-
         player?.addListener(playerListener)
 
         return START_STICKY
@@ -56,17 +56,21 @@ class PlaybackNotificationService : Service() {
 
         val toggleIntent = PendingIntent.getBroadcast(
             this, 0,
-            Intent(PlaybackControlReceiver.ACTION_TOGGLE),
+            Intent(this, PlaybackControlReceiver::class.java).apply {
+                action = PlaybackControlReceiver.ACTION_TOGGLE
+            },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
         val stopIntent = PendingIntent.getBroadcast(
             this, 1,
-            Intent(PlaybackControlReceiver.ACTION_STOP),
+            Intent(this, PlaybackControlReceiver::class.java).apply {
+                action = PlaybackControlReceiver.ACTION_STOP
+            },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
-        val playPauseIcon = if (isPlaying) R.drawable.ic_notif_pause else R.drawable.ic_notif_play
+        val playPauseIcon  = if (isPlaying) R.drawable.ic_notif_pause else R.drawable.ic_notif_play
         val playPauseLabel = if (isPlaying) "Pause" else "Play"
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
@@ -74,8 +78,11 @@ class PlaybackNotificationService : Service() {
             .setContentTitle(title)
             .setContentText(type.replaceFirstChar { it.uppercase() })
             .setContentIntent(openIntent)
-            .addAction(playPauseIcon, playPauseLabel, toggleIntent)
-            .addAction(R.drawable.ic_notif_stop, "Stop", stopIntent)
+            .addAction(playPauseIcon, playPauseLabel, toggleIntent)   // index 0
+            .addAction(R.drawable.ic_notif_stop, "Stop", stopIntent)  // index 1
+            .setStyle(
+                MediaStyle().setShowActionsInCompactView(0, 1)
+            )
             .setOngoing(isPlaying)
             .setShowWhen(false)
             .setSilent(true)
@@ -83,10 +90,10 @@ class PlaybackNotificationService : Service() {
     }
 
     companion object {
-        const val CHANNEL_ID   = "playback_channel"
-        const val NOTIF_ID     = 2
-        const val EXTRA_TITLE  = "extra_title"
-        const val EXTRA_TYPE   = "extra_type"
+        const val CHANNEL_ID        = "playback_channel"
+        const val NOTIF_ID          = 2
+        const val EXTRA_TITLE       = "extra_title"
+        const val EXTRA_TYPE        = "extra_type"
         const val ACTION_OPEN_PLAYER = "com.khanqah.app.OPEN_PLAYER"
 
         fun createChannel(context: android.content.Context) {

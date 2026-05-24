@@ -27,18 +27,10 @@ class PlayerViewModel(
     private val _content = MutableStateFlow<Content?>(null)
     val content = _content.asStateFlow()
 
-    val player: ExoPlayer = ExoPlayer.Builder(context)
-        .setLoadControl(
-            DefaultLoadControl.Builder()
-                .setBufferDurationsMs(
-                    DefaultLoadControl.DEFAULT_MIN_BUFFER_MS,
-                    DefaultLoadControl.DEFAULT_MAX_BUFFER_MS,
-                    1_500,
-                    DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS,
-                )
-                .build()
-        )
-        .build()
+    private val _player = MutableStateFlow<ExoPlayer?>(null)
+    val playerState = _player.asStateFlow()
+
+    private var playerOwned = true
     private var progressJob: Job? = null
 
     fun load(id: String) = viewModelScope.launch {
@@ -49,30 +41,53 @@ class PlayerViewModel(
                      c.mediaUrl.lowercase().endsWith(".pdf")
         if (isBook) return@launch
 
+        val nowPlayingManager = (context.applicationContext as KhanqahApp).nowPlayingManager
+
+        // Same content already playing in background — reuse that player
+        if (nowPlayingManager.info.value?.contentId == id && nowPlayingManager.player != null) {
+            _player.value = nowPlayingManager.player
+            playerOwned = false
+            return@launch
+        }
+
         val saved = progressRepo.getLocal(id) ?: run {
             progressRepo.loadAll()
             progressRepo.getLocal(id)
         }
 
-        player.setMediaItem(MediaItem.fromUri(c.mediaUrl))
-        player.prepare()
+        val p = ExoPlayer.Builder(context)
+            .setLoadControl(
+                DefaultLoadControl.Builder()
+                    .setBufferDurationsMs(
+                        DefaultLoadControl.DEFAULT_MIN_BUFFER_MS,
+                        DefaultLoadControl.DEFAULT_MAX_BUFFER_MS,
+                        1_500,
+                        DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS,
+                    )
+                    .build()
+            )
+            .build()
+        _player.value = p
+        playerOwned = true
+
+        p.setMediaItem(MediaItem.fromUri(c.mediaUrl))
+        p.prepare()
 
         if (saved != null && !saved.completed && saved.positionSeconds > 0) {
-            player.seekTo(saved.positionSeconds * 1000L)
+            p.seekTo(saved.positionSeconds * 1000L)
         }
-        player.play()
+        p.play()
 
-        val nowPlayingManager = (context.applicationContext as KhanqahApp).nowPlayingManager
         nowPlayingManager.set(
             NowPlayingInfo(contentId = id, title = c.titleEn, type = c.type),
-            player,
+            p,
         )
 
-        player.addListener(object : Player.Listener {
+        p.addListener(object : Player.Listener {
             override fun onPlaybackStateChanged(state: Int) {
                 if (state == Player.STATE_ENDED) {
                     viewModelScope.launch {
-                        progressRepo.save(id, (player.duration / 1000).toInt(), completed = true)
+                        progressRepo.save(id, (p.duration / 1000).toInt(), completed = true)
                     }
                 }
             }
@@ -82,8 +97,8 @@ class PlayerViewModel(
         progressJob = viewModelScope.launch {
             while (true) {
                 delay(10_000)
-                val pos = (player.currentPosition / 1000).toInt()
-                val dur = (player.duration / 1000).toInt()
+                val pos = (p.currentPosition / 1000).toInt()
+                val dur = (p.duration / 1000).toInt()
                 val completed = dur > 0 && pos >= (dur * 0.9).toInt()
                 progressRepo.save(id, pos, completed)
             }
@@ -93,7 +108,7 @@ class PlayerViewModel(
     override fun onCleared() {
         progressJob?.cancel()
         (context.applicationContext as KhanqahApp).nowPlayingManager.clear()
-        player.release()
+        if (playerOwned) _player.value?.release()
         super.onCleared()
     }
 }
