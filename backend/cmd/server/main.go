@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
@@ -13,6 +14,7 @@ import (
 
 	_ "khanqah/api/docs"
 	"khanqah/api/internal/db"
+	"khanqah/api/internal/fcm"
 	"khanqah/api/internal/handler"
 	"khanqah/api/internal/middleware"
 	"khanqah/api/internal/sms"
@@ -64,6 +66,14 @@ func main() {
 		log.Fatal("JWT_SECRET must be set")
 	}
 
+	fcmClient, err := fcm.New(context.Background())
+	if err != nil {
+		log.Fatalf("fcm init: %v", err)
+	}
+	if fcmClient == nil {
+		log.Println("fcm: FIREBASE_CREDENTIALS not set — push notifications disabled")
+	}
+
 	r := chi.NewRouter()
 	r.Use(chimiddleware.RequestSize(1 << 20)) // 1 MB body limit
 	r.Use(cors.Handler(cors.Options{
@@ -110,12 +120,12 @@ func main() {
 			r.Use(middleware.RequireAuth(jwtSecret))
 			r.Use(middleware.RequireRole("editor", "admin", "broadcaster"))
 			r.Post("/admin/upload", handler.GenerateUploadURL(r2))
-			r.Post("/admin/content", handler.CreateContent(pool))
+			r.Post("/admin/content", handler.CreateContent(pool, fcmClient))
 			r.Put("/admin/content/{id}", handler.UpdateContent(pool))
 			r.Get("/admin/categories", handler.ListCategories(pool))
 			r.Post("/admin/categories", handler.CreateCategory(pool))
 			r.Put("/admin/categories/{id}", handler.UpdateCategory(pool))
-			r.Post("/admin/live/start", handler.StartLiveSession(pool))
+			r.Post("/admin/live/start", handler.StartLiveSession(pool, fcmClient))
 			r.Post("/admin/live/end/{id}", handler.EndLiveSession(pool))
 		})
 
@@ -133,6 +143,8 @@ func main() {
 			r.Put("/admin/team/{id}/name", handler.UpdateUserName(pool))
 			r.Delete("/admin/team/{id}", handler.DeleteUser(pool))
 			r.Get("/admin/bugs", handler.ListBugReports(pool))
+			r.Get("/admin/notification-settings", handler.GetNotificationSettings(pool))
+			r.Put("/admin/notification-settings/{key}", handler.UpdateNotificationSetting(pool))
 		})
 	})
 

@@ -19,9 +19,9 @@ import Content from './pages/admin/Content'
 import Upload from './pages/admin/Upload'
 import Categories from './pages/admin/Categories'
 import AdminSchedule from './pages/admin/Schedule'
-import AdminLive from './pages/admin/Live'
 import Team from './pages/admin/Team'
 import Bugs from './pages/admin/Bugs'
+import Settings from './pages/admin/Settings'
 
 const queryClient = new QueryClient()
 
@@ -45,9 +45,9 @@ createRoot(document.getElementById('root')!).render(
               <Route path="/admin/upload" element={<Upload />} />
               <Route path="/admin/categories" element={<Categories />} />
               <Route path="/admin/schedule" element={<AdminSchedule />} />
-              <Route path="/admin/live" element={<AdminLive />} />
               <Route path="/admin/team" element={<Team />} />
               <Route path="/admin/bugs" element={<Bugs />} />
+              <Route path="/admin/settings" element={<Settings />} />
             </Route>
           </Route>
         </Routes>

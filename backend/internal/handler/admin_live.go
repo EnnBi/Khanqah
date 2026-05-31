@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -11,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	dbgen "khanqah/api/internal/db/generated"
+	"khanqah/api/internal/fcm"
 	"khanqah/api/internal/middleware"
 )
 
@@ -26,7 +28,7 @@ const hlsStreamURL = "https://arrashid.ennbi.com/hls/stream.m3u8"
 //	@Success		201		{object}	object
 //	@Failure		400		{object}	errorResponse
 //	@Router			/admin/live/start [post]
-func StartLiveSession(pool *pgxpool.Pool) http.HandlerFunc {
+func StartLiveSession(pool *pgxpool.Pool, fcmClient *fcm.Client) http.HandlerFunc {
 	q := dbgen.New(pool)
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims := middleware.ClaimsFromContext(r.Context())
@@ -79,6 +81,15 @@ func StartLiveSession(pool *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 		writeJSON(w, http.StatusCreated, row)
+
+		if notificationEnabled(r.Context(), pool, "broadcast_live") {
+			go func() {
+				if err := fcmClient.SendToTopic(r.Context(), "broadcast_live",
+					"Live Now", row.TitleEn+" is now live"); err != nil {
+					log.Printf("fcm broadcast_live: %v", err)
+				}
+			}()
+		}
 	}
 }
 

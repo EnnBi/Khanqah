@@ -2,6 +2,7 @@ package com.khanqah.admin.data.repository
 
 import com.khanqah.admin.data.api.AdminApiService
 import com.khanqah.admin.data.model.Category
+import kotlinx.coroutines.delay
 
 class LiveRepository(private val api: AdminApiService) {
     suspend fun getCurrent(): com.khanqah.admin.data.model.LiveSession? = try {
@@ -9,7 +10,20 @@ class LiveRepository(private val api: AdminApiService) {
     } catch (_: Exception) { null }
     suspend fun listCategories(): List<Category> = api.listCategories()
     suspend fun start(categoryId: String, titleEn: String, titleUr: String) =
-        api.startLive(mapOf("category_id" to categoryId, "title_en" to titleEn, "title_ur" to titleUr))
+        retry(times = 3, delayMs = 2000) {
+            api.startLive(mapOf("category_id" to categoryId, "title_en" to titleEn, "title_ur" to titleUr))
+        }
     suspend fun end(id: String) = api.endLive(id)
     suspend fun getListeners(): Int = try { api.getListeners()["listeners"] ?: 0 } catch (_: Exception) { 0 }
+}
+
+private suspend fun <T> retry(times: Int, delayMs: Long, block: suspend () -> T): T {
+    var lastException: Exception? = null
+    repeat(times) { attempt ->
+        try { return block() } catch (e: Exception) {
+            lastException = e
+            if (attempt < times - 1) delay(delayMs)
+        }
+    }
+    throw lastException!!
 }

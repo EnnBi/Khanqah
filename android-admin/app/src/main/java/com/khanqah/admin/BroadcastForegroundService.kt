@@ -31,7 +31,7 @@ class BroadcastForegroundService : Service() {
             .build()
 
         startForeground(NOTIF_ID, notification)
-        return START_NOT_STICKY
+        return START_STICKY
     }
 
     companion object {

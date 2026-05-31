@@ -7,9 +7,9 @@ const NAV = [
   { href: '/admin/content', label: 'Content' },
   { href: '/admin/categories', label: 'Categories' },
   { href: '/admin/schedule', label: 'Schedule' },
-  { href: '/admin/live', label: 'Live' },
   { href: '/admin/team', label: 'Team' },
   { href: '/admin/bugs', label: 'Bug Reports' },
+  { href: '/admin/settings', label: 'Settings' },
 ]
 
 export default function AdminLayout() {

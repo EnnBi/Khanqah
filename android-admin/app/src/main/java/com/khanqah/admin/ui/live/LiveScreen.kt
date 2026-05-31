@@ -316,12 +316,16 @@ fun LiveScreen(
 
 @Composable
 private fun LiveOnAirScreen(session: LiveSession, isStreaming: Boolean, listenerCount: Int, onEnd: (String) -> Unit) {
+    val startEpochMs = remember(session.id) {
+        session.startedAt?.let {
+            runCatching { java.time.Instant.parse(it).toEpochMilli() }.getOrNull()
+        } ?: System.currentTimeMillis()
+    }
     var elapsedSeconds by remember { mutableIntStateOf(0) }
     LaunchedEffect(session.id) {
-        elapsedSeconds = 0
         while (true) {
+            elapsedSeconds = ((System.currentTimeMillis() - startEpochMs) / 1000).toInt().coerceAtLeast(0)
             delay(1000)
-            elapsedSeconds++
         }
     }
 

@@ -42,6 +42,7 @@ data class LiveSession(
     @SerializedName("title_ur") val titleUr: String = "",
     @SerializedName("stream_url") val streamUrl: String,
     val status: String,
+    @SerializedName("started_at") val startedAt: String? = null,
 )
 
 data class BugReport(

@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -11,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	dbgen "khanqah/api/internal/db/generated"
+	"khanqah/api/internal/fcm"
 	"khanqah/api/internal/middleware"
 )
 
@@ -24,7 +26,7 @@ import (
 //	@Success		201		{object}	object
 //	@Failure		400		{object}	errorResponse
 //	@Router			/admin/content [post]
-func CreateContent(pool *pgxpool.Pool) http.HandlerFunc {
+func CreateContent(pool *pgxpool.Pool, fcmClient *fcm.Client) http.HandlerFunc {
 	q := dbgen.New(pool)
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims := middleware.ClaimsFromContext(r.Context())
@@ -48,6 +50,15 @@ func CreateContent(pool *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 		writeJSON(w, http.StatusCreated, row)
+
+		if notificationEnabled(r.Context(), pool, "content_upload") {
+			go func() {
+				if err := fcmClient.SendToTopic(r.Context(), "content_upload",
+					"New Content", row.TitleEn); err != nil {
+					log.Printf("fcm content_upload: %v", err)
+				}
+			}()
+		}
 	}
 }
 

@@ -1,6 +1,7 @@
 package com.khanqah.app
 
 import android.app.Application
+import com.google.firebase.messaging.FirebaseMessaging
 import com.khanqah.app.data.api.ApiClient
 import com.khanqah.app.data.api.TokenManager
 import com.khanqah.app.data.db.AppDatabase
@@ -30,6 +31,8 @@ class KhanqahApp : Application() {
         super.onCreate()
         ListeningForegroundService.createChannel(this)
         PlaybackNotificationService.createChannel(this)
+        FirebaseMessaging.getInstance().subscribeToTopic("broadcast_live")
+        FirebaseMessaging.getInstance().subscribeToTopic("content_upload")
         val db = AppDatabase.getInstance(this)
         tokenManager = TokenManager(this)
         val apiClient = ApiClient(tokenManager)
