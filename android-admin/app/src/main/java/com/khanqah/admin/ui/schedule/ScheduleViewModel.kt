@@ -18,9 +18,12 @@ class ScheduleViewModel(private val repo: ScheduleRepository) : ViewModel() {
         try { _sessions.value = repo.list() } catch (_: Exception) {}
     }
 
-    fun create(titleEn: String, titleUr: String, scheduledAt: String) = viewModelScope.launch {
+    fun create(
+        titleEn: String, titleUr: String, scheduledAt: String,
+        isRecurring: Boolean = false, recurrenceRule: String? = null,
+    ) = viewModelScope.launch {
         try {
-            val new = repo.create(titleEn, titleUr, scheduledAt)
+            val new = repo.create(titleEn, titleUr, scheduledAt, isRecurring, recurrenceRule)
             _sessions.value = _sessions.value + new
         } catch (_: Exception) {}
     }
