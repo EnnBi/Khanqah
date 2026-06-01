@@ -25,6 +25,7 @@ data class Category(
     @SerializedName("name_ur") val nameUr: String,
     val type: String,
     @SerializedName("sort_order") val sortOrder: Int,
+    val slug: String? = null,
 )
 
 data class ScheduledSession(

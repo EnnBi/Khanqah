@@ -49,6 +49,9 @@ interface AdminApiService {
     @DELETE("admin/schedule/{id}")
     suspend fun deleteSession(@Path("id") id: String)
 
+    @PUT("admin/schedule/{id}")
+    suspend fun updateSession(@Path("id") id: String, @Body body: Map<String, Any?>): ScheduledSession
+
     @POST("admin/live/start")
     suspend fun startLive(@Body body: Map<String, String>): LiveSession
 
@@ -66,6 +69,12 @@ interface AdminApiService {
 
     @PUT("admin/team/{id}/role")
     suspend fun updateRole(@Path("id") id: String, @Body body: Map<String, String>): User
+
+    @PUT("admin/team/{id}/name")
+    suspend fun updateUserName(@Path("id") id: String, @Body body: Map<String, String>): User
+
+    @DELETE("admin/team/{id}")
+    suspend fun deleteUser(@Path("id") id: String)
 
     @GET("admin/bugs")
     suspend fun listBugs(@Query("status") status: String? = null): List<BugReport>
