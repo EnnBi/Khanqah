@@ -22,6 +22,13 @@ class ContentViewModel(private val repo: ContentAdminRepository) : ViewModel() {
         viewModelScope.launch { try { _categories.value = repo.listCategories() } catch (_: Exception) {} }
     }
 
+    fun update(id: String, titleEn: String, titleUr: String, categoryId: String) = viewModelScope.launch {
+        try {
+            val updated = repo.updateContent(id, titleEn, titleUr, categoryId)
+            _items.value = _items.value.map { if (it.id == id) updated else it }
+        } catch (_: Exception) {}
+    }
+
     fun delete(id: String) = viewModelScope.launch {
         try {
             repo.deleteContent(id)
