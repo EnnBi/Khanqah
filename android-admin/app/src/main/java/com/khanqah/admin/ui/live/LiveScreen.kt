@@ -315,7 +315,7 @@ fun LiveScreen(
 // ── Live on-air full-screen ───────────────────────────────────────────────────
 
 @Composable
-private fun LiveOnAirScreen(session: LiveSession, isStreaming: Boolean, listenerCount: Int, onEnd: (String) -> Unit) {
+internal fun LiveOnAirScreen(session: LiveSession, isStreaming: Boolean, listenerCount: Int, onEnd: (String) -> Unit) {
     val startEpochMs = remember(session.id) {
         session.startedAt?.let {
             runCatching { java.time.Instant.parse(it).toEpochMilli() }.getOrNull()
@@ -463,7 +463,7 @@ private fun LiveOnAirScreen(session: LiveSession, isStreaming: Boolean, listener
 // ── Next session card ─────────────────────────────────────────────────────────
 
 @Composable
-private fun NextSessionCard(session: ScheduledSession, onUse: () -> Unit) {
+internal fun NextSessionCard(session: ScheduledSession, onUse: () -> Unit) {
     val (day, mon, time) = parseDateParts(session.scheduledAt, session.isRecurring, session.recurrenceRule)
     val recurrenceLabel = when {
         session.recurrenceRule?.contains("DAILY") == true   -> "DAILY"
@@ -595,7 +595,7 @@ private fun NextSessionCard(session: ScheduledSession, onUse: () -> Unit) {
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
 
-private fun List<ScheduledSession>.nextUpcoming(): ScheduledSession? {
+internal fun List<ScheduledSession>.nextUpcoming(): ScheduledSession? {
     val now = java.time.Instant.now()
     return mapNotNull { s ->
         runCatching {
@@ -618,7 +618,7 @@ private fun List<ScheduledSession>.nextUpcoming(): ScheduledSession? {
     }.minByOrNull { (_, inst) -> inst }?.first
 }
 
-private fun parseDateParts(scheduledAt: String, isRecurring: Boolean, rule: String?): Triple<String, String, String> =
+internal fun parseDateParts(scheduledAt: String, isRecurring: Boolean, rule: String?): Triple<String, String, String> =
     try {
         val now  = java.time.Instant.now()
         val base = java.time.Instant.parse(scheduledAt)
