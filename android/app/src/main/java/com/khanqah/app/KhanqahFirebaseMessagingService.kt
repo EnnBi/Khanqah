@@ -33,7 +33,7 @@ class KhanqahFirebaseMessagingService : FirebaseMessagingService() {
         val notif = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(body)
-            .setSmallIcon(R.drawable.ic_notif_audio)
+            .setSmallIcon(R.drawable.ic_notif_listening)
             .setContentIntent(pi)
             .setAutoCancel(true)
             .build()
