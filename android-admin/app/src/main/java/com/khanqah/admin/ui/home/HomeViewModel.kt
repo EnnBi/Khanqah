@@ -8,8 +8,8 @@ import com.khanqah.admin.data.repository.ContentAdminRepository
 import com.khanqah.admin.data.repository.ScheduleRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import com.khanqah.admin.ui.live.nextUpcoming
 import kotlinx.coroutines.launch
-import java.time.Instant
 
 class HomeViewModel(
     private val contentRepo: ContentAdminRepository,
@@ -33,15 +33,7 @@ class HomeViewModel(
         }
         viewModelScope.launch {
             try {
-                val now = Instant.now()
-                _nextSession.value = scheduleRepo.list()
-                    .filter { s ->
-                        runCatching { Instant.parse(s.scheduledAt).isAfter(now) }.getOrDefault(false)
-                            || s.isRecurring
-                    }
-                    .minByOrNull { s ->
-                        runCatching { Instant.parse(s.scheduledAt).toEpochMilli() }.getOrDefault(Long.MAX_VALUE)
-                    }
+                _nextSession.value = scheduleRepo.list().nextUpcoming()
             } catch (_: Exception) {}
         }
         viewModelScope.launch {
