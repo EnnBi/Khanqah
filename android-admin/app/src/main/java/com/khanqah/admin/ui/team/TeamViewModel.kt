@@ -24,4 +24,18 @@ class TeamViewModel(private val repo: TeamRepository) : ViewModel() {
             _users.value = _users.value.map { if (it.id == id) updated else it }
         } catch (_: Exception) {}
     }
+
+    fun updateName(id: String, name: String) = viewModelScope.launch {
+        try {
+            val updated = repo.updateName(id, name)
+            _users.value = _users.value.map { if (it.id == id) updated else it }
+        } catch (_: Exception) {}
+    }
+
+    fun deleteUser(id: String) = viewModelScope.launch {
+        try {
+            repo.deleteUser(id)
+            _users.value = _users.value.filter { it.id != id }
+        } catch (_: Exception) {}
+    }
 }

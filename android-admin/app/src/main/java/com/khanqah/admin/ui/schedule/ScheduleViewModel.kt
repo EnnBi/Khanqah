@@ -20,11 +20,22 @@ class ScheduleViewModel(private val repo: ScheduleRepository) : ViewModel() {
 
     fun create(
         titleEn: String, titleUr: String, scheduledAt: String,
-        isRecurring: Boolean = false, recurrenceRule: String? = null,
+        isRecurring: Boolean, recurrenceRule: String?,
     ) = viewModelScope.launch {
         try {
             val new = repo.create(titleEn, titleUr, scheduledAt, isRecurring, recurrenceRule)
             _sessions.value = _sessions.value + new
+        } catch (_: Exception) {}
+    }
+
+    fun update(
+        id: String,
+        titleEn: String, titleUr: String, scheduledAt: String,
+        isRecurring: Boolean, recurrenceRule: String?,
+    ) = viewModelScope.launch {
+        try {
+            val updated = repo.update(id, titleEn, titleUr, scheduledAt, isRecurring, recurrenceRule)
+            _sessions.value = _sessions.value.map { if (it.id == id) updated else it }
         } catch (_: Exception) {}
     }
 
