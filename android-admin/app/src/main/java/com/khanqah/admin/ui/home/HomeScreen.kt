@@ -148,15 +148,17 @@ fun HomeScreen(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             DashboardTile(
-                modifier = Modifier.weight(1f).fillMaxHeight(),
-                label    = "CONTENT",
-                value    = if (contentCount == 0) "—" else contentCount.toString(),
+                modifier   = Modifier.weight(1f).fillMaxHeight(),
+                label      = "CONTENT",
+                value      = if (contentCount == 0) "—" else contentCount.toString(),
+                valueStyle = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
             )
             DashboardTile(
-                modifier = Modifier.weight(1f).fillMaxHeight(),
-                label    = "NEXT SESSION",
-                value    = nextSession?.titleEn ?: "None scheduled",
-                sub      = nextSession?.let { formatNextAt(it.scheduledAt) },
+                modifier   = Modifier.weight(1f).fillMaxHeight(),
+                label      = "NEXT SESSION",
+                value      = nextSession?.titleEn ?: "None scheduled",
+                sub        = nextSession?.let { formatNextAt(it.scheduledAt) },
+                valueStyle = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
             )
         }
 
@@ -398,7 +400,13 @@ private fun LiveSetupSheetContent(
 }
 
 @Composable
-private fun DashboardTile(label: String, value: String, sub: String? = null, modifier: Modifier = Modifier) {
+private fun DashboardTile(
+    label: String,
+    value: String,
+    sub: String? = null,
+    valueStyle: androidx.compose.ui.text.TextStyle = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+    modifier: Modifier = Modifier,
+) {
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(12.dp))
@@ -409,7 +417,7 @@ private fun DashboardTile(label: String, value: String, sub: String? = null, mod
         Column {
             Text(label, style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, letterSpacing = 0.1.sp), color = AdminGold)
             Spacer(Modifier.height(6.dp))
-            Text(value, style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold), color = AdminCream,
+            Text(value, style = valueStyle, color = AdminCream,
                 maxLines = 1, overflow = TextOverflow.Ellipsis)
             sub?.let {
                 Spacer(Modifier.height(2.dp))
