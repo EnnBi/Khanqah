@@ -20,22 +20,29 @@ class ApiClient(private val tokenManager: TokenManager) {
     private val refreshAuthenticator = object : Authenticator {
         override fun authenticate(route: Route?, response: Response): Request? {
             if (response.code != 401) return null
-            val rt = runBlocking { tokenManager.getRefreshToken() } ?: return null
+
+            // Already retried once with a refreshed token and still 401 → give up.
+            if (response.priorResponse != null) return expire()
+
+            val rt = runBlocking { tokenManager.getRefreshToken() } ?: return expire()
             return try {
                 val newTokens = runBlocking {
                     buildBase().create(AdminApiService::class.java)
                         .refreshToken(mapOf("refresh_token" to rt))
                 }
-                val newAccess = newTokens["access_token"] ?: run {
-                    runBlocking { tokenManager.clear() }
-                    return null
-                }
+                val newAccess = newTokens["access_token"] ?: return expire()
                 runBlocking { tokenManager.saveAccessToken(newAccess) }
                 response.request.newBuilder().header("Authorization", "Bearer $newAccess").build()
             } catch (e: Exception) {
-                runBlocking { tokenManager.clear() }
-                null
+                expire()
             }
+        }
+
+        // Session is unrecoverable: clear tokens and signal the UI to route to login.
+        private fun expire(): Request? {
+            runBlocking { tokenManager.clear() }
+            tokenManager.notifyAuthExpired()
+            return null
         }
     }
 

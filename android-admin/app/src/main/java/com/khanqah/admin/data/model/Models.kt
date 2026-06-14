@@ -29,6 +29,11 @@ data class Category(
     val slug: String? = null,
 )
 
+data class NotificationSetting(
+    val key: String,
+    val enabled: Boolean,
+)
+
 data class ScheduledSession(
     val id: String,
     @SerializedName("title_en") val titleEn: String,

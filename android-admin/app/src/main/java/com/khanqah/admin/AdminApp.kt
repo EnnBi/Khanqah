@@ -11,10 +11,12 @@ import com.khanqah.admin.ui.content.ContentViewModel
 import com.khanqah.admin.ui.home.HomeViewModel
 import com.khanqah.admin.ui.live.LiveViewModel
 import com.khanqah.admin.ui.schedule.ScheduleViewModel
+import com.khanqah.admin.ui.settings.SettingsViewModel
 import com.khanqah.admin.ui.team.TeamViewModel
 import com.khanqah.admin.ui.upload.UploadViewModel
 
 class AdminApp : Application() {
+    lateinit var tokenManager: TokenManager
     lateinit var authRepo: AuthRepository
     lateinit var authViewModel: AuthViewModel
     lateinit var contentViewModel: ContentViewModel
@@ -25,11 +27,12 @@ class AdminApp : Application() {
     lateinit var bugsViewModel: BugsViewModel
     lateinit var categoryViewModel: CategoryViewModel
     lateinit var homeViewModel: HomeViewModel
+    lateinit var settingsViewModel: SettingsViewModel
 
     override fun onCreate() {
         super.onCreate()
         BroadcastForegroundService.createChannel(this)
-        val tokenManager = TokenManager(this)
+        tokenManager = TokenManager(this)
         val api = ApiClient(tokenManager).service
         val contentRepo = ContentAdminRepository(api)
         val scheduleRepo = ScheduleRepository(api)
@@ -45,5 +48,6 @@ class AdminApp : Application() {
         bugsViewModel = BugsViewModel(bugRepo)
         categoryViewModel = CategoryViewModel(CategoryRepository(api))
         homeViewModel = HomeViewModel(contentRepo, scheduleRepo, bugRepo)
+        settingsViewModel = SettingsViewModel(SettingsRepository(api))
     }
 }

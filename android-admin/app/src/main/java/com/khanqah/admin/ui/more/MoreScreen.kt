@@ -10,6 +10,7 @@ import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Group
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -26,6 +27,7 @@ fun MoreScreen(
     onNavigateTeam: () -> Unit,
     onNavigateCategories: () -> Unit,
     onNavigateBugs: () -> Unit,
+    onNavigateSettings: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -46,6 +48,8 @@ fun MoreScreen(
         MoreNavCard(icon = Icons.Outlined.Category,  title = "Categories",   sub = "Create and rename categories",  onClick = onNavigateCategories)
         Spacer(Modifier.height(8.dp))
         MoreNavCard(icon = Icons.Outlined.BugReport, title = "Bug Reports",  sub = "View reports from users",       onClick = onNavigateBugs)
+        Spacer(Modifier.height(8.dp))
+        MoreNavCard(icon = Icons.Outlined.Notifications, title = "Settings", sub = "Push notification controls",     onClick = onNavigateSettings)
     }
 }
 

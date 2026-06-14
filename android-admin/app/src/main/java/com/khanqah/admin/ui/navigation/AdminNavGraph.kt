@@ -19,6 +19,7 @@ import com.khanqah.admin.ui.content.ContentListScreen
 import com.khanqah.admin.ui.home.HomeScreen
 import com.khanqah.admin.ui.more.MoreScreen
 import com.khanqah.admin.ui.schedule.ScheduleScreen
+import com.khanqah.admin.ui.settings.SettingsScreen
 import com.khanqah.admin.ui.team.TeamScreen
 import com.khanqah.admin.ui.upload.UploadScreen
 
@@ -30,10 +31,12 @@ fun AdminNavGraph(app: AdminApp, startDestination: String) {
     val backstackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backstackEntry?.destination?.route
 
-    val authExpired by app.liveViewModel.authExpired.collectAsState()
-    if (authExpired) {
+    val liveAuthExpired by app.liveViewModel.authExpired.collectAsState()
+    val sessionExpired by app.tokenManager.authExpired.collectAsState()
+    if (liveAuthExpired || sessionExpired) {
         LaunchedEffect(Unit) {
             app.liveViewModel.clearAuthExpired()
+            app.tokenManager.clearAuthExpired()
             app.authViewModel.reset()
             navController.navigate("login") { popUpTo(0) { inclusive = true } }
         }
@@ -60,8 +63,16 @@ fun AdminNavGraph(app: AdminApp, startDestination: String) {
             composable("login") {
                 LoginScreen(viewModel = app.authViewModel) {
                     app.liveViewModel.clearAuthExpired()
+                    app.tokenManager.clearAuthExpired()
+                    // Reload everything with the fresh token (admin endpoints 401'd before login).
                     app.liveViewModel.refresh()
                     app.scheduleViewModel.refresh()
+                    app.contentViewModel.refresh()
+                    app.categoryViewModel.refresh()
+                    app.teamViewModel.refresh()
+                    app.bugsViewModel.refresh()
+                    app.homeViewModel.refresh()
+                    app.settingsViewModel.refresh()
                     navController.navigate("home") { popUpTo("login") { inclusive = true } }
                 }
             }
@@ -117,6 +128,7 @@ fun AdminNavGraph(app: AdminApp, startDestination: String) {
                     onNavigateTeam       = { navController.navigate("team") },
                     onNavigateCategories = { navController.navigate("categories") },
                     onNavigateBugs       = { navController.navigate("bugs") },
+                    onNavigateSettings   = { navController.navigate("settings") },
                 )
             }
             composable("team") {
@@ -140,6 +152,13 @@ fun AdminNavGraph(app: AdminApp, startDestination: String) {
             composable("bugs") {
                 val reports by app.bugsViewModel.reports.collectAsState()
                 BugsScreen(reports = reports)
+            }
+            composable("settings") {
+                val settings by app.settingsViewModel.settings.collectAsState()
+                SettingsScreen(
+                    settings = settings,
+                    onToggle = { key, enabled -> app.settingsViewModel.toggle(key, enabled) },
+                )
             }
         }
     }

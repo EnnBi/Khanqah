@@ -78,4 +78,10 @@ interface AdminApiService {
 
     @GET("admin/bugs")
     suspend fun listBugs(@Query("status") status: String? = null): List<BugReport>
+
+    @GET("admin/notification-settings")
+    suspend fun listNotificationSettings(): List<NotificationSetting>
+
+    @PUT("admin/notification-settings/{key}")
+    suspend fun updateNotificationSetting(@Path("key") key: String, @Body body: Map<String, Boolean>)
 }
