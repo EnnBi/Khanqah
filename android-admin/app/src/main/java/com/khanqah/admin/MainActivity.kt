@@ -13,7 +13,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val app = application as AdminApp
-        val startDest = if (runBlocking { app.authRepo.isLoggedIn() }) "live" else "login"
+        val startDest = if (runBlocking { app.authRepo.isLoggedIn() }) "home" else "login"
 
         setContent {
             KhanqahTheme {
