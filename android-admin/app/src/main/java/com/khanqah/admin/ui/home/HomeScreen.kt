@@ -77,11 +77,23 @@ fun HomeScreen(
         return
     }
 
+    Scaffold(
+        containerColor = AdminBackground,
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick        = { liveViewModel.clearError(); showSetupSheet = true },
+                containerColor = AdminGold,
+                contentColor   = AdminOnGold,
+            ) {
+                Icon(Icons.Outlined.Mic, contentDescription = "Start broadcast")
+            }
+        },
+    ) { padding ->
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(AdminBackground)
             .verticalScroll(rememberScrollState())
+            .padding(padding)
             .padding(horizontal = 20.dp),
     ) {
         Spacer(Modifier.height(24.dp))
@@ -124,17 +136,6 @@ fun HomeScreen(
                 error?.let { err ->
                     Spacer(Modifier.height(8.dp))
                     Text(err, style = MaterialTheme.typography.bodySmall, color = AdminError)
-                }
-                Spacer(Modifier.height(16.dp))
-                Button(
-                    onClick = { liveViewModel.clearError(); showSetupSheet = true },
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = AdminCoral),
-                ) {
-                    Icon(Icons.Outlined.Mic, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text("START BROADCAST", fontWeight = FontWeight.Bold, letterSpacing = 0.06.sp)
                 }
             }
         }
@@ -233,7 +234,8 @@ fun HomeScreen(
             }
         }
 
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(88.dp))
+    }
     }
 
     // Broadcast setup bottom sheet
