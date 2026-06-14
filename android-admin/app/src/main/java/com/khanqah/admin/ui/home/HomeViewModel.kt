@@ -2,6 +2,7 @@ package com.khanqah.admin.ui.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.khanqah.admin.data.model.Content
 import com.khanqah.admin.data.model.ScheduledSession
 import com.khanqah.admin.data.repository.BugRepository
 import com.khanqah.admin.data.repository.ContentAdminRepository
@@ -19,6 +20,9 @@ class HomeViewModel(
     private val _contentCount = MutableStateFlow(0)
     val contentCount = _contentCount.asStateFlow()
 
+    private val _recentContent = MutableStateFlow<List<Content>>(emptyList())
+    val recentContent = _recentContent.asStateFlow()
+
     private val _nextSession = MutableStateFlow<ScheduledSession?>(null)
     val nextSession = _nextSession.asStateFlow()
 
@@ -29,7 +33,11 @@ class HomeViewModel(
 
     fun refresh() {
         viewModelScope.launch {
-            try { _contentCount.value = contentRepo.listContent().size } catch (_: Exception) {}
+            try {
+                val all = contentRepo.listContent()   // ordered created_at DESC by backend
+                _contentCount.value = all.size
+                _recentContent.value = all.take(5)
+            } catch (_: Exception) {}
         }
         viewModelScope.launch {
             try {

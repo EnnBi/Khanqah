@@ -17,6 +17,7 @@ data class Content(
     val type: String,
     @SerializedName("category_id") val categoryId: String,
     @SerializedName("is_video") val isVideo: Boolean,
+    @SerializedName("created_at") val createdAt: String? = null,
 )
 
 data class Category(

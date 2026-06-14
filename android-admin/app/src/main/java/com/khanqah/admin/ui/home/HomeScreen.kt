@@ -16,24 +16,30 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Mic
+import androidx.compose.material.icons.outlined.MusicNote
+import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import coil.compose.AsyncImage
 import com.khanqah.admin.data.model.Category
+import com.khanqah.admin.data.model.Content
 import com.khanqah.admin.data.model.ScheduledSession
 import com.khanqah.admin.ui.live.LiveOnAirScreen
 import com.khanqah.admin.ui.live.LiveViewModel
 import com.khanqah.admin.ui.live.NextSessionCard
 import com.khanqah.admin.ui.live.nextUpcoming
 import com.khanqah.admin.ui.theme.*
+import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.TextStyle
@@ -46,6 +52,7 @@ fun HomeScreen(
     homeViewModel: HomeViewModel,
     sessions: List<ScheduledSession>,
     onNavigateToBugs: () -> Unit,
+    onNavigateToContent: () -> Unit,
 ) {
     val currentSession by liveViewModel.currentSession.collectAsState()
     val isStreaming    by liveViewModel.isStreaming.collectAsState()
@@ -55,6 +62,7 @@ fun HomeScreen(
     val contentCount   by homeViewModel.contentCount.collectAsState()
     val nextSession    by homeViewModel.nextSession.collectAsState()
     val openBugCount   by homeViewModel.openBugCount.collectAsState()
+    val recentContent  by homeViewModel.recentContent.collectAsState()
 
     var showSetupSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -131,17 +139,20 @@ fun HomeScreen(
             }
         }
 
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(16.dp))
 
-        // Stats row
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        // Stats row — equal-height tiles
+        Row(
+            modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
             DashboardTile(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).fillMaxHeight(),
                 label    = "CONTENT",
                 value    = if (contentCount == 0) "—" else contentCount.toString(),
             )
             DashboardTile(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).fillMaxHeight(),
                 label    = "NEXT SESSION",
                 value    = nextSession?.titleEn ?: "None scheduled",
                 sub      = nextSession?.let { formatNextAt(it.scheduledAt) },
@@ -150,7 +161,7 @@ fun HomeScreen(
 
         // Bug alert
         if (openBugCount > 0) {
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(16.dp))
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -170,6 +181,55 @@ fun HomeScreen(
                     modifier = Modifier.weight(1f),
                 )
                 Icon(Icons.Outlined.ChevronRight, contentDescription = null, tint = AdminError.copy(alpha = 0.6f))
+            }
+        }
+
+        Spacer(Modifier.height(24.dp))
+
+        // Recent content
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "RECENT CONTENT",
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, letterSpacing = 0.18.sp, fontWeight = FontWeight.Bold),
+                color = AdminGold,
+                modifier = Modifier.weight(1f),
+            )
+            if (recentContent.isNotEmpty()) {
+                Row(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .clickable { onNavigateToContent() }
+                        .padding(horizontal = 4.dp, vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "See all",
+                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.1.sp),
+                        color = AdminCreamMuted,
+                    )
+                    Icon(
+                        Icons.Outlined.ChevronRight, contentDescription = null,
+                        tint = AdminCreamMuted, modifier = Modifier.size(16.dp),
+                    )
+                }
+            }
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        if (recentContent.isEmpty()) {
+            Text("No content yet", style = MaterialTheme.typography.bodyMedium, color = AdminCreamMuted)
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                recentContent.forEach { item ->
+                    RecentContentRow(
+                        item         = item,
+                        categoryName = categories.find { it.id == item.categoryId }?.nameEn ?: item.type,
+                    )
+                }
             }
         }
 
@@ -348,13 +408,84 @@ private fun DashboardTile(label: String, value: String, sub: String? = null, mod
             Text(label, style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, letterSpacing = 0.1.sp), color = AdminGold)
             Spacer(Modifier.height(6.dp))
             Text(value, style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold), color = AdminCream,
-                maxLines = 2, overflow = TextOverflow.Ellipsis)
+                maxLines = 1, overflow = TextOverflow.Ellipsis)
             sub?.let {
                 Spacer(Modifier.height(2.dp))
                 Text(it, style = MaterialTheme.typography.bodySmall, color = AdminGold)
             }
         }
     }
+}
+
+@Composable
+private fun RecentContentRow(item: Content, categoryName: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(AdminSurface)
+            .border(1.dp, AdminBorder, RoundedCornerShape(12.dp))
+            .padding(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(AdminSurfaceVar),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (!item.thumbnailUrl.isNullOrBlank()) {
+                AsyncImage(
+                    model              = item.thumbnailUrl,
+                    contentDescription = null,
+                    contentScale       = ContentScale.Crop,
+                    modifier           = Modifier.fillMaxSize(),
+                )
+            } else {
+                Icon(
+                    if (item.isVideo) Icons.Outlined.Videocam else Icons.Outlined.MusicNote,
+                    contentDescription = null, tint = AdminGold, modifier = Modifier.size(20.dp),
+                )
+            }
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                item.titleEn,
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = AdminCream, maxLines = 1, overflow = TextOverflow.Ellipsis,
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                "$categoryName · ${item.type}",
+                style = MaterialTheme.typography.bodySmall,
+                color = AdminCreamMuted, maxLines = 1, overflow = TextOverflow.Ellipsis,
+            )
+        }
+        formatRelative(item.createdAt)?.let {
+            Spacer(Modifier.width(8.dp))
+            Text(it, style = MaterialTheme.typography.labelSmall, color = AdminCreamMuted)
+        }
+    }
+}
+
+private fun formatRelative(iso: String?): String? {
+    if (iso.isNullOrBlank()) return null
+    return try {
+        val then = Instant.parse(iso)
+        val days = Duration.between(then, Instant.now()).toDays()
+        when {
+            days <= 0L  -> "Today"
+            days == 1L  -> "1d"
+            days < 7L   -> "${days}d"
+            days < 30L  -> "${days / 7}w"
+            else        -> {
+                val zdt = then.atZone(ZoneId.systemDefault())
+                "${zdt.dayOfMonth} ${zdt.month.getDisplayName(TextStyle.SHORT, Locale.ENGLISH)}"
+            }
+        }
+    } catch (_: Exception) { null }
 }
 
 private fun formatNextAt(scheduledAt: String): String = try {

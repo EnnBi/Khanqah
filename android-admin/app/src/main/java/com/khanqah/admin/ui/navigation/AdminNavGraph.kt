@@ -75,10 +75,17 @@ fun AdminNavGraph(app: AdminApp, startDestination: String) {
                     else ctx.stopService(intent)
                 }
                 HomeScreen(
-                    liveViewModel    = app.liveViewModel,
-                    homeViewModel    = app.homeViewModel,
-                    sessions         = sessions,
-                    onNavigateToBugs = { navController.navigate("bugs") },
+                    liveViewModel       = app.liveViewModel,
+                    homeViewModel       = app.homeViewModel,
+                    sessions            = sessions,
+                    onNavigateToBugs    = { navController.navigate("bugs") },
+                    onNavigateToContent = {
+                        navController.navigate("content") {
+                            popUpTo("home") { saveState = true }
+                            launchSingleTop = true
+                            restoreState    = true
+                        }
+                    },
                 )
             }
             composable("content") {
