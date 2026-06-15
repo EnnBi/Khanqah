@@ -113,6 +113,11 @@ func main() {
 			r.Put("/me/progress/{contentId}", handler.UpsertProgress(pool))
 			r.Get("/me/playlists", handler.GetPlaylists(pool))
 			r.Get("/me/downloads", handler.GetDownloads(pool))
+
+			// Ask Hazrat — key registry
+			r.Post("/keys", handler.RegisterDeviceKey(pool))
+			r.Get("/keys/shaykh", handler.GetShaykhKey(pool))
+			r.Get("/keys/{userId}", handler.GetUserKey(pool))
 		})
 
 		// Editor+ (content management, upload, live)
