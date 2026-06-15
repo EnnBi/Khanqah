@@ -246,6 +246,18 @@ guest access to Q&A. (`AuthRepository.isLoggedIn()` already exists.)
    messages per thread). Opening the conversation auto-marks new answers read
    (`POST /qa/messages/{id}/read`).
 
+**Local conversation cache (required, not optional):** because each question is sealed *to*
+the Shaykh's public key via authenticated `crypto_box`, the user's own device **cannot** decrypt
+its own questions back from the server copy (that would need the Shaykh's secret key). So the app
+**persists the plaintext of every question it sends** — text and, for audio, the local audio
+file — in a local Room cache keyed by the returned message id + thread id, written at send time.
+The conversation view is the **merge** of: our own questions (from this local cache) + the
+Shaykh's answers (decrypted from the server against the pinned Shaykh key). This is what lets the
+user re-open a thread later and see the full back-and-forth. Trade-off: the question history lives
+only on the device that sent it — a new device sees the Shaykh's answers but not the original
+question text (acceptable for MVP; revisit with key-recovery in Phase 2). This cache is built in
+sub-plan 2E.
+
 **Identity handling & privacy:** name, address, and phone are **bundled inside the
 end-to-end-encrypted question payload** (alongside the question text/audio), so the Shaykh sees
 them but the server / DBA / cloud never can. The address is **never** stored as a plaintext
