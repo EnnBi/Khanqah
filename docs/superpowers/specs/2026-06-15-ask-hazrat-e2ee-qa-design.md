@@ -23,7 +23,7 @@ Supported content: text questions, audio questions, audio answers, text answers 
 | Decision | Choice | Rationale |
 |---|---|---|
 | Shaykh interface | **New dedicated native Android app** (`com.khanqah.shaykh`) | Cleanest single-purpose UX for a non-technical elderly user; reuses admin app plumbing |
-| Platforms | **Android-first** (Expo user app + native Shaykh app); iOS = later phase | Matches current build/ship reality (Android only today) |
+| Platforms | **Android-first** — both the live user app (`android/`) and the Shaykh app are native Kotlin/Compose; iOS = later phase | Matches current build/ship reality (Android only). NOTE: the shipped user app is native Kotlin, NOT the legacy Expo `app/` |
 | Shaykh count | **Single Shaykh** | One public key, trivial distribution & routing |
 | Crypto | **X25519 + AES-256-GCM hybrid** via libsodium (authenticated `crypto_box` for the key) | Audited primitives, ideal for async one-to-one; no custom crypto |
 | Text→speech | **User-side pre-render, always Urdu** | Shaykh always just taps Play; never depends on his device |
@@ -38,7 +38,7 @@ Three surfaces; one invariant: **the server only ever holds ciphertext + metadat
 ```
 ┌────────────────┐         ┌──────────────────────┐         ┌────────────────┐
 │  User app      │         │  Go backend          │         │  Shaykh app    │
-│  (Expo/RN,     │◀───────▶│  (key registry,      │◀───────▶│  (new native   │
+│  (native Kotlin│◀───────▶│  (key registry,      │◀───────▶│  (new native   │
 │   Android)     │  HTTPS  │   encrypted blob      │  HTTPS  │   Kotlin app)  │
 │                │         │   store, push relay)  │         │                │
 │ • X25519 keys  │         │                       │         │ • X25519 keys  │
@@ -82,7 +82,7 @@ can decrypt nothing.
   - A **hardware-backed, non-exportable AES-256 key in the Android Keystore** wraps
     (AES-GCM-encrypts) the X25519 private key.
   - The wrapped blob is persisted in `EncryptedSharedPreferences` (Kotlin Shaykh app) /
-    `expo-secure-store` (RN user app — Keystore-backed).
+    `EncryptedSharedPreferences` (native Kotlin user app, same as the Shaykh app).
   - iOS (Phase 3) uses Keychain / Secure Enclave with the same wrap pattern.
 - The **public key** is uploaded to the server key registry (`device_keys`).
 - **Single Shaykh:** his public key is published via the existing `config.json` plus
@@ -209,9 +209,16 @@ This is a dedicated push path, separate from the existing content/broadcast topi
 
 ## 6a. User app — Ask Hazrat screens
 
-The user-app feature replaces the current Coming Soon route (`/coming-soon?feature=ask`).
+> **Platform:** the live user app is the **native Kotlin/Jetpack Compose app in `android/`**
+> (`com.khanqah.app`), which already authenticates against the Go backend via
+> `ApiService`/`TokenManager`/`AuthRepository` (no Supabase). Ask Hazrat is built here as new
+> Compose screens + Retrofit endpoints + an `AppNavGraph` route — **not** in the legacy Expo
+> `app/` project. The screen *design* below is platform-agnostic; the implementation is native
+> Kotlin, mirroring the admin and Shaykh apps.
+
+The feature replaces the current Coming Soon destination for "Ask Hazrat".
 **Authentication is required** — a guest tapping "Ask Hazrat" is routed to login first; no
-guest access to Q&A.
+guest access to Q&A. (`AuthRepository.isLoggedIn()` already exists.)
 
 **Three screens:**
 
@@ -302,7 +309,7 @@ via content-free push.
 ## 9. Device security
 
 - `FLAG_SECURE` on all Q&A screens (blocks screenshots and the recents-screen preview).
-- Biometric + PIN gate (`BiometricPrompt` / `expo-local-authentication`); biometric also
+- Biometric + PIN gate (`BiometricPrompt`, native on both apps); biometric also
   gates unwrapping the private key.
 - Auto-lock on background / after an idle timeout.
 - **No plaintext at rest:** messages are decrypted on view only; nothing decrypted is cached
@@ -366,13 +373,17 @@ operational/compliance purposes but reveal only metadata.
 
 ## 15. Recommended libraries / SDKs
 
-- **User app (Expo/RN):** `react-native-libsodium` (X25519, `crypto_box`, AEAD),
-  `expo-secure-store` (Keystore-backed key storage), `expo-local-authentication` (biometric),
-  existing `expo-av` (audio record/play), ML Kit translate + language-ID (via a RN ML Kit
-  wrapper), a BIP39 mnemonic library.
+- **User app (native Kotlin, `android/`):** `lazysodium-android` (X25519, `crypto_box`, AEAD),
+  Android Keystore + `EncryptedSharedPreferences` (key/token storage), `BiometricPrompt`,
+  `MediaRecorder`/`MediaPlayer` (audio record/play), **ML Kit Translate** (on-device, Android
+  SDK) + ML Kit language-ID, **`android.speech.tts.TextToSpeech`** (Urdu TTS), a BIP39 mnemonic
+  library (Phase 2). Reuse the existing `ApiService`/`ApiClient`/`TokenManager` Retrofit stack.
 - **Shaykh app (Kotlin):** `lazysodium-android` (libsodium), Android Keystore +
   `EncryptedSharedPreferences`, `BiometricPrompt`, `MediaRecorder`/`MediaPlayer`, Retrofit/
   OkHttp (reuse admin patterns), DataStore. Bundled Jameel Noori Nastaleeq TTF.
+
+  Both Android apps share the same native stack — only the Shaykh app bundles ML Kit is *not*
+  needed there (it receives already-translated Urdu); the user app owns translation/TTS.
 - **Backend (Go):** no new crypto — only store opaque blobs. Reuse `pgx`, the existing R2
   storage client, and the FCM client.
 
