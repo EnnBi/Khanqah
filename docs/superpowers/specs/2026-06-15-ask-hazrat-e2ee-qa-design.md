@@ -207,6 +207,45 @@ This is a dedicated push path, separate from the existing content/broadcast topi
 (which legitimately carry title/body). Delivered via the existing OneSignal (client) + FCM
 (server) infrastructure.
 
+## 6a. User app — Ask Hazrat screens
+
+The user-app feature replaces the current Coming Soon route (`/coming-soon?feature=ask`).
+**Authentication is required** — a guest tapping "Ask Hazrat" is routed to login first; no
+guest access to Q&A.
+
+**Three screens:**
+
+1. **Thread list (entry):** the user's past questions to the Shaykh, each row showing a
+   snippet, a status chip (Pending / Answered), timestamp, and an unread dot for new answers.
+   A prominent "Ask a new question" button. Empty state for first-time users.
+
+2. **Compose:** input fields —
+   - **Name** (required; prefilled from profile, editable)
+   - **Phone** (required; prefilled from auth, editable)
+   - **Address** (required; multiline)
+   - **Question mode** toggle: ✍️ Text / 🎙 Audio
+   - **Question text** (multiline; any language → auto-translated to Urdu per §7)
+   - **Audio recorder** (record/stop/preview) with a **5-minute maximum** and a live countdown
+   - Privacy notice label; **Send** button.
+
+   Identity fields are collected once and cached locally for prefill (not re-typed each time),
+   but remain required.
+
+3. **Conversation (WhatsApp-style):** chat bubbles — the user's questions on one side, the
+   Shaykh's answers on the other. Each bubble shows text or an inline ▶ audio player plus a
+   **timestamp**, with **date separators** ("Today", "14 Jun 2026") between days. Sent /
+   Delivered / Read ticks; unread highlight on new answers; full scrollable history.
+   **Follow-up questions** are allowed in the same thread (the schema already supports multiple
+   messages per thread). Opening the conversation auto-marks new answers read
+   (`POST /qa/messages/{id}/read`).
+
+**Identity handling & privacy:** name, address, and phone are **bundled inside the
+end-to-end-encrypted question payload** (alongside the question text/audio), so the Shaykh sees
+them but the server / DBA / cloud never can. The address is **never** stored as a plaintext
+server column; its prefill value is cached in encrypted local storage on the device. (Phone is
+the sole exception already present in plaintext server-side, because OTP login requires it.)
+This keeps the §12 threat model intact for personal data.
+
 ## 7. Urdu-always question pipeline (all on-device)
 
 When a user submits a text question, the **user's device** does this *before* encryption:
