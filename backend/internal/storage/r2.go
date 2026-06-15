@@ -47,6 +47,19 @@ func (c *R2Client) GenerateUploadURL(ctx context.Context, fileKey, contentType s
 	return result.URL, nil
 }
 
+// GenerateDownloadURL returns a pre-signed GET URL for fileKey, valid 15 minutes.
+func (c *R2Client) GenerateDownloadURL(ctx context.Context, fileKey string) (string, error) {
+	presign := s3.NewPresignClient(c.s3)
+	result, err := presign.PresignGetObject(ctx, &s3.GetObjectInput{
+		Bucket: aws.String(c.bucket),
+		Key:    aws.String(fileKey),
+	}, s3.WithPresignExpires(15*time.Minute))
+	if err != nil {
+		return "", fmt.Errorf("storage.GenerateDownloadURL: %w", err)
+	}
+	return result.URL, nil
+}
+
 // CDNUrl converts a file key to the public CDN URL.
 func (c *R2Client) CDNUrl(fileKey string) string {
 	return c.cdnBase + "/" + fileKey

@@ -119,6 +119,7 @@ func main() {
 			r.Get("/keys/shaykh", handler.GetShaykhKey(pool))
 			r.Get("/keys/{userId}", handler.GetUserKey(pool))
 				r.Post("/qa/upload", handler.GenerateQAUploadURL(r2))
+				r.Post("/qa/download", handler.GenerateQADownloadURL(r2))
 				r.Post("/qa/messages", handler.SendQAMessage(pool, fcmClient))
 				r.Get("/qa/threads", handler.ListQAThreads(pool))
 				r.Get("/qa/messages", handler.ListQAMessages(pool))
