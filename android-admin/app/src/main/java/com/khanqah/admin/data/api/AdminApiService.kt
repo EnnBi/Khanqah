@@ -3,6 +3,7 @@ package com.khanqah.admin.data.api
 import com.khanqah.admin.data.model.*
 import retrofit2.http.*
 
+@JvmSuppressWildcards
 interface AdminApiService {
     @POST("auth/otp/send")
     suspend fun sendOtp(@Body body: Map<String, String>): Map<String, String>
