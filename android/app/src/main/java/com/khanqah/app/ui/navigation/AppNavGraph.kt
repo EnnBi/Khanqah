@@ -40,6 +40,9 @@ import com.khanqah.app.ui.auth.AuthViewModel
 import com.khanqah.app.ui.auth.LoginScreen
 import com.khanqah.app.ui.home.HomeScreen
 import com.khanqah.app.ui.home.HomeViewModel
+import com.khanqah.app.ui.qa.AskComposeScreen
+import com.khanqah.app.ui.qa.AskConversationScreen
+import com.khanqah.app.ui.qa.AskThreadListScreen
 import com.khanqah.app.ui.library.CategoryDetailScreen
 import com.khanqah.app.ui.library.CategoryDetailViewModel
 import com.khanqah.app.ui.library.LibraryScreen
@@ -73,6 +76,13 @@ sealed class Screen(val route: String) {
     object BayanTab  : Screen("tab_bayan")
     object ClipsTab  : Screen("tab_clips")
     object BooksTab  : Screen("tab_books")
+    object AskList : Screen("ask")
+    object AskCompose : Screen("ask/compose?threadId={threadId}") {
+        fun route(threadId: String? = null) = if (threadId == null) "ask/compose" else "ask/compose?threadId=$threadId"
+    }
+    object AskConversation : Screen("ask/thread/{threadId}") {
+        fun route(threadId: String) = "ask/thread/$threadId"
+    }
 }
 
 private fun String.encodeUrl() = java.net.URLEncoder.encode(this, "UTF-8")
@@ -313,6 +323,7 @@ fun AppNavGraph(
                     onComingSoonClick = { title ->
                         navController.navigate(Screen.ComingSoon.route(title))
                     },
+                    onAskHazrat = { navController.navigate(Screen.AskList.route) },
                     onCategoryTypeClick = { query ->
                         val cat = libraryViewModel.categories.value.firstOrNull { c ->
                             c.type.equals(query, ignoreCase = true) ||
@@ -443,6 +454,33 @@ fun AppNavGraph(
                         showBackButton = false,
                     )
                 }
+            }
+            composable(Screen.AskList.route) {
+                if (!isLoggedIn) {
+                    androidx.compose.runtime.LaunchedEffect(Unit) { navController.navigate(Screen.Login.route) }
+                } else {
+                    val vm = remember { (context.applicationContext as com.khanqah.app.KhanqahApp).makeQaViewModel() }
+                    AskThreadListScreen(vm,
+                        onAskNew = { navController.navigate(Screen.AskCompose.route()) },
+                        onOpenThread = { navController.navigate(Screen.AskConversation.route(it)) },
+                        onBack = { navController.popBackStack() })
+                }
+            }
+            composable(
+                Screen.AskCompose.route,
+                arguments = listOf(androidx.navigation.navArgument("threadId") { nullable = true; defaultValue = null; type = androidx.navigation.NavType.StringType })
+            ) { back ->
+                val threadId = back.arguments?.getString("threadId")
+                val vm = remember { (context.applicationContext as com.khanqah.app.KhanqahApp).makeQaViewModel() }
+                AskComposeScreen(vm, threadId, onSent = { navController.popBackStack() }, onBack = { navController.popBackStack() })
+            }
+            composable(
+                Screen.AskConversation.route,
+                arguments = listOf(androidx.navigation.navArgument("threadId") { type = androidx.navigation.NavType.StringType })
+            ) { back ->
+                val threadId = back.arguments?.getString("threadId") ?: return@composable
+                val vm = remember { (context.applicationContext as com.khanqah.app.KhanqahApp).makeQaViewModel() }
+                AskConversationScreen(vm, threadId, onFollowUp = { navController.navigate(Screen.AskCompose.route(threadId)) }, onBack = { navController.popBackStack() })
             }
         }
     }

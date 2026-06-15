@@ -54,6 +54,7 @@ fun HomeScreen(
     onScheduleClick: () -> Unit = {},
     onComingSoonClick: (String) -> Unit = {},
     onCategoryTypeClick: (String) -> Unit = {},
+    onAskHazrat: () -> Unit = {},
 ) {
     val content by viewModel.content.collectAsState(emptyList())
     val live by viewModel.live.collectAsState()
@@ -220,7 +221,7 @@ fun HomeScreen(
         val row2 = listOf(
             FeatureItem(if (isUrdu) HomeStr.MAJLIS_TIMES_UR else HomeStr.MAJLIS_TIMES_EN, Icons.Filled.Event,               onScheduleClick),
             FeatureItem(if (isUrdu) HomeStr.CATEGORIES_UR  else HomeStr.CATEGORIES_EN,   Icons.Filled.GridView,            onLibraryClick),
-            FeatureItem(if (isUrdu) HomeStr.ASK_HAZRAT_UR  else HomeStr.ASK_HAZRAT_EN,   Icons.AutoMirrored.Filled.Chat,   { onComingSoonClick("Ask Hazrat") }),
+            FeatureItem(if (isUrdu) HomeStr.ASK_HAZRAT_UR  else HomeStr.ASK_HAZRAT_EN,   Icons.AutoMirrored.Filled.Chat,   onAskHazrat),
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
             row1.forEach { FeatureTile(it.label, it.icon, it.onClick, Modifier.weight(1f)) }
