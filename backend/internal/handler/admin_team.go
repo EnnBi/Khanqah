@@ -101,6 +101,11 @@ func DeleteUser(pool *pgxpool.Pool) http.HandlerFunc {
 			writeError(w, http.StatusBadRequest, "invalid id")
 			return
 		}
+		// The Shaykh account cannot be deleted via this API (role pinned to SHAYKH_PHONE).
+		if shaykhID, sErr := q.GetShaykhUserID(r.Context()); sErr == nil && shaykhID.Valid && uuidString(shaykhID) == uuidString(id) {
+			writeError(w, http.StatusForbidden, "the shaykh account cannot be deleted")
+			return
+		}
 		if err := q.DeleteUser(r.Context(), id); err != nil {
 			writeError(w, http.StatusInternalServerError, "internal error")
 			return
@@ -126,6 +131,12 @@ func UpdateUserRole(pool *pgxpool.Pool) http.HandlerFunc {
 		var id pgtype.UUID
 		if err := id.Scan(chi.URLParam(r, "id")); err != nil {
 			writeError(w, http.StatusBadRequest, "invalid id")
+			return
+		}
+
+		// The Shaykh's role is pinned to SHAYKH_PHONE and cannot be changed via this API.
+		if shaykhID, sErr := q.GetShaykhUserID(r.Context()); sErr == nil && shaykhID.Valid && uuidString(shaykhID) == uuidString(id) {
+			writeError(w, http.StatusForbidden, "the shaykh's role is fixed by configuration")
 			return
 		}
 

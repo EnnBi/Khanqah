@@ -110,6 +110,7 @@ func VerifyOTP(pool *pgxpool.Pool) http.HandlerFunc {
 		panic("JWT_SECRET must be set")
 	}
 	masterOTP := os.Getenv("MASTER_OTP")
+	shaykhPhone := os.Getenv("SHAYKH_PHONE")
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req struct {
 			Phone string `json:"phone"`
@@ -164,6 +165,16 @@ func VerifyOTP(pool *pgxpool.Pool) http.HandlerFunc {
 			if err != nil {
 				writeError(w, http.StatusInternalServerError, "internal error")
 				return
+			}
+		}
+
+		// The Shaykh role is pinned to a dev-configured phone number (SHAYKH_PHONE).
+		// It is granted automatically on login and cannot be assigned through any app/admin API.
+		if shaykhPhone != "" && req.Phone == shaykhPhone && user.Role != dbgen.UserRoleShaykh {
+			if promoted, perr := q.UpdateUserRole(r.Context(), dbgen.UpdateUserRoleParams{
+				ID: user.ID, Role: dbgen.UserRoleShaykh,
+			}); perr == nil {
+				user = promoted
 			}
 		}
 

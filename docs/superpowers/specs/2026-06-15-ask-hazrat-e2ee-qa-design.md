@@ -91,6 +91,26 @@ can decrypt nothing.
 - **User public keys** are fetched by the Shaykh app on demand (participant-gated) to encrypt
   answers.
 
+## 3a. Provisioning & pinning the Shaykh
+
+The Shaykh identity is **pinned to a single phone number, configured only by a developer** —
+it cannot be granted, changed, or revoked from any app or admin screen.
+
+- A server env var **`SHAYKH_PHONE`** (in the backend `.env`, editable only by dev/ops)
+  designates the Shaykh's phone number.
+- **Auto-grant on login:** when that phone completes OTP login, `VerifyOTP` promotes the user
+  to `role = 'shaykh'` automatically (idempotent). No admin action, no in-app toggle.
+- **Immutable from the app:**
+  - The admin `UpdateUserRole` allowlist excludes `shaykh`, so no one can be *promoted* to
+    Shaykh via the API.
+  - `UpdateUserRole` and `DeleteUser` refuse to change the role of, or delete, the current
+    Shaykh account (returns 403).
+- **Switching the Shaykh** is a deliberate developer operation: update `SHAYKH_PHONE` and
+  demote the previous Shaykh's row directly in the database. It is impossible through any
+  client.
+- After first login, the Shaykh's device must register its public key (`POST /keys`) before
+  users can encrypt questions to him.
+
 ## 4. Database schema (new tables, self-hosted Postgres)
 
 ```sql
