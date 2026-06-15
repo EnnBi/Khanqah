@@ -47,6 +47,8 @@ firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.r
 firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging-ktx" }
 lazysodium-android = { group = "com.goterl", name = "lazysodium-android", version.ref = "lazysodium" }
 jna = { group = "net.java.dev.jna", name = "jna", version.ref = "jna" }
+androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version = "1.2.1" }
+androidx-test-runner = { group = "androidx.test", name = "runner", version = "1.6.2" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
