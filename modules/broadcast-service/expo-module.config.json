@@ -1,9 +1,0 @@
-{
-  "platforms": ["android", "ios"],
-  "android": {
-    "modules": ["com.khanqah.broadcastservice.BroadcastServiceModule"]
-  },
-  "ios": {
-    "modules": ["BroadcastServiceModule"]
-  }
-}
