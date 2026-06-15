@@ -312,7 +312,8 @@ Native Android (Kotlin + Jetpack Compose), package `com.khanqah.shaykh`.
   button. Nothing else.
 - **Question screen:** large buttons only — `▶ چلائیں` (Play), `🎙 جواب ریکارڈ کریں`
   (Record Answer), `✓ بھیجیں` (Send). No keyboard, no chat list, no settings, no nav.
-- Login once via OTP; biometric unlock thereafter.
+- Login once via OTP; a simple lock thereafter (biometric or PIN) — exact choice decided in
+  Plan 3, kept minimal for the non-technical user.
 
 Answers: the Shaykh records audio (`MediaRecorder`); optionally a short text answer can be
 typed (Urdu). Audio is encrypted to the user's public key and uploaded; the user is notified
@@ -320,13 +321,24 @@ via content-free push.
 
 ## 9. Device security
 
-- `FLAG_SECURE` on all Q&A screens (blocks screenshots and the recents-screen preview).
-- Biometric + PIN gate (`BiometricPrompt`, native on both apps); biometric also
-  gates unwrapping the private key.
-- Auto-lock on background / after an idle timeout.
-- **No plaintext at rest:** messages are decrypted on view only; nothing decrypted is cached
-  to disk. Any unavoidable transient cache is encrypted under a Keystore key.
-- Encrypted local storage for the wrapped private key and tokens.
+**User app (end users):** no app-level biometric/PIN lock. Rationale: biometric app-lock is
+**not** part of the E2EE guarantee — it only guards against someone using an *already-unlocked*
+phone. End users are adequately covered by the device's own lock screen plus the measures below,
+and the Shaykh does not use the user app (he has his own). So we deliberately keep the user-app
+flow low-friction:
+- `FLAG_SECURE` on all Q&A screens (blocks screenshots and the recents-screen preview). ✅ built
+- Content-free push (no message text in notifications). ✅ built
+- Private key in the hardware Android Keystore (wrapped); decrypted content held only in memory
+  during view; the only persisted plaintext is the user's *own* sent questions in the local Room
+  cache (required to show their side of the conversation — §6a).
+- Encrypted/Keystore-backed storage for the wrapped private key and auth tokens.
+
+**Shaykh app:** holds the key that can read *every* questioner's messages, so it warrants
+stronger on-device protection — a simple lock (biometric or a PIN) is decided in Plan 3, balanced
+against the non-technical elderly user's need for simplicity.
+
+> Auto-lock / idle timeout and any user-app biometric were considered and **dropped for end
+> users** as unnecessary friction (decision 2026-06-15).
 
 ## 10. Key recovery (no admin backdoor — ever)
 
@@ -353,7 +365,7 @@ operational/compliance purposes but reveal only metadata.
 | Malicious/compromised server, DBA, cloud provider, support staff | E2EE — only ciphertext + metadata stored; no server decryption capability |
 | Server forging a message "from the Shaykh" | Authenticated `crypto_box` — server lacks the sender's private key |
 | Network MITM | TLS + TOFU public-key pinning + loud key-change warnings |
-| Lost/stolen device | Keystore-wrapped non-exportable keys + biometric/PIN + auto-lock + FLAG_SECURE |
+| Lost/stolen device | Device lock screen + Keystore-wrapped non-exportable keys + FLAG_SECURE (user app); + a simple lock on the Shaykh app |
 | Cloud TTS/translation leaking plaintext | Prohibited; all translation/TTS on-device |
 | Push payload leaking content | Content-free push (generic string + thread id only) |
 
@@ -405,8 +417,9 @@ operational/compliance purposes but reveal only metadata.
 keypair generation + Keystore-wrapped storage; public-key registry + Shaykh-key distribution
 (TOFU); text & audio questions; audio & text answers; authenticated `crypto_box` +
 AES-256-GCM; on-device Urdu translation + TTS pre-render; content-free push; Shaykh app
-(Urdu/RTL/Nastaleeq queue → play → record → send); user ask/receive screens; FLAG_SECURE +
-biometric/PIN; no plaintext at rest.
+(Urdu/RTL/Nastaleeq queue → play → record → send); user ask/receive screens; FLAG_SECURE
+(user app); content-free push; no plaintext at rest. (User-app biometric dropped as
+unnecessary; Shaykh-app lock decided in Plan 3.)
 
 **Phase 2 — recovery & operability:**
 recovery phrase + Argon2id encrypted backup + restore; audit-log surfacing; auto-lock; key
