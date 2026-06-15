@@ -26,6 +26,7 @@ class KhanqahApp : Application() {
     lateinit var categoryRepo: CategoryRepository
     lateinit var progressRepo: ProgressRepository
     lateinit var qaRepo: QaRepository
+    lateinit var makeQaViewModel: () -> com.khanqah.app.ui.qa.QaViewModel
     lateinit var authViewModel: AuthViewModel
     lateinit var homeViewModel: HomeViewModel
     lateinit var libraryViewModel: LibraryViewModel
@@ -49,6 +50,13 @@ class KhanqahApp : Application() {
         val qaCrypto = com.khanqah.app.crypto.QaCrypto(identityKeyStore)
         val shaykhKeyStore = com.khanqah.app.data.api.ShaykhKeyStore(this)
         qaRepo = QaRepository(apiClient.service, identityKeyStore, qaCrypto, shaykhKeyStore)
+        val urduPipeline = com.khanqah.app.qa.UrduPipeline(this)
+        val sentQuestionDao = db.sentQuestionDao()
+        makeQaViewModel = {
+            com.khanqah.app.ui.qa.QaViewModel(
+                qaRepo, urduPipeline, sentQuestionDao, com.khanqah.app.qa.AudioPlayer(this)
+            )
+        }
         authViewModel = AuthViewModel(authRepo)
         homeViewModel = HomeViewModel(contentRepo, apiClient.service)
         libraryViewModel = LibraryViewModel(categoryRepo, contentRepo)
