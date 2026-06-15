@@ -45,6 +45,28 @@ func (q *Queries) CreateLiveSession(ctx context.Context, arg CreateLiveSessionPa
 	return i, err
 }
 
+const endCurrentLiveSession = `-- name: EndCurrentLiveSession :one
+UPDATE live_sessions SET status = 'ended', ended_at = NOW()
+WHERE status = 'live' RETURNING id, title_en, title_ur, stream_url, started_by, started_at, ended_at, recording_url, status
+`
+
+func (q *Queries) EndCurrentLiveSession(ctx context.Context) (LiveSession, error) {
+	row := q.db.QueryRow(ctx, endCurrentLiveSession)
+	var i LiveSession
+	err := row.Scan(
+		&i.ID,
+		&i.TitleEn,
+		&i.TitleUr,
+		&i.StreamUrl,
+		&i.StartedBy,
+		&i.StartedAt,
+		&i.EndedAt,
+		&i.RecordingUrl,
+		&i.Status,
+	)
+	return i, err
+}
+
 const endLiveSession = `-- name: EndLiveSession :one
 UPDATE live_sessions SET status = 'ended', ended_at = NOW()
 WHERE id = $1 RETURNING id, title_en, title_ur, stream_url, started_by, started_at, ended_at, recording_url, status

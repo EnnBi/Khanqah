@@ -24,3 +24,6 @@ UPDATE users SET display_name = $2 WHERE id = $1 RETURNING *;
 
 -- name: DeleteUser :exec
 DELETE FROM users WHERE id = $1;
+
+-- name: GetShaykhUserID :one
+SELECT id FROM users WHERE role = 'shaykh' ORDER BY created_at LIMIT 1;

@@ -46,6 +46,17 @@ func (q *Queries) DeleteUser(ctx context.Context, id pgtype.UUID) error {
 	return err
 }
 
+const getShaykhUserID = `-- name: GetShaykhUserID :one
+SELECT id FROM users WHERE role = 'shaykh' ORDER BY created_at LIMIT 1
+`
+
+func (q *Queries) GetShaykhUserID(ctx context.Context) (pgtype.UUID, error) {
+	row := q.db.QueryRow(ctx, getShaykhUserID)
+	var id pgtype.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
 const getUserByID = `-- name: GetUserByID :one
 SELECT id, phone, display_name, role, language_pref, theme_pref, created_at FROM users WHERE id = $1
 `

@@ -152,6 +152,7 @@ const (
 	UserRoleEditor      UserRole = "editor"
 	UserRoleAdmin       UserRole = "admin"
 	UserRoleBroadcaster UserRole = "broadcaster"
+	UserRoleShaykh      UserRole = "shaykh"
 )
 
 func (e *UserRole) Scan(src interface{}) error {
@@ -239,6 +240,15 @@ type Content struct {
 	UpdatedAt     pgtype.Timestamptz `json:"updated_at"`
 }
 
+type DeviceKey struct {
+	ID        pgtype.UUID        `json:"id"`
+	UserID    pgtype.UUID        `json:"user_id"`
+	PublicKey []byte             `json:"public_key"`
+	Algo      string             `json:"algo"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	RevokedAt pgtype.Timestamptz `json:"revoked_at"`
+}
+
 type Download struct {
 	ID           pgtype.UUID        `json:"id"`
 	UserID       pgtype.UUID        `json:"user_id"`
@@ -267,6 +277,12 @@ type LiveSession struct {
 	Status       LiveSessionStatus  `json:"status"`
 }
 
+type NotificationSetting struct {
+	Key       string             `json:"key"`
+	Enabled   bool               `json:"enabled"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+}
+
 type Otp struct {
 	ID        pgtype.UUID        `json:"id"`
 	Phone     string             `json:"phone"`
@@ -291,6 +307,43 @@ type PlaylistItem struct {
 	ContentID  pgtype.UUID        `json:"content_id"`
 	SortOrder  int32              `json:"sort_order"`
 	AddedAt    pgtype.Timestamptz `json:"added_at"`
+}
+
+type QaAuditLog struct {
+	ID        pgtype.UUID        `json:"id"`
+	UserID    pgtype.UUID        `json:"user_id"`
+	EventType string             `json:"event_type"`
+	DeviceID  *string            `json:"device_id"`
+	Ip        *string            `json:"ip"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
+type QaMessage struct {
+	ID               pgtype.UUID        `json:"id"`
+	ThreadID         pgtype.UUID        `json:"thread_id"`
+	SenderID         pgtype.UUID        `json:"sender_id"`
+	RecipientID      pgtype.UUID        `json:"recipient_id"`
+	Direction        string             `json:"direction"`
+	ContentType      string             `json:"content_type"`
+	CiphertextRef    *string            `json:"ciphertext_ref"`
+	CiphertextInline []byte             `json:"ciphertext_inline"`
+	EncCek           []byte             `json:"enc_cek"`
+	NonceKey         []byte             `json:"nonce_key"`
+	NoncePayload     []byte             `json:"nonce_payload"`
+	SenderKeyID      pgtype.UUID        `json:"sender_key_id"`
+	ByteSize         int64              `json:"byte_size"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	DeliveredAt      pgtype.Timestamptz `json:"delivered_at"`
+	ReadAt           pgtype.Timestamptz `json:"read_at"`
+}
+
+type QaThread struct {
+	ID            pgtype.UUID        `json:"id"`
+	UserID        pgtype.UUID        `json:"user_id"`
+	ShaykhID      pgtype.UUID        `json:"shaykh_id"`
+	Status        string             `json:"status"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+	LastMessageAt pgtype.Timestamptz `json:"last_message_at"`
 }
 
 type RefreshToken struct {
