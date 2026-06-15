@@ -125,6 +125,8 @@ fun AppNavGraph(
     isUrdu: Boolean,
     openLive: Boolean = false,
     openPlayer: Boolean = false,
+    openAsk: Boolean = false,
+    openAskThread: String? = null,
     onLanguageToggle: () -> Unit,
     onLogout: () -> Unit,
 ) {
@@ -147,6 +149,17 @@ fun AppNavGraph(
             val info = app.nowPlayingManager.info.value
             if (info != null) {
                 navController.navigate(Screen.Player.route(info.contentId)) { launchSingleTop = true }
+            }
+        }
+    }
+
+    // Navigate to Ask Hazrat when QA push notification is tapped
+    LaunchedEffect(openAsk) {
+        if (openAsk && isLoggedIn) {
+            if (openAskThread != null) {
+                navController.navigate(Screen.AskConversation.route(openAskThread)) { launchSingleTop = true }
+            } else {
+                navController.navigate(Screen.AskList.route) { launchSingleTop = true }
             }
         }
     }

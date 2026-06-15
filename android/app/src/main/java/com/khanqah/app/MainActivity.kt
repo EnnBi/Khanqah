@@ -17,14 +17,20 @@ import kotlinx.coroutines.runBlocking
 
 class MainActivity : ComponentActivity() {
 
-    private var openLiveState   = mutableStateOf(false)
-    private var openPlayerState = mutableStateOf(false)
+    private var openLiveState      = mutableStateOf(false)
+    private var openPlayerState    = mutableStateOf(false)
+    private var openAskState       = mutableStateOf(false)
+    private var openAskThreadState = mutableStateOf<String?>(null)
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         when (intent.action) {
             ListeningForegroundService.ACTION_OPEN_LIVE -> openLiveState.value = true
             PlaybackNotificationService.ACTION_OPEN_PLAYER -> openPlayerState.value = true
+            KhanqahFirebaseMessagingService.ACTION_OPEN_ASK -> {
+                openAskState.value = true
+                openAskThreadState.value = intent.getStringExtra(KhanqahFirebaseMessagingService.EXTRA_THREAD_ID)
+            }
         }
     }
 
@@ -44,6 +50,10 @@ class MainActivity : ComponentActivity() {
         if (intent?.action == PlaybackNotificationService.ACTION_OPEN_PLAYER) {
             openPlayerState.value = true
         }
+        if (intent?.action == KhanqahFirebaseMessagingService.ACTION_OPEN_ASK) {
+            openAskState.value = true
+            openAskThreadState.value = intent.getStringExtra(KhanqahFirebaseMessagingService.EXTRA_THREAD_ID)
+        }
 
         setContent {
             KhanqahTheme {
@@ -62,8 +72,10 @@ class MainActivity : ComponentActivity() {
                     LocalLayoutDirection provides layoutDirection,
                     LocalIsUrdu provides (language == "ur"),
                 ) {
-                    val openLive   by openLiveState
-                    val openPlayer by openPlayerState
+                    val openLive      by openLiveState
+                    val openPlayer    by openPlayerState
+                    val openAsk       by openAskState
+                    val openAskThread by openAskThreadState
                     AppNavGraph(
                         authViewModel                  = app.authViewModel,
                         homeViewModel                  = app.homeViewModel,
@@ -79,6 +91,8 @@ class MainActivity : ComponentActivity() {
                         isUrdu                         = language == "ur",
                         openLive                       = openLive,
                         openPlayer                     = openPlayer,
+                        openAsk                        = openAsk,
+                        openAskThread                  = openAskThread,
                         onLanguageToggle               = {
                             scope.launch {
                                 app.tokenManager.setLanguage(if (language == "ur") "en" else "ur")
