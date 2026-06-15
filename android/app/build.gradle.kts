@@ -63,6 +63,9 @@ dependencies {
         exclude(group = "net.java.dev.jna", module = "jna")
     }
     implementation(libs.jna) { artifact { type = "aar" } }
+    implementation(libs.mlkit.translate)
+    implementation(libs.mlkit.language.id)
+    implementation(libs.coroutines.play.services)
     debugImplementation(libs.compose.ui.tooling)
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
