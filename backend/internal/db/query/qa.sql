@@ -1,0 +1,50 @@
+-- name: CreateQAThread :one
+INSERT INTO qa_threads (user_id, shaykh_id)
+VALUES ($1, $2)
+RETURNING *;
+
+-- name: GetOpenThreadForUser :one
+SELECT * FROM qa_threads
+WHERE user_id = $1 AND shaykh_id = $2 AND status = 'open'
+ORDER BY created_at DESC
+LIMIT 1;
+
+-- name: GetThreadByID :one
+SELECT * FROM qa_threads WHERE id = $1;
+
+-- name: ListThreadsForUser :many
+SELECT * FROM qa_threads
+WHERE user_id = $1
+ORDER BY last_message_at DESC;
+
+-- name: ListThreadsForShaykh :many
+SELECT * FROM qa_threads
+WHERE shaykh_id = $1
+ORDER BY last_message_at DESC;
+
+-- name: TouchThread :exec
+UPDATE qa_threads SET last_message_at = NOW(), status = $2 WHERE id = $1;
+
+-- name: CreateQAMessage :one
+INSERT INTO qa_messages (
+  thread_id, sender_id, recipient_id, direction, content_type,
+  ciphertext_ref, ciphertext_inline, enc_cek, nonce_key, nonce_payload,
+  sender_key_id, byte_size
+) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+RETURNING *;
+
+-- name: ListMessagesByThread :many
+SELECT * FROM qa_messages
+WHERE thread_id = $1
+ORDER BY created_at ASC;
+
+-- name: GetMessageByID :one
+SELECT * FROM qa_messages WHERE id = $1;
+
+-- name: MarkMessageRead :exec
+UPDATE qa_messages SET read_at = NOW()
+WHERE id = $1 AND read_at IS NULL;
+
+-- name: CreateAuditLog :exec
+INSERT INTO qa_audit_log (user_id, event_type, device_id, ip)
+VALUES ($1, $2, $3, $4);
