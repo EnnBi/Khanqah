@@ -118,6 +118,7 @@ func main() {
 			r.Post("/keys", handler.RegisterDeviceKey(pool))
 			r.Get("/keys/shaykh", handler.GetShaykhKey(pool))
 			r.Get("/keys/{userId}", handler.GetUserKey(pool))
+				r.Post("/qa/upload", handler.GenerateQAUploadURL(r2))
 		})
 
 		// Editor+ (content management, upload, live)
