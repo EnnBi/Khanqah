@@ -280,6 +280,7 @@ fun AppNavGraph(
         ) {
             composable(Screen.Login.route) {
                 LoginScreen(viewModel = authViewModel) {
+                    app.onLoggedIn()
                     navController.navigate(Screen.Home.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
