@@ -119,6 +119,10 @@ func main() {
 			r.Get("/keys/shaykh", handler.GetShaykhKey(pool))
 			r.Get("/keys/{userId}", handler.GetUserKey(pool))
 				r.Post("/qa/upload", handler.GenerateQAUploadURL(r2))
+				r.Post("/qa/messages", handler.SendQAMessage(pool, fcmClient))
+				r.Get("/qa/threads", handler.ListQAThreads(pool))
+				r.Get("/qa/messages", handler.ListQAMessages(pool))
+				r.Post("/qa/messages/{id}/read", handler.MarkQAMessageRead(pool))
 		})
 
 		// Editor+ (content management, upload, live)
