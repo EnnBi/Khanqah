@@ -48,4 +48,28 @@ interface ApiService {
         @Path("contentId") contentId: String,
         @Body body: UpsertProgressRequest,
     ): Progress
+
+    @POST("keys")
+    suspend fun registerKey(@Body body: RegisterKeyRequest): RegisterKeyResponse
+
+    @GET("keys/shaykh")
+    suspend fun getShaykhKey(): ShaykhKeyResponse
+
+    @POST("qa/upload")
+    suspend fun qaUploadUrl(@Body body: QaUploadRequest): QaUploadResponse
+
+    @POST("qa/download")
+    suspend fun qaDownloadUrl(@Body body: QaDownloadRequest): QaDownloadResponse
+
+    @POST("qa/messages")
+    suspend fun sendQaMessage(@Body body: SendMessageRequest): SendMessageResponse
+
+    @GET("qa/threads")
+    suspend fun listQaThreads(): List<QaThreadDto>
+
+    @GET("qa/messages")
+    suspend fun listQaMessages(@Query("thread_id") threadId: String): List<QaMessageDto>
+
+    @POST("qa/messages/{id}/read")
+    suspend fun markQaRead(@Path("id") id: String): retrofit2.Response<Unit>
 }
