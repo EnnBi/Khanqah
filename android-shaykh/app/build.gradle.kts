@@ -46,5 +46,9 @@ dependencies {
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.lifecycle.runtime.ktx)
     implementation(libs.coil.compose)
+    implementation(libs.lazysodium.android) {
+        exclude(group = "net.java.dev.jna", module = "jna")
+    }
+    implementation(libs.jna) { artifact { type = "aar" } }
     debugImplementation(libs.compose.ui.tooling)
 }

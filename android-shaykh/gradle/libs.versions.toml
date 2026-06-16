@@ -1,6 +1,8 @@
 [versions]
 agp = "8.7.3"
 kotlin = "2.0.21"
+lazysodium = "5.1.0"
+jna = "5.14.0"
 coreKtx = "1.15.0"
 activityCompose = "1.9.3"
 composeBom = "2024.12.01"
@@ -29,6 +31,8 @@ datastore-preferences = { group = "androidx.datastore", name = "datastore-prefer
 lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle" }
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
+lazysodium-android = { group = "com.goterl", name = "lazysodium-android", version.ref = "lazysodium" }
+jna = { group = "net.java.dev.jna", name = "jna", version.ref = "jna" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
