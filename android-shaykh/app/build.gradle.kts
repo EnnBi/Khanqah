@@ -50,5 +50,7 @@ dependencies {
         exclude(group = "net.java.dev.jna", module = "jna")
     }
     implementation(libs.jna) { artifact { type = "aar" } }
+    implementation(libs.androidx.biometric)
+    implementation(libs.compose.foundation)
     debugImplementation(libs.compose.ui.tooling)
 }
