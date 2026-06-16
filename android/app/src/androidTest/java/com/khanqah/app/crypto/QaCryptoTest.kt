@@ -13,12 +13,15 @@ import org.junit.runner.RunWith
 class QaCryptoTest {
     private val ctx = InstrumentationRegistry.getInstrumentation().targetContext
 
-    private fun newIdentity(alias: String): IdentityKeyStore =
-        IdentityKeyStore(ctx, KeystoreSealer(alias))
+    // All tests share the one "qa_keys" DataStore (the keypair persists across
+    // tests), so they MUST use the same Keystore sealer alias — otherwise the
+    // private key sealed by one test can't be unsealed by another (MAC fails).
+    private fun newIdentity(): IdentityKeyStore =
+        IdentityKeyStore(ctx, KeystoreSealer("khanqah_qa_test"))
 
     @Test
     fun ensureKeypair_isIdempotent_andPersists(): Unit = runBlocking {
-        val id = newIdentity("test_alias_a")
+        val id = newIdentity()
         val pub1 = id.ensureKeypair()
         val pub2 = id.ensureKeypair()
         assertArrayEquals("keypair must be stable across calls", pub1, pub2)
@@ -30,7 +33,7 @@ class QaCryptoTest {
         // Single identity (one shared "qa_keys" DataStore): encrypt to self,
         // still exercises the full crypto_box + AES-GCM path. True two-party
         // separation is validated in sub-plan 2B against the live key registry.
-        val id = newIdentity("test_alias_b")
+        val id = newIdentity()
         val myPub = id.ensureKeypair()
         val crypto = QaCrypto(id)
 
@@ -43,7 +46,7 @@ class QaCryptoTest {
 
     @Test
     fun tamperedCiphertext_failsToDecrypt(): Unit = runBlocking {
-        val id = newIdentity("test_alias_c")
+        val id = newIdentity()
         val myPub = id.ensureKeypair()
         val crypto = QaCrypto(id)
         val env = crypto.encryptForRecipient("hello".toByteArray(), myPub)
