@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -170,6 +171,7 @@ func ListQAThreads(pool *pgxpool.Pool) http.HandlerFunc {
 		if claims.Role == "shaykh" {
 			rows, err := q.ListThreadsForShaykh(r.Context(), id)
 			if err != nil {
+				log.Printf("qa ListThreadsForShaykh(%q): %v", claims.UserID, err)
 				writeError(w, http.StatusInternalServerError, "internal error")
 				return
 			}

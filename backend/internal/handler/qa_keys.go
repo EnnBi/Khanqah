@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -49,6 +50,7 @@ func RegisterDeviceKey(pool *pgxpool.Pool) http.HandlerFunc {
 		_ = userID.Scan(claims.UserID)
 
 		if err := q.RevokeActiveDeviceKeys(r.Context(), userID); err != nil {
+			log.Printf("qa RevokeActiveDeviceKeys(%q): %v", claims.UserID, err)
 			writeError(w, http.StatusInternalServerError, "internal error")
 			return
 		}
@@ -56,6 +58,7 @@ func RegisterDeviceKey(pool *pgxpool.Pool) http.HandlerFunc {
 			UserID: userID, PublicKey: pub, Algo: req.Algo,
 		})
 		if err != nil {
+			log.Printf("qa CreateDeviceKey(%q): %v", claims.UserID, err)
 			writeError(w, http.StatusInternalServerError, "internal error")
 			return
 		}
