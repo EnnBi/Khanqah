@@ -2,12 +2,10 @@ package handler
 
 import (
 	"encoding/json"
-	"errors"
 	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -74,6 +72,7 @@ func SendQAMessage(pool *pgxpool.Pool, fcmClient *fcm.Client) http.HandlerFunc {
 		switch req.Direction {
 		case "q": // user → shaykh
 			if req.ThreadID != "" {
+				// Follow-up: continue an existing thread (must be the sender's own).
 				var tid pgtype.UUID
 				if err := tid.Scan(req.ThreadID); err != nil {
 					writeError(w, http.StatusBadRequest, "invalid thread_id")
@@ -85,14 +84,11 @@ func SendQAMessage(pool *pgxpool.Pool, fcmClient *fcm.Client) http.HandlerFunc {
 					return
 				}
 			} else {
-				thread, err = q.GetOpenThreadForUser(r.Context(), dbgen.GetOpenThreadForUserParams{
+				// A fresh question always starts its own thread, so each question
+				// is answered independently (no merging into one open thread).
+				thread, err = q.CreateQAThread(r.Context(), dbgen.CreateQAThreadParams{
 					UserID: senderID, ShaykhID: shaykhID,
 				})
-				if errors.Is(err, pgx.ErrNoRows) {
-					thread, err = q.CreateQAThread(r.Context(), dbgen.CreateQAThreadParams{
-						UserID: senderID, ShaykhID: shaykhID,
-					})
-				}
 				if err != nil {
 					writeError(w, http.StatusInternalServerError, "internal error")
 					return
