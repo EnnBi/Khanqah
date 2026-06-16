@@ -7,6 +7,7 @@ on:
     paths:
       - 'android/**'
       - 'android-admin/**'
+      - 'android-shaykh/**'
 
 jobs:
   build-user-app:
@@ -76,10 +77,41 @@ jobs:
           path: android-admin/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 14
 
+  build-shaykh-app:
+    name: Build shaykh app APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Make gradlew executable
+        working-directory: android-shaykh
+        run: chmod +x gradlew
+
+      - name: Build debug APK
+        working-directory: android-shaykh
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: khanqah-shaykh-debug
+          path: android-shaykh/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 14
+
   deploy-downloads:
     name: Deploy APK download page
     runs-on: ubuntu-latest
-    needs: [build-user-app, build-admin-app]
+    needs: [build-user-app, build-admin-app, build-shaykh-app]
     timeout-minutes: 10
 
     env:
@@ -105,10 +137,17 @@ jobs:
           name: khanqah-admin-debug
           path: artifacts/admin
 
+      - name: Download shaykh APK
+        uses: actions/download-artifact@v4
+        with:
+          name: khanqah-shaykh-debug
+          path: artifacts/shaykh
+
       - name: Rename APKs
         run: |
           cp artifacts/user/app-debug.apk khanqah-user.apk
           cp artifacts/admin/app-debug.apk khanqah-admin.apk
+          cp artifacts/shaykh/app-debug.apk khanqah-shaykh.apk
 
       - name: Generate index.html
         run: |
@@ -132,6 +171,7 @@ jobs:
 
           USER_CHANGES=$(make_items "android/")
           ADMIN_CHANGES=$(make_items "android-admin/")
+          SHAYKH_CHANGES=$(make_items "android-shaykh/")
 
           cat > index.html <<HTML
           <!DOCTYPE html>
@@ -365,6 +405,17 @@ jobs:
                   <div class="sep"><div class="sep-line"></div><span class="sep-text">Changes</span><div class="sep-line"></div></div>
                   <ul class="changes">${ADMIN_CHANGES}</ul>
                 </div>
+                <div class="card">
+                  <div class="app-eyebrow">Shaykh App</div>
+                  <div class="app-name">Khanqah Hazrat</div>
+                  <div class="meta">
+                    <div class="meta-row"><span class="meta-key">Built</span>${BUILD_DATE}</div>
+                    <div class="meta-row"><span class="meta-key">Commit</span>${COMMIT_SHORT}</div>
+                  </div>
+                  <a class="btn" href="/downloads/khanqah-shaykh.apk">&#8595; &nbsp; Download APK</a>
+                  <div class="sep"><div class="sep-line"></div><span class="sep-text">Changes</span><div class="sep-line"></div></div>
+                  <ul class="changes">${SHAYKH_CHANGES}</ul>
+                </div>
               </div>
               <p class="footer">Debug builds &nbsp;&middot;&nbsp; For testing only</p>
             </div>
@@ -385,4 +436,5 @@ jobs:
             index.html \
             khanqah-user.apk \
             khanqah-admin.apk \
+            khanqah-shaykh.apk \
             "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_DIR/"
