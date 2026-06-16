@@ -97,6 +97,11 @@ jobs:
         working-directory: android-shaykh
         run: chmod +x gradlew
 
+      - name: Write google-services.json
+        env:
+          GOOGLE_SERVICES_JSON_SHAYKH: ${{ secrets.GOOGLE_SERVICES_JSON_SHAYKH }}
+        run: printf '%s' "$GOOGLE_SERVICES_JSON_SHAYKH" > android-shaykh/app/google-services.json
+
       - name: Build debug APK
         working-directory: android-shaykh
         run: ./gradlew assembleDebug --no-daemon
