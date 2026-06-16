@@ -1,5 +1,10 @@
 package com.khanqah.shaykh.ui.qa
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -100,6 +105,16 @@ private fun AnswerSheet(vm: ShaykhQueueViewModel, question: IncomingQuestion, on
     var recordedBytes by remember { mutableStateOf<ByteArray?>(null) }
     val answerState by vm.answerState.collectAsState()
 
+    fun beginRecording() {
+        runCatching {
+            recorder.start(onMaxReached = { recordedBytes = recorder.stop(); recording = false })
+            recording = true
+        }
+    }
+    val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) beginRecording()
+    }
+
     LaunchedEffect(recording) {
         if (recording) { elapsed = 0; while (recording && elapsed < AudioRecorder.MAX_DURATION_MS / 1000) { delay(1000); elapsed++ } }
     }
@@ -114,8 +129,14 @@ private fun AnswerSheet(vm: ShaykhQueueViewModel, question: IncomingQuestion, on
             Spacer(Modifier.height(20.dp))
             Surface(
                 onClick = {
-                    if (!recording && recordedBytes == null) { recorder.start(onMaxReached = { recordedBytes = recorder.stop(); recording = false }); recording = true }
-                    else if (recording) { recordedBytes = recorder.stop(); recording = false }
+                    if (!recording && recordedBytes == null) {
+                        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED)
+                            beginRecording()
+                        else
+                            micPermission.launch(Manifest.permission.RECORD_AUDIO)
+                    } else if (recording) {
+                        recordedBytes = recorder.stop(); recording = false
+                    }
                 },
                 shape = CircleShape,
                 color = if (recording) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.tertiary,
