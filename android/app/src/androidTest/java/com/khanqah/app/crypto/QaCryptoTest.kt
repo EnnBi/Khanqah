@@ -17,7 +17,7 @@ class QaCryptoTest {
         IdentityKeyStore(ctx, KeystoreSealer(alias))
 
     @Test
-    fun ensureKeypair_isIdempotent_andPersists() = runBlocking {
+    fun ensureKeypair_isIdempotent_andPersists(): Unit = runBlocking {
         val id = newIdentity("test_alias_a")
         val pub1 = id.ensureKeypair()
         val pub2 = id.ensureKeypair()
@@ -26,7 +26,7 @@ class QaCryptoTest {
     }
 
     @Test
-    fun encrypt_then_decrypt_roundTrips() = runBlocking {
+    fun encrypt_then_decrypt_roundTrips(): Unit = runBlocking {
         // Single identity (one shared "qa_keys" DataStore): encrypt to self,
         // still exercises the full crypto_box + AES-GCM path. True two-party
         // separation is validated in sub-plan 2B against the live key registry.
@@ -42,7 +42,7 @@ class QaCryptoTest {
     }
 
     @Test
-    fun tamperedCiphertext_failsToDecrypt() = runBlocking {
+    fun tamperedCiphertext_failsToDecrypt(): Unit = runBlocking {
         val id = newIdentity("test_alias_c")
         val myPub = id.ensureKeypair()
         val crypto = QaCrypto(id)

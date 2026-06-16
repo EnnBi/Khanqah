@@ -18,7 +18,7 @@ class UrduPipelineTest {
     private val ctx = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Test
-    fun prepare_returnsUrduText_audioOptional() = runBlocking {
+    fun prepare_returnsUrduText_audioOptional(): Unit = runBlocking {
         val pipeline = UrduPipeline(ctx)
         val prepared = pipeline.prepare("You may shorten prayer while travelling")
         assertTrue("urduText must be non-blank", prepared.urduText.isNotBlank())
