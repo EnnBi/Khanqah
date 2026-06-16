@@ -10,7 +10,7 @@ class AuthRepository(private val api: ApiService, private val tokenManager: Toke
     suspend fun verifyOtp(phone: String, otp: String): Result<Unit> {
         return try {
             val result = api.verifyOtp(mapOf("phone" to phone, "otp" to otp))
-            tokenManager.saveTokens(result.accessToken, result.refreshToken, result.role)
+            tokenManager.saveTokens(result.accessToken, result.refreshToken, result.role, result.userId ?: "")
             result.displayName?.let { tokenManager.saveDisplayName(it) }
             Result.success(Unit)
         } catch (e: Exception) {

@@ -39,6 +39,8 @@ class ShaykhApp : Application() {
 
     fun onLoggedIn() {
         CoroutineScope(Dispatchers.IO).launch {
+            val uid = tokenManager.getUserId()
+            if (uid.isNotBlank()) com.google.firebase.messaging.FirebaseMessaging.getInstance().subscribeToTopic("user-$uid")
             runCatching { shaykhRepo.ensureRegistered() }
         }
     }
