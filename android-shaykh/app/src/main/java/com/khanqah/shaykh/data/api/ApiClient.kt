@@ -27,7 +27,7 @@ class ApiClient(private val tokenManager: TokenManager) {
             val rt = runBlocking { tokenManager.getRefreshToken() } ?: return expire()
             return try {
                 val newTokens = runBlocking {
-                    buildBase().create(AdminApiService::class.java)
+                    buildBase().create(ApiService::class.java)
                         .refreshToken(mapOf("refresh_token" to rt))
                 }
                 val newAccess = newTokens["access_token"] ?: return expire()
@@ -46,7 +46,7 @@ class ApiClient(private val tokenManager: TokenManager) {
         }
     }
 
-    val service: AdminApiService = buildWithAuth().create(AdminApiService::class.java)
+    val service: ApiService = buildWithAuth().create(ApiService::class.java)
 
     private fun buildBase(): Retrofit = Retrofit.Builder()
         .baseUrl(BASE_URL)

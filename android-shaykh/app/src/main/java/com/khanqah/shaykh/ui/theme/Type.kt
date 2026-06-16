@@ -2,14 +2,20 @@ package com.khanqah.shaykh.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.sp
+import com.khanqah.shaykh.R
+
+val NastaleeqFontFamily = FontFamily(Font(R.font.jameel_noori_nastaleeq))
+
+private fun nastaleeq(size: Int, line: Int) =
+    TextStyle(fontFamily = NastaleeqFontFamily, fontSize = size.sp, lineHeight = line.sp)
 
 val Typography = Typography(
-    headlineLarge = TextStyle(fontSize = 28.sp, fontWeight = FontWeight.SemiBold, lineHeight = 36.sp),
-    headlineMedium = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.SemiBold, lineHeight = 30.sp),
-    titleLarge = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Medium, lineHeight = 26.sp),
-    bodyLarge = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Normal, lineHeight = 24.sp),
-    bodyMedium = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Normal, lineHeight = 20.sp),
-    labelSmall = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Normal, lineHeight = 16.sp),
+    displayLarge  = nastaleeq(40, 64), displayMedium  = nastaleeq(34, 56),
+    headlineLarge = nastaleeq(30, 52), headlineMedium = nastaleeq(26, 46),
+    titleLarge    = nastaleeq(24, 44), titleMedium    = nastaleeq(20, 38),
+    bodyLarge     = nastaleeq(20, 40), bodyMedium     = nastaleeq(18, 36), bodySmall = nastaleeq(15, 30),
+    labelLarge    = nastaleeq(18, 34), labelMedium    = nastaleeq(16, 30), labelSmall = nastaleeq(14, 28),
 )

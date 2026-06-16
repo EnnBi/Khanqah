@@ -15,6 +15,7 @@ class TokenManager(private val context: Context) {
     private val ACCESS = stringPreferencesKey("access_token")
     private val REFRESH = stringPreferencesKey("refresh_token")
     private val ROLE = stringPreferencesKey("role")
+    private val DISPLAY_NAME = stringPreferencesKey("display_name")
 
     // Emitted when an authenticated request fails and the session cannot be
     // recovered (no/expired refresh token). Observed by the nav graph to route to login.
@@ -26,6 +27,7 @@ class TokenManager(private val context: Context) {
     suspend fun getAccessToken() = context.dataStore.data.map { it[ACCESS] }.first()
     suspend fun getRefreshToken() = context.dataStore.data.map { it[REFRESH] }.first()
     suspend fun getRole() = context.dataStore.data.map { it[ROLE] }.first()
+    suspend fun getDisplayName() = context.dataStore.data.map { it[DISPLAY_NAME] }.first()
 
     suspend fun saveTokens(access: String, refresh: String, role: String) {
         context.dataStore.edit { it[ACCESS] = access; it[REFRESH] = refresh; it[ROLE] = role }
@@ -33,6 +35,10 @@ class TokenManager(private val context: Context) {
 
     suspend fun saveAccessToken(access: String) {
         context.dataStore.edit { it[ACCESS] = access }
+    }
+
+    suspend fun saveDisplayName(name: String) {
+        context.dataStore.edit { it[DISPLAY_NAME] = name }
     }
 
     suspend fun clear() = context.dataStore.edit { it.clear() }

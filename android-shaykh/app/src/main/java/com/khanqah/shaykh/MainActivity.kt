@@ -4,20 +4,25 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.khanqah.shaykh.ui.navigation.AdminNavGraph
-import com.khanqah.shaykh.ui.theme.KhanqahTheme
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
+import com.khanqah.shaykh.ui.navigation.ShaykhNavGraph
+import com.khanqah.shaykh.ui.theme.KhanqahShaykhTheme
 import kotlinx.coroutines.runBlocking
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        val app = application as AdminApp
-        val startDest = if (runBlocking { app.authRepo.isLoggedIn() }) "home" else "login"
-
+        val app = application as ShaykhApp
+        val loggedIn = runBlocking { app.authRepo.isLoggedIn() }
+        val name = runBlocking { app.authRepo.getDisplayName() }
         setContent {
-            KhanqahTheme {
-                AdminNavGraph(app = app, startDestination = startDest)
+            KhanqahShaykhTheme {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                    ShaykhNavGraph(app.authViewModel, loggedIn, name)
+                }
             }
         }
     }

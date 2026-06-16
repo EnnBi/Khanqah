@@ -34,7 +34,7 @@ private val AdminColorScheme = darkColorScheme(
 )
 
 @Composable
-fun KhanqahTheme(content: @Composable () -> Unit) {
+fun KhanqahShaykhTheme(content: @Composable () -> Unit) {
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
