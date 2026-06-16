@@ -144,7 +144,7 @@ func SendQAMessage(pool *pgxpool.Pool, fcmClient *fcm.Client) http.HandlerFunc {
 			UserID: senderID, EventType: "msg_sent",
 		})
 
-		notifyNewMessage(fcmClient, uuidString(recipientID), req.Direction)
+		notifyNewMessage(fcmClient, uuidString(recipientID), req.Direction, uuidString(thread.ID))
 		writeJSON(w, http.StatusCreated, map[string]string{
 			"id":        uuidString(msg.ID),
 			"thread_id": uuidString(thread.ID),

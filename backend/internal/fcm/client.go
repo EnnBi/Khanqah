@@ -41,6 +41,13 @@ func New(ctx context.Context) (*Client, error) {
 
 // SendToTopic sends a notification to an FCM topic. No-op if client is nil.
 func (c *Client) SendToTopic(ctx context.Context, topic, title, body string) error {
+	return c.SendToTopicWithData(ctx, topic, title, body, nil)
+}
+
+// SendToTopicWithData sends a notification plus an optional data payload (e.g. a
+// thread_id for deep-linking). Data values must be strings and carry NO message
+// content. No-op if client is nil.
+func (c *Client) SendToTopicWithData(ctx context.Context, topic, title, body string, data map[string]string) error {
 	if c == nil {
 		return nil
 	}
@@ -48,14 +55,18 @@ func (c *Client) SendToTopic(ctx context.Context, topic, title, body string) err
 	if err != nil {
 		return fmt.Errorf("fcm: get token: %w", err)
 	}
-	payload := map[string]any{
-		"message": map[string]any{
-			"topic": topic,
-			"notification": map[string]string{
-				"title": title,
-				"body":  body,
-			},
+	message := map[string]any{
+		"topic": topic,
+		"notification": map[string]string{
+			"title": title,
+			"body":  body,
 		},
+	}
+	if len(data) > 0 {
+		message["data"] = data
+	}
+	payload := map[string]any{
+		"message": message,
 	}
 	b, _ := json.Marshal(payload)
 	url := fmt.Sprintf("https://fcm.googleapis.com/v1/projects/%s/messages:send", c.projectID)
