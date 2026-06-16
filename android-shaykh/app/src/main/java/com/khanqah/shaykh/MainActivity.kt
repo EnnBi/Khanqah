@@ -1,0 +1,24 @@
+package com.khanqah.shaykh
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import com.khanqah.shaykh.ui.navigation.AdminNavGraph
+import com.khanqah.shaykh.ui.theme.KhanqahTheme
+import kotlinx.coroutines.runBlocking
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        val app = application as AdminApp
+        val startDest = if (runBlocking { app.authRepo.isLoggedIn() }) "home" else "login"
+
+        setContent {
+            KhanqahTheme {
+                AdminNavGraph(app = app, startDestination = startDest)
+            }
+        }
+    }
+}
