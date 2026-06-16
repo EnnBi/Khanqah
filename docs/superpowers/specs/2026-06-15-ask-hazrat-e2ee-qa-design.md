@@ -312,8 +312,16 @@ Native Android (Kotlin + Jetpack Compose), package `com.khanqah.shaykh`.
   button. Nothing else.
 - **Question screen:** large buttons only — `▶ چلائیں` (Play), `🎙 جواب ریکارڈ کریں`
   (Record Answer), `✓ بھیجیں` (Send). No keyboard, no chat list, no settings, no nav.
-- Login once via OTP; a simple lock thereafter (biometric or PIN) — exact choice decided in
-  Plan 3, kept minimal for the non-technical user.
+- Login once via OTP (phone = `SHAYKH_PHONE`, auto-granted `shaykh` role). On every open, a
+  single **`BiometricPrompt` with device-credential fallback** (`setAllowedAuthenticators(
+  BIOMETRIC_STRONG or DEVICE_CREDENTIAL)`) — one fingerprint/face tap, or the phone's existing
+  PIN/pattern if no biometric is enrolled. This protects the master key (this device decrypts
+  *every* questioner's messages) with minimal friction. (Decided 2026-06-15.)
+
+**Code sharing:** the Shaykh app is a separate Android Gradle project (`android-shaykh/`,
+package `com.khanqah.shaykh`). The crypto + QA classes (the 2A `crypto/` package + QA models/
+API/repository) are **copied** into it rather than extracted to a shared module — pragmatic at
+a three-app scale; the small duplication is kept in sync by hand. (Decided 2026-06-15.)
 
 Answers: the Shaykh records audio (`MediaRecorder`); optionally a short text answer can be
 typed (Urdu). Audio is encrypted to the user's public key and uploaded; the user is notified
