@@ -119,6 +119,60 @@ func (q *Queries) CreateQAThread(ctx context.Context, arg CreateQAThreadParams) 
 	return i, err
 }
 
+const getMessageByCiphertextRef = `-- name: GetMessageByCiphertextRef :one
+SELECT m.id, m.thread_id, m.sender_id, m.recipient_id, m.direction, m.content_type, m.ciphertext_ref, m.ciphertext_inline, m.enc_cek, m.nonce_key, m.nonce_payload, m.sender_key_id, m.byte_size, m.created_at, m.delivered_at, m.read_at, t.user_id AS thread_user_id, t.shaykh_id AS thread_shaykh_id
+FROM qa_messages m JOIN qa_threads t ON t.id = m.thread_id
+WHERE m.ciphertext_ref = $1
+LIMIT 1
+`
+
+type GetMessageByCiphertextRefRow struct {
+	ID               pgtype.UUID        `json:"id"`
+	ThreadID         pgtype.UUID        `json:"thread_id"`
+	SenderID         pgtype.UUID        `json:"sender_id"`
+	RecipientID      pgtype.UUID        `json:"recipient_id"`
+	Direction        string             `json:"direction"`
+	ContentType      string             `json:"content_type"`
+	CiphertextRef    *string            `json:"ciphertext_ref"`
+	CiphertextInline []byte             `json:"ciphertext_inline"`
+	EncCek           []byte             `json:"enc_cek"`
+	NonceKey         []byte             `json:"nonce_key"`
+	NoncePayload     []byte             `json:"nonce_payload"`
+	SenderKeyID      pgtype.UUID        `json:"sender_key_id"`
+	ByteSize         int64              `json:"byte_size"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	DeliveredAt      pgtype.Timestamptz `json:"delivered_at"`
+	ReadAt           pgtype.Timestamptz `json:"read_at"`
+	ThreadUserID     pgtype.UUID        `json:"thread_user_id"`
+	ThreadShaykhID   pgtype.UUID        `json:"thread_shaykh_id"`
+}
+
+func (q *Queries) GetMessageByCiphertextRef(ctx context.Context, ciphertextRef *string) (GetMessageByCiphertextRefRow, error) {
+	row := q.db.QueryRow(ctx, getMessageByCiphertextRef, ciphertextRef)
+	var i GetMessageByCiphertextRefRow
+	err := row.Scan(
+		&i.ID,
+		&i.ThreadID,
+		&i.SenderID,
+		&i.RecipientID,
+		&i.Direction,
+		&i.ContentType,
+		&i.CiphertextRef,
+		&i.CiphertextInline,
+		&i.EncCek,
+		&i.NonceKey,
+		&i.NoncePayload,
+		&i.SenderKeyID,
+		&i.ByteSize,
+		&i.CreatedAt,
+		&i.DeliveredAt,
+		&i.ReadAt,
+		&i.ThreadUserID,
+		&i.ThreadShaykhID,
+	)
+	return i, err
+}
+
 const getMessageByID = `-- name: GetMessageByID :one
 SELECT id, thread_id, sender_id, recipient_id, direction, content_type, ciphertext_ref, ciphertext_inline, enc_cek, nonce_key, nonce_payload, sender_key_id, byte_size, created_at, delivered_at, read_at FROM qa_messages WHERE id = $1
 `

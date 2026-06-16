@@ -7,7 +7,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	dbgen "khanqah/api/internal/db/generated"
 	"khanqah/api/internal/middleware"
+	"khanqah/api/internal/qa"
 	"khanqah/api/internal/storage"
 )
 
@@ -49,7 +53,8 @@ func GenerateQAUploadURL(r2 *storage.R2Client) http.HandlerFunc {
 //	@Tags		qa
 //	@Security	BearerAuth
 //	@Router		/qa/download [post]
-func GenerateQADownloadURL(r2 *storage.R2Client) http.HandlerFunc {
+func GenerateQADownloadURL(pool *pgxpool.Pool, r2 *storage.R2Client) http.HandlerFunc {
+	q := dbgen.New(pool)
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims := middleware.ClaimsFromContext(r.Context())
 		if claims == nil {
@@ -67,9 +72,12 @@ func GenerateQADownloadURL(r2 *storage.R2Client) http.HandlerFunc {
 			writeError(w, http.StatusBadRequest, "invalid file_key")
 			return
 		}
-		// A user may fetch only blobs under their own prefix; the shaykh may fetch any qa/ blob.
-		prefixOwn := "qa/" + claims.UserID + "/"
-		if claims.Role != "shaykh" && !strings.HasPrefix(req.FileKey, prefixOwn) {
+		row, err := q.GetMessageByCiphertextRef(r.Context(), &req.FileKey)
+		if err != nil {
+			writeError(w, http.StatusNotFound, "blob not found")
+			return
+		}
+		if !qa.CanAccessThread(claims.UserID, uuidString(row.ThreadUserID), uuidString(row.ThreadShaykhID)) {
 			writeError(w, http.StatusForbidden, "forbidden")
 			return
 		}

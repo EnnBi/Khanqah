@@ -45,6 +45,12 @@ SELECT * FROM qa_messages WHERE id = $1;
 UPDATE qa_messages SET read_at = NOW()
 WHERE id = $1 AND read_at IS NULL;
 
+-- name: GetMessageByCiphertextRef :one
+SELECT m.*, t.user_id AS thread_user_id, t.shaykh_id AS thread_shaykh_id
+FROM qa_messages m JOIN qa_threads t ON t.id = m.thread_id
+WHERE m.ciphertext_ref = $1
+LIMIT 1;
+
 -- name: CreateAuditLog :exec
 INSERT INTO qa_audit_log (user_id, event_type, device_id, ip)
 VALUES ($1, $2, $3, $4);
