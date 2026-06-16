@@ -52,9 +52,10 @@ class KhanqahApp : Application() {
         qaRepo = QaRepository(apiClient.service, identityKeyStore, qaCrypto, shaykhKeyStore)
         val urduPipeline = com.khanqah.app.qa.UrduPipeline(this)
         val sentQuestionDao = db.sentQuestionDao()
+        val qaPrefs = com.khanqah.app.ui.qa.QaPrefs(this)
         makeQaViewModel = {
             com.khanqah.app.ui.qa.QaViewModel(
-                qaRepo, urduPipeline, sentQuestionDao, com.khanqah.app.qa.AudioPlayer(this)
+                qaRepo, urduPipeline, sentQuestionDao, com.khanqah.app.qa.AudioPlayer(this), qaPrefs
             )
         }
         authViewModel = AuthViewModel(authRepo)

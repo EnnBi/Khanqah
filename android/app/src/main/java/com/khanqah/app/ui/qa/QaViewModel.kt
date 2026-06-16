@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.khanqah.app.data.db.SentQuestionDao
 import com.khanqah.app.data.db.entities.SentQuestionEntity
-import com.khanqah.app.data.model.QaThreadDto
 import com.khanqah.app.data.repository.DecryptedMessage
 import com.khanqah.app.data.repository.QaRepository
 import com.khanqah.app.data.repository.ShaykhKeyChangedException
@@ -24,6 +23,17 @@ data class ChatItem(
     val read: Boolean,
 )
 
+/** A thread enriched for the list UI: status + locally-cached question preview + unread flag.
+ *  The server can't read E2EE content, so [preview] comes from our own sent-question cache. */
+data class ThreadRow(
+    val id: String,
+    val status: String,
+    val lastMessageAt: String,
+    val preview: String,
+    val isAudio: Boolean,
+    val unread: Boolean,
+)
+
 sealed interface SendState {
     data object Idle : SendState
     data object Preparing : SendState
@@ -37,14 +47,36 @@ class QaViewModel(
     private val pipeline: UrduPipeline,
     private val dao: SentQuestionDao,
     val audioPlayer: AudioPlayer,
+    private val prefs: QaPrefs,
 ) : ViewModel() {
 
-    val threads = MutableStateFlow<List<QaThreadDto>>(emptyList())
+    val threadRows = MutableStateFlow<List<ThreadRow>>(emptyList())
     val messages = MutableStateFlow<List<ChatItem>>(emptyList())
     val sendState: MutableStateFlow<SendState> = MutableStateFlow(SendState.Idle)
 
     fun loadThreads() = viewModelScope.launch {
-        runCatching { repo.listThreads() }.onSuccess { threads.value = it }
+        val list = runCatching { repo.listThreads() }.getOrNull() ?: return@launch
+        val seen = prefs.loadSeenThreads()
+        threadRows.value = list.map { t ->
+            val original = dao.forThread(t.id).minByOrNull { it.createdAt }
+            val answered = t.status.equals("answered", ignoreCase = true)
+            ThreadRow(
+                id = t.id,
+                status = t.status,
+                lastMessageAt = t.lastMessageAt,
+                preview = original?.text?.takeIf { it.isNotBlank() } ?: "",
+                isAudio = original != null && original.text.isBlank() && original.audioPath != null,
+                unread = answered && !seen.contains(t.id),
+            )
+        }
+    }
+
+    /** Mark an answered thread as read once its conversation has been opened. */
+    fun markThreadSeen(threadId: String) = viewModelScope.launch {
+        prefs.markThreadSeen(threadId)
+        threadRows.value = threadRows.value.map {
+            if (it.id == threadId) it.copy(unread = false) else it
+        }
     }
 
     fun loadMessages(threadId: String) = viewModelScope.launch {

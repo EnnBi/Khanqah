@@ -1,19 +1,28 @@
 package com.khanqah.app.ui.qa
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.Reply
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -28,13 +37,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.khanqah.app.ui.theme.CrimsonProFontFamily
 import com.khanqah.app.ui.theme.NastaleeqFontFamily
 import com.khanqah.app.ui.utils.LocalIsUrdu
+import kotlin.math.abs
+
+private sealed interface ConvEntry {
+    data class DayHeader(val label: String) : ConvEntry
+    data class Message(val item: ChatItem) : ConvEntry
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,17 +69,29 @@ fun AskConversationScreen(
 
     LaunchedEffect(threadId) { vm.loadMessages(threadId) }
 
+    val entries = remember(messages) { buildEntries(messages) }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        if (ur) "گفتگو" else "Conversation",
-                        fontFamily = if (ur) NastaleeqFontFamily else null,
-                        fontSize = if (ur) 22.sp else 18.sp,
-                        fontWeight = FontWeight.SemiBold,
-                    )
+                    Column {
+                        Text(
+                            if (ur) "حضرت" else "Hazrat",
+                            fontFamily = if (ur) NastaleeqFontFamily else CrimsonProFontFamily,
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onBackground,
+                        )
+                        Text(
+                            if (ur) "مکمل خفیہ" else "END-TO-END ENCRYPTED",
+                            fontFamily = if (ur) NastaleeqFontFamily else null,
+                            fontSize = 10.sp,
+                            letterSpacing = if (ur) 0.sp else 1.2.sp,
+                            color = MaterialTheme.colorScheme.secondary,
+                        )
+                    }
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
@@ -71,23 +102,16 @@ fun AskConversationScreen(
                         )
                     }
                 },
-                actions = {
-                    IconButton(onClick = onFollowUp) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.Reply,
-                            contentDescription = if (ur) "فالو اپ" else "Follow up",
-                            tint = MaterialTheme.colorScheme.onBackground,
-                        )
-                    }
-                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = MaterialTheme.colorScheme.onBackground,
                 ),
             )
         },
+        bottomBar = {
+            FollowUpBar(isUrdu = ur, onClick = onFollowUp)
+        },
     ) { padding ->
-        if (messages.isEmpty()) {
+        if (entries.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -106,78 +130,229 @@ fun AskConversationScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                items(messages) { item ->
-                    Row(
-                        modifier = Modifier.fillParentMaxWidth(),
-                        horizontalArrangement = if (item.fromMe) Arrangement.End else Arrangement.Start,
-                    ) {
-                        Surface(
-                            shape = RoundedCornerShape(16.dp),
-                            color = if (item.fromMe)
-                                MaterialTheme.colorScheme.primaryContainer
-                            else
-                                MaterialTheme.colorScheme.surfaceVariant,
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .widthIn(max = 280.dp)
-                                    .padding(12.dp),
-                                verticalArrangement = Arrangement.spacedBy(4.dp),
-                            ) {
-                                if (item.text.isNotBlank()) {
-                                    Text(
-                                        item.text,
-                                        fontFamily = NastaleeqFontFamily,
-                                        fontSize = 16.sp,
-                                        color = if (item.fromMe)
-                                            MaterialTheme.colorScheme.onPrimaryContainer
-                                        else
-                                            MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                                if (item.hasAudio) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        IconButton(onClick = { vm.playAnswerAudio(item) }) {
-                                            Icon(
-                                                Icons.Filled.PlayArrow,
-                                                contentDescription = null,
-                                                tint = if (item.fromMe)
-                                                    MaterialTheme.colorScheme.onPrimaryContainer
-                                                else
-                                                    MaterialTheme.colorScheme.onSurfaceVariant,
-                                            )
-                                        }
-                                        Text(
-                                            if (ur) "آواز" else "Audio",
-                                            fontFamily = if (ur) NastaleeqFontFamily else null,
-                                            fontSize = if (ur) 14.sp else 12.sp,
-                                            color = if (item.fromMe)
-                                                MaterialTheme.colorScheme.onPrimaryContainer
-                                            else
-                                                MaterialTheme.colorScheme.onSurfaceVariant,
-                                        )
-                                    }
-                                }
-                                // Defensive timestamp: no crash if string is short
-                                val ts = try {
-                                    if (item.createdAtIso.length >= 16)
-                                        item.createdAtIso.take(16).replace("T", " ")
-                                    else
-                                        item.createdAtIso
-                                } catch (_: Exception) { "" }
-                                Text(
-                                    ts,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                        }
+                items(entries) { entry ->
+                    when (entry) {
+                        is ConvEntry.DayHeader -> DaySeparator(entry.label)
+                        is ConvEntry.Message -> MessageBubble(entry.item, ur, vm)
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun DaySeparator(label: String) {
+    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(20.dp))
+                .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+                .padding(horizontal = 12.dp, vertical = 3.dp),
+        ) {
+            Text(
+                label,
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.secondary,
+            )
+        }
+    }
+}
+
+@Composable
+private fun MessageBubble(item: ChatItem, ur: Boolean, vm: QaViewModel) {
+    val mine = item.fromMe
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = if (mine) Arrangement.End else Arrangement.Start,
+    ) {
+        Surface(
+            shape = RoundedCornerShape(
+                topStart = 18.dp, topEnd = 18.dp,
+                bottomEnd = if (mine) 5.dp else 18.dp,
+                bottomStart = if (mine) 18.dp else 5.dp,
+            ),
+            color = if (mine) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+            border = if (mine) null
+            else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        ) {
+            val onBubble = if (mine) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+            Column(
+                modifier = Modifier
+                    .widthIn(max = 270.dp)
+                    .padding(horizontal = 14.dp, vertical = 11.dp),
+            ) {
+                if (!mine) {
+                    Text(
+                        if (ur) "حضرت" else "Hazrat",
+                        fontFamily = if (ur) NastaleeqFontFamily else null,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.tertiary,
+                        modifier = Modifier.padding(bottom = 4.dp),
+                    )
+                }
+                if (item.text.isNotBlank()) {
+                    Text(
+                        item.text,
+                        fontFamily = NastaleeqFontFamily,
+                        fontSize = 16.sp,
+                        lineHeight = 28.sp,
+                        color = onBubble,
+                    )
+                }
+                if (item.hasAudio) {
+                    if (item.text.isNotBlank()) Spacer(Modifier.height(8.dp))
+                    AudioRow(item = item, mine = mine, onBubble = onBubble, onPlay = { vm.playAnswerAudio(item) })
+                }
+                Spacer(Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        shortTime(item.createdAtIso),
+                        fontSize = 10.sp,
+                        color = onBubble.copy(alpha = 0.65f),
+                    )
+                    if (mine) {
+                        Spacer(Modifier.width(4.dp))
+                        Text("✓✓", fontSize = 10.sp, color = onBubble.copy(alpha = 0.65f))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AudioRow(item: ChatItem, mine: Boolean, onBubble: Color, onPlay: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(11.dp),
+        modifier = Modifier.widthIn(min = 170.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(38.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.tertiary)
+                .clickable(onClick = onPlay),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Filled.PlayArrow,
+                contentDescription = "Play",
+                tint = MaterialTheme.colorScheme.onTertiary,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+        Waveform(seed = item.id.hashCode(), color = onBubble, modifier = Modifier.weight(1f))
+    }
+}
+
+@Composable
+private fun Waveform(seed: Int, color: Color, modifier: Modifier = Modifier) {
+    // Deterministic decorative bars so each clip looks distinct but stable across recompositions.
+    val heights = remember(seed) {
+        val rnd = java.util.Random(seed.toLong())
+        List(22) { 4 + abs(rnd.nextInt() % 18) }
+    }
+    Row(
+        modifier = modifier.height(22.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        heights.forEach { h ->
+            Box(
+                modifier = Modifier
+                    .width(3.dp)
+                    .height(h.dp)
+                    .clip(RoundedCornerShape(3.dp))
+                    .background(color.copy(alpha = 0.5f)),
+            )
+        }
+    }
+}
+
+@Composable
+private fun FollowUpBar(isUrdu: Boolean, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.background)
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .clip(RoundedCornerShape(22.dp))
+                .background(MaterialTheme.colorScheme.surface)
+                .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(22.dp))
+                .clickable(onClick = onClick)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+        ) {
+            Text(
+                if (isUrdu) "مزید سوال ریکارڈ کریں…" else "Record a follow-up…",
+                fontFamily = if (isUrdu) NastaleeqFontFamily else null,
+                fontSize = if (isUrdu) 14.sp else 13.sp,
+                color = MaterialTheme.colorScheme.secondary,
+            )
+        }
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primary)
+                .clickable(onClick = onClick),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Filled.Mic,
+                contentDescription = if (isUrdu) "نیا سوال" else "New question",
+                tint = MaterialTheme.colorScheme.tertiary,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+    }
+}
+
+private fun buildEntries(messages: List<ChatItem>): List<ConvEntry> {
+    val out = ArrayList<ConvEntry>(messages.size + 2)
+    var lastDay: String? = null
+    for (m in messages) {
+        val day = dayLabelOf(m.createdAtIso)
+        if (day != null && day != lastDay) {
+            out.add(ConvEntry.DayHeader(day))
+            lastDay = day
+        }
+        out.add(ConvEntry.Message(m))
+    }
+    return out
+}
+
+private fun dayLabelOf(iso: String): String? = try {
+    val date = java.time.Instant.parse(iso).atZone(java.time.ZoneId.systemDefault()).toLocalDate()
+    val today = java.time.LocalDate.now()
+    when (date) {
+        today -> "Today"
+        today.minusDays(1) -> "Yesterday"
+        else -> date.format(java.time.format.DateTimeFormatter.ofPattern("d MMM yyyy"))
+    }
+} catch (_: Exception) {
+    null
+}
+
+private fun shortTime(iso: String): String = try {
+    java.time.Instant.parse(iso)
+        .atZone(java.time.ZoneId.systemDefault())
+        .format(java.time.format.DateTimeFormatter.ofPattern("h:mm a"))
+} catch (_: Exception) {
+    if (iso.length >= 16) iso.substring(11, 16) else iso
 }
