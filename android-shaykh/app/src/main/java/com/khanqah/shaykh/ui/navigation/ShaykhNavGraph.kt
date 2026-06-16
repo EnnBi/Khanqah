@@ -8,7 +8,6 @@ import androidx.navigation.compose.rememberNavController
 import com.khanqah.shaykh.ShaykhApp
 import com.khanqah.shaykh.ui.auth.AuthViewModel
 import com.khanqah.shaykh.ui.auth.LoginScreen
-import com.khanqah.shaykh.ui.home.ShaykhHomeScreen
 
 @Composable
 fun ShaykhNavGraph(authViewModel: AuthViewModel, startLoggedIn: Boolean, initialName: String) {
@@ -26,10 +25,14 @@ fun ShaykhNavGraph(authViewModel: AuthViewModel, startLoggedIn: Boolean, initial
             )
         }
         composable("home") {
-            ShaykhHomeScreen(displayName = initialName, onLogout = {
-                authViewModel.logout()
-                nav.navigate("login") { popUpTo("home") { inclusive = true } }
-            })
+            val ctx = androidx.compose.ui.platform.LocalContext.current
+            val vm = remember { (ctx.applicationContext as com.khanqah.shaykh.ShaykhApp).makeQueueViewModel() }
+            com.khanqah.shaykh.ui.qa.BiometricGate {
+                com.khanqah.shaykh.ui.qa.ShaykhFeedScreen(vm = vm, onLogout = {
+                    authViewModel.logout()
+                    nav.navigate("login") { popUpTo("home") { inclusive = true } }
+                })
+            }
         }
     }
 }
