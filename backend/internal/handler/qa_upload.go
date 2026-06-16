@@ -7,11 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
-
-	dbgen "khanqah/api/internal/db/generated"
 	"khanqah/api/internal/middleware"
-	"khanqah/api/internal/qa"
 	"khanqah/api/internal/storage"
 )
 
@@ -53,8 +49,7 @@ func GenerateQAUploadURL(r2 *storage.R2Client) http.HandlerFunc {
 //	@Tags		qa
 //	@Security	BearerAuth
 //	@Router		/qa/download [post]
-func GenerateQADownloadURL(pool *pgxpool.Pool, r2 *storage.R2Client) http.HandlerFunc {
-	q := dbgen.New(pool)
+func GenerateQADownloadURL(r2 *storage.R2Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims := middleware.ClaimsFromContext(r.Context())
 		if claims == nil {
@@ -68,17 +63,14 @@ func GenerateQADownloadURL(pool *pgxpool.Pool, r2 *storage.R2Client) http.Handle
 			writeError(w, http.StatusBadRequest, "file_key is required")
 			return
 		}
+		// Audio blobs are referenced from INSIDE the E2EE envelope (not as a message
+		// ciphertext_ref), so file_key can't be mapped to a thread server-side. The blob
+		// is opaque AES-256-GCM ciphertext whose key lives only inside the recipient's
+		// crypto_box envelope, and file_keys are high-entropy and never exposed to
+		// non-participants — so the encryption is the access guard. Any authenticated
+		// user may presign a qa/ blob.
 		if !strings.HasPrefix(req.FileKey, "qa/") {
 			writeError(w, http.StatusBadRequest, "invalid file_key")
-			return
-		}
-		row, err := q.GetMessageByCiphertextRef(r.Context(), &req.FileKey)
-		if err != nil {
-			writeError(w, http.StatusNotFound, "blob not found")
-			return
-		}
-		if !qa.CanAccessThread(claims.UserID, uuidString(row.ThreadUserID), uuidString(row.ThreadShaykhID)) {
-			writeError(w, http.StatusForbidden, "forbidden")
 			return
 		}
 		url, err := r2.GenerateDownloadURL(r.Context(), req.FileKey)
