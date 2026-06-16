@@ -15,6 +15,7 @@ class ShaykhApp : Application() {
     lateinit var authRepo: AuthRepository
     lateinit var authViewModel: AuthViewModel
     lateinit var shaykhRepo: ShaykhRepository
+    lateinit var makeQueueViewModel: () -> com.khanqah.shaykh.ui.qa.ShaykhQueueViewModel
 
     override fun onCreate() {
         super.onCreate()
@@ -26,6 +27,10 @@ class ShaykhApp : Application() {
         val identityKeyStore = com.khanqah.shaykh.crypto.IdentityKeyStore(this)
         val qaCrypto = com.khanqah.shaykh.crypto.QaCrypto(identityKeyStore)
         shaykhRepo = ShaykhRepository(apiClient.service, identityKeyStore, qaCrypto)
+
+        makeQueueViewModel = {
+            com.khanqah.shaykh.ui.qa.ShaykhQueueViewModel(shaykhRepo, com.khanqah.shaykh.qa.AudioPlayer(this))
+        }
 
         CoroutineScope(Dispatchers.IO).launch {
             if (authRepo.isLoggedIn()) onLoggedIn()
