@@ -175,13 +175,20 @@ func ListQAThreads(pool *pgxpool.Pool) http.HandlerFunc {
 				writeError(w, http.StatusInternalServerError, "internal error")
 				return
 			}
+			if rows == nil {
+				rows = []dbgen.QaThread{}
+			}
 			writeJSON(w, http.StatusOK, rows)
 			return
 		}
 		rows, err := q.ListThreadsForUser(r.Context(), id)
 		if err != nil {
+			log.Printf("qa ListThreadsForUser(%q): %v", claims.UserID, err)
 			writeError(w, http.StatusInternalServerError, "internal error")
 			return
+		}
+		if rows == nil {
+			rows = []dbgen.QaThread{}
 		}
 		writeJSON(w, http.StatusOK, rows)
 	}
@@ -216,8 +223,12 @@ func ListQAMessages(pool *pgxpool.Pool) http.HandlerFunc {
 		}
 		rows, err := q.ListMessagesByThread(r.Context(), tid)
 		if err != nil {
+			log.Printf("qa ListMessagesByThread: %v", err)
 			writeError(w, http.StatusInternalServerError, "internal error")
 			return
+		}
+		if rows == nil {
+			rows = []dbgen.QaMessage{}
 		}
 		writeJSON(w, http.StatusOK, rows)
 	}
