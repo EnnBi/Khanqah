@@ -100,7 +100,7 @@ class ShaykhRepository(
             cipher.doFinal(enc)
         }
 
-    suspend fun sendAnswer(thread: QaThreadDto, replyToMessageId: String, answerText: String, answerAudio: ByteArray?): SendMessageResponse =
+    suspend fun sendAnswer(thread: QaThreadDto, replyToMessageId: String, answerText: String, answerAudio: ByteArray?, durationSec: Int = 0): SendMessageResponse =
         withContext(Dispatchers.IO) {
             ensureRegistered()
             val questionerPub = questionerKey(thread.userId)
@@ -124,7 +124,7 @@ class ShaykhRepository(
             }
 
             val kind = if (answerAudio != null) "audio" else "text"
-            val envelope = AnswerEnvelope(kind = kind, text = answerText, audioRef = audioRef, audioKeyB64 = audioKeyB64, audioNonceB64 = audioNonceB64)
+            val envelope = AnswerEnvelope(kind = kind, text = answerText, audioRef = audioRef, audioKeyB64 = audioKeyB64, audioNonceB64 = audioNonceB64, durationSec = durationSec)
             val e: EncryptedEnvelope = crypto.encryptForRecipient(QaProtocol.encodeAnswer(envelope), questionerPub)
             api.sendQaMessage(
                 SendMessageRequest(

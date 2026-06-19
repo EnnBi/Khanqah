@@ -166,7 +166,7 @@ private fun AnswerSheet(vm: ShaykhQueueViewModel, question: IncomingQuestion, on
             Spacer(Modifier.height(24.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedButton(onClick = { recordedBytes = null; elapsed = 0 }, modifier = Modifier.weight(1f), enabled = recordedBytes != null) { Text("دوبارہ") }
-                Button(onClick = { vm.sendAnswer(question, recordedBytes, "") }, modifier = Modifier.weight(1f),
+                Button(onClick = { vm.sendAnswer(question, recordedBytes, "", elapsed) }, modifier = Modifier.weight(1f),
                     enabled = recordedBytes != null && answerState !is AnswerState.Sending) {
                     Text(if (answerState is AnswerState.Sending) "بھیجا جا رہا ہے…" else "بھیجیں ✓")
                 }

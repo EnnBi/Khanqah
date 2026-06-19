@@ -59,11 +59,11 @@ class ShaykhQueueViewModel(
 
     fun stopAudio() = audioPlayer.stop()
 
-    fun sendAnswer(q: IncomingQuestion, audioBytes: ByteArray?, text: String) = viewModelScope.launch {
+    fun sendAnswer(q: IncomingQuestion, audioBytes: ByteArray?, text: String, durationSec: Int = 0) = viewModelScope.launch {
         answerState.value = AnswerState.Sending
         try {
             val thread = QaThreadDto(q.threadId, q.questionerUserId, "", "open", "", "")
-            repo.sendAnswer(thread, q.messageId, text, audioBytes)
+            repo.sendAnswer(thread, q.messageId, text, audioBytes, durationSec)
             // Remove only the answered question, not the whole thread — other follow-ups remain.
             questions.value = questions.value.filter { it.messageId != q.messageId }
             answerState.value = AnswerState.Sent
