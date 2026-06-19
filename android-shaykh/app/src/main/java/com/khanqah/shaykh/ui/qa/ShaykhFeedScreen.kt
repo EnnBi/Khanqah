@@ -356,7 +356,7 @@ private fun RoundCtrl(icon: ImageVector, label: String, c: com.khanqah.shaykh.ui
             Icon(icon, contentDescription = label, modifier = Modifier.size(if (big) 30.dp else 24.dp),
                 tint = if (danger) Color.White else if (gold) c.onGold else c.text)
         }
-        Text(label, fontFamily = NastaleeqFontFamily, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = c.muted)
+        Text(label, fontFamily = NastaleeqFontFamily, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = c.text)
     }
 }
 
