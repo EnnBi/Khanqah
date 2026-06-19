@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -147,7 +148,13 @@ fun AskConversationScreen(
                 )
             }
         } else {
+            val listState = rememberLazyListState()
+            // Keep the newest message visible above the composer as messages arrive/send.
+            LaunchedEffect(entries.size) {
+                if (entries.isNotEmpty()) listState.animateScrollToItem(entries.size - 1)
+            }
             LazyColumn(
+                state = listState,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),
