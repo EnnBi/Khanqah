@@ -84,8 +84,8 @@ fun ShaykhFeedScreen(vm: ShaykhQueueViewModel, onLogout: () -> Unit) {
                         questions.getOrNull(page)?.let { q ->
                             QuestionCard(
                                 q = q, index = page, total = questions.size, vm = vm,
-                                onAnswer = { sheetFor = q },
-                                onDismiss = { vm.dismiss(q) },
+                                onAnswer = { vm.stopAudio(); sheetFor = q },
+                                onDismiss = { vm.stopAudio(); vm.dismiss(q) },
                             )
                         }
                     }
