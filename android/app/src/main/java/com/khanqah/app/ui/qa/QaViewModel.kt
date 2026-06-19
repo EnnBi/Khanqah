@@ -21,22 +21,25 @@ data class ChatItem(
     val localAudioPath: String?,
     val createdAtIso: String,
     val read: Boolean,
+    val durationSec: Int = 0,   // voice-note length shown on the bubble (own=cache, answer=envelope)
     // For answers: a quote of the question this replies to (WhatsApp-style). replyToId is set
     // whenever the answer references a question; text/isAudio come from our local sent cache.
     val replyToId: String? = null,
     val replyToText: String? = null,
     val replyToIsAudio: Boolean = false,
+    val replyToDurationSec: Int = 0,
+    val replyToCreatedAtMs: Long? = null,
 )
 
 /** A thread enriched for the list UI: status + locally-cached question preview + unread flag.
  *  The server can't read E2EE content, so [preview] comes from our own sent-question cache. */
 data class ThreadRow(
     val id: String,
-    val status: String,
+    val answered: Boolean,     // newest question answered (backend-computed)
     val lastMessageAt: String,
     val preview: String,
     val isAudio: Boolean,
-    val unread: Boolean,
+    val unreadCount: Int,      // unseen answers; shown as a numeric badge until opened
     val seq: Int = 0,          // stable per-user question number (1 = earliest)
     val durationSec: Int = 0,  // voice-note length, for the list label
 )
@@ -63,31 +66,23 @@ class QaViewModel(
 
     fun loadThreads() = viewModelScope.launch {
         val list = runCatching { repo.listThreads() }.getOrNull() ?: return@launch
-        val seen = prefs.loadSeenThreads()
         // Stable question numbers: earliest-created thread is Q1, regardless of display order.
         val seqByThread = list.sortedBy { it.createdAt }
             .withIndex().associate { (i, t) -> t.id to (i + 1) }
         threadRows.value = list.map { t ->
             val original = dao.forThread(t.id).minByOrNull { it.createdAt }
-            val answered = t.status.equals("answered", ignoreCase = true)
             ThreadRow(
                 id = t.id,
-                status = t.status,
+                // Chip reflects whether the newest question has been answered (backend-computed),
+                // so a thread with a fresh reply reads "Answered" even if an earlier one is pending.
+                answered = t.newestQuestionAnswered,
                 lastMessageAt = t.lastMessageAt,
                 preview = original?.text?.takeIf { it.isNotBlank() } ?: "",
                 isAudio = original != null && original.text.isBlank() && original.audioPath != null,
-                unread = answered && !seen.contains(t.id),
+                unreadCount = t.unreadAnswers,
                 seq = seqByThread[t.id] ?: 0,
                 durationSec = original?.durationSec ?: 0,
             )
-        }
-    }
-
-    /** Mark an answered thread as read once its conversation has been opened. */
-    fun markThreadSeen(threadId: String) = viewModelScope.launch {
-        prefs.markThreadSeen(threadId)
-        threadRows.value = threadRows.value.map {
-            if (it.id == threadId) it.copy(unread = false) else it
         }
     }
 
@@ -108,9 +103,12 @@ class QaViewModel(
             audioRef = m.audioRef, audioKeyB64 = m.audioKeyB64, audioNonceB64 = m.audioNonceB64,
             localAudioPath = cache?.audioPath,
             createdAtIso = m.createdAt, read = m.readAt != null,
+            durationSec = if (fromMe) (cache?.durationSec ?: 0) else m.durationSec,
             replyToId = m.replyTo,
             replyToText = repliedTo?.text?.takeIf { it.isNotBlank() },
             replyToIsAudio = repliedTo?.audioPath != null,
+            replyToDurationSec = repliedTo?.durationSec ?: 0,
+            replyToCreatedAtMs = repliedTo?.createdAt,
         )
     }
 

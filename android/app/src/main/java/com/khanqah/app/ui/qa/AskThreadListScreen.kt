@@ -117,10 +117,7 @@ fun AskThreadListScreen(
                         ThreadCard(
                             row = row,
                             isUrdu = isUrdu,
-                            onClick = {
-                                if (row.unread) vm.markThreadSeen(row.id)
-                                onOpenThread(row.id)
-                            },
+                            onClick = { onOpenThread(row.id) },
                         )
                     }
                     item { Spacer(Modifier.height(76.dp)) } // clearance for the FAB pill
@@ -144,7 +141,7 @@ private fun ThreadCard(
     isUrdu: Boolean,
     onClick: () -> Unit,
 ) {
-    val answered = row.status.equals("answered", ignoreCase = true)
+    val answered = row.answered
     val chip = if (answered) answeredChipColors() else pendingChipColors()
     val avatarChar = row.preview.trim().firstOrNull()?.toString()
         ?: if (row.isAudio) "🎙" else "؟"
@@ -217,13 +214,21 @@ private fun ThreadCard(
                     )
                 }
             }
-            if (row.unread) {
+            if (row.unreadCount > 0) {
                 Box(
                     modifier = Modifier
-                        .size(9.dp)
+                        .size(20.dp)
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.tertiary),
-                )
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        if (row.unreadCount > 9) "9+" else row.unreadCount.toString(),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onTertiary,
+                    )
+                }
             }
         }
     }

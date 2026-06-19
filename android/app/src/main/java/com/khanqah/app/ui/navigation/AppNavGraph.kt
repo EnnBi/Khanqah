@@ -506,7 +506,7 @@ fun AppNavGraph(
             ) { back ->
                 val threadId = back.arguments?.getString("threadId") ?: return@composable
                 val vm = remember { (context.applicationContext as com.khanqah.app.KhanqahApp).makeQaViewModel() }
-                AskConversationScreen(vm, threadId, onFollowUp = { navController.navigate(Screen.AskCompose.route(threadId)) }, onBack = { navController.popBackStack() })
+                AskConversationScreen(vm, threadId, onBack = { navController.popBackStack() })
             }
         }
     }

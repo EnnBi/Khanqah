@@ -19,6 +19,7 @@ data class AnswerEnvelope(
     val audioRef: String? = null,
     val audioKeyB64: String? = null,
     val audioNonceB64: String? = null,
+    val durationSec: Int = 0,
 )
 
 object QaProtocol {

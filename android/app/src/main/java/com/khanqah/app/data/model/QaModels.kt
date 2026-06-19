@@ -48,6 +48,8 @@ data class QaThreadDto(
     val status: String,
     @SerializedName("created_at") val createdAt: String,
     @SerializedName("last_message_at") val lastMessageAt: String,
+    @SerializedName("unread_answers") val unreadAnswers: Int = 0,
+    @SerializedName("newest_question_answered") val newestQuestionAnswered: Boolean = false,
 )
 
 data class QaMessageDto(

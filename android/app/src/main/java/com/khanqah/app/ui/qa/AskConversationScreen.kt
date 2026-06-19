@@ -24,6 +24,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -41,8 +43,18 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
+import com.khanqah.app.qa.AudioRecorder
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -65,14 +77,20 @@ private sealed interface ConvEntry {
 fun AskConversationScreen(
     vm: QaViewModel,
     threadId: String,
-    onFollowUp: () -> Unit,
     onBack: () -> Unit,
 ) {
     SecureScreen()
     val ur = LocalIsUrdu.current
     val messages by vm.messages.collectAsState()
 
-    LaunchedEffect(threadId) { vm.loadMessages(threadId) }
+    // Load now, then poll while the conversation is open so new answers appear without reopening.
+    LaunchedEffect(threadId) {
+        vm.loadMessages(threadId)
+        while (true) {
+            kotlinx.coroutines.delay(5000)
+            vm.loadMessages(threadId)
+        }
+    }
 
     val entries = remember(messages) { buildEntries(messages) }
 
@@ -113,7 +131,7 @@ fun AskConversationScreen(
             )
         },
         bottomBar = {
-            FollowUpBar(isUrdu = ur, onClick = onFollowUp)
+            FollowUpRecorder(vm = vm, threadId = threadId, isUrdu = ur)
         },
     ) { padding ->
         if (entries.isEmpty()) {
@@ -241,10 +259,13 @@ private fun MessageBubble(item: ChatItem, ur: Boolean, vm: QaViewModel) {
 @Composable
 private fun ReplyQuote(item: ChatItem, ur: Boolean, onBubble: Color) {
     val accent = MaterialTheme.colorScheme.tertiary
+    val timeSuffix = item.replyToCreatedAtMs?.let { " · " + shortTimeMs(it) } ?: ""
     val label = when {
         item.replyToText != null -> item.replyToText
-        item.replyToIsAudio -> if (ur) "🎙 آواز کا سوال" else "🎙 Voice question"
-        else -> if (ur) "آپ کا سوال" else "Your question"
+        else -> {
+            val dur = if (item.replyToDurationSec > 0) " " + formatClock(item.replyToDurationSec * 1000) else ""
+            "🎙$dur$timeSuffix"
+        }
     }
     Row(
         modifier = Modifier
@@ -287,6 +308,12 @@ private fun AudioRow(item: ChatItem, onBubble: Color, vm: QaViewModel) {
     val durationMs = if (active && playback.durationMs > 0) playback.durationMs else 0
     val positionMs = if (active) playback.positionMs else 0
     val fraction = if (durationMs > 0) (positionMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f
+    // Show the known clip length up-front (before play); fall back to playback duration once loaded.
+    val labelMs = when {
+        active && positionMs > 0 -> positionMs
+        durationMs > 0 -> durationMs
+        else -> item.durationSec * 1000
+    }
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -324,7 +351,7 @@ private fun AudioRow(item: ChatItem, onBubble: Color, vm: QaViewModel) {
                 modifier = Modifier.fillMaxWidth().height(20.dp),
             )
             Text(
-                formatClock(if (active && positionMs > 0) positionMs else durationMs),
+                formatClock(labelMs),
                 fontSize = 10.sp,
                 color = onBubble.copy(alpha = 0.65f),
             )
@@ -339,7 +366,49 @@ private fun formatClock(ms: Int): String {
 }
 
 @Composable
-private fun FollowUpBar(isUrdu: Boolean, onClick: () -> Unit) {
+private fun FollowUpRecorder(vm: QaViewModel, threadId: String, isUrdu: Boolean) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val recorder = remember { AudioRecorder(context) }
+    val prefs = remember { QaPrefs(context) }
+    var identity by remember { mutableStateOf(Triple("", "", "")) }
+    LaunchedEffect(Unit) { identity = prefs.load() }
+
+    var recording by remember { mutableStateOf(false) }
+    var elapsed by remember { mutableIntStateOf(0) }
+    val amps = remember { mutableStateListOf<Int>() }
+    val sendState by vm.sendState.collectAsState()
+    val sending = sendState is SendState.Preparing || sendState is SendState.Sending
+
+    fun reset() { recording = false; elapsed = 0; amps.clear() }
+
+    fun begin() {
+        amps.clear(); elapsed = 0
+        runCatching { recorder.start { recording = false } }
+        recording = true
+    }
+
+    val permLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted -> if (granted) begin() }
+
+    // Tick the timer + sample amplitude for the live waveform while recording.
+    LaunchedEffect(recording) {
+        if (recording) {
+            var t = 0
+            while (recording) {
+                amps.add(recorder.amplitude())
+                if (amps.size > 40) amps.removeAt(0)
+                kotlinx.coroutines.delay(120)
+                t += 120
+                elapsed = t / 1000
+            }
+        }
+    }
+
+    // After a successful send, reset the bar.
+    LaunchedEffect(sendState) { if (sendState is SendState.Sent) reset() }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -348,35 +417,123 @@ private fun FollowUpBar(isUrdu: Boolean, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .clip(RoundedCornerShape(22.dp))
-                .background(MaterialTheme.colorScheme.surface)
-                .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(22.dp))
-                .clickable(onClick = onClick)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-        ) {
-            Text(
-                if (isUrdu) "مزید سوال ریکارڈ کریں…" else "Record a follow-up…",
-                fontFamily = if (isUrdu) NastaleeqFontFamily else null,
-                fontSize = if (isUrdu) 14.sp else 13.sp,
-                color = MaterialTheme.colorScheme.secondary,
-            )
+        if (!recording) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(22.dp))
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+            ) {
+                Text(
+                    if (sending) (if (isUrdu) "بھیجا جا رہا ہے…" else "Sending…")
+                    else (if (isUrdu) "مزید سوال ریکارڈ کریں…" else "Record a follow-up…"),
+                    fontFamily = if (isUrdu) NastaleeqFontFamily else null,
+                    fontSize = if (isUrdu) 14.sp else 13.sp,
+                    color = MaterialTheme.colorScheme.secondary,
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary)
+                    .clickable(enabled = !sending) {
+                        if (androidx.core.content.ContextCompat.checkSelfPermission(
+                                context, android.Manifest.permission.RECORD_AUDIO
+                            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                        ) begin() else permLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
+                    },
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Filled.Mic,
+                    contentDescription = if (isUrdu) "ریکارڈ" else "Record",
+                    tint = MaterialTheme.colorScheme.tertiary,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+        } else {
+            // Cancel (discard)
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .clickable { runCatching { recorder.cancel() }; reset() },
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Filled.Delete,
+                    contentDescription = "Cancel",
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(24.dp),
+                )
+            }
+            // Live waveform + timer
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(22.dp))
+                    .padding(horizontal = 14.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    formatClock(elapsed * 1000),
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                LiveWaveform(amps = amps, color = MaterialTheme.colorScheme.tertiary, modifier = Modifier.weight(1f))
+            }
+            // Send
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.tertiary)
+                    .clickable {
+                        val bytes = recorder.stop()
+                        val dur = elapsed
+                        recording = false
+                        if (bytes != null) {
+                            val out = java.io.File(context.cacheDir, "qa_sent_${System.currentTimeMillis()}.m4a")
+                            out.writeBytes(bytes)
+                            val (n, p, a) = identity
+                            vm.sendRecorded(n, p, a, bytes, out.absolutePath, dur, threadId)
+                            scope.launch { kotlinx.coroutines.delay(600); vm.loadMessages(threadId) }
+                        } else reset()
+                    },
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Filled.Send,
+                    contentDescription = if (isUrdu) "بھیجیں" else "Send",
+                    tint = MaterialTheme.colorScheme.onTertiary,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
         }
-        Box(
-            modifier = Modifier
-                .size(44.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary)
-                .clickable(onClick = onClick),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                Icons.Filled.Mic,
-                contentDescription = if (isUrdu) "نیا سوال" else "New question",
-                tint = MaterialTheme.colorScheme.tertiary,
-                modifier = Modifier.size(20.dp),
+    }
+}
+
+@Composable
+private fun LiveWaveform(amps: List<Int>, color: Color, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier.height(28.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        amps.takeLast(40).forEach { amp ->
+            val frac = (amp.toFloat() / 32767f).coerceIn(0.04f, 1f)
+            Box(
+                modifier = Modifier
+                    .width(3.dp)
+                    .height((4 + frac * 22).dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(color),
             )
         }
     }
@@ -414,4 +571,12 @@ private fun shortTime(iso: String): String = try {
         .format(java.time.format.DateTimeFormatter.ofPattern("h:mm a"))
 } catch (_: Exception) {
     if (iso.length >= 16) iso.substring(11, 16) else iso
+}
+
+private fun shortTimeMs(epochMs: Long): String = try {
+    java.time.Instant.ofEpochMilli(epochMs)
+        .atZone(java.time.ZoneId.systemDefault())
+        .format(java.time.format.DateTimeFormatter.ofPattern("h:mm a"))
+} catch (_: Exception) {
+    ""
 }

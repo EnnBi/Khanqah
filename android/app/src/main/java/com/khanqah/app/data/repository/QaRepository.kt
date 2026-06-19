@@ -33,6 +33,7 @@ data class DecryptedMessage(
     val audioNonceB64: String?,
     val readAt: String?,
     val replyTo: String? = null, // answers: id of the question this answers
+    val durationSec: Int = 0,    // answers: voice-note length (from the encrypted envelope)
 )
 
 class QaRepository(
@@ -132,7 +133,7 @@ class QaRepository(
                     noncePayload = b64d(m.noncePayload), ciphertext = b64d(m.ciphertextInline),
                 )
                 val a = QaProtocol.decodeAnswer(crypto.decryptFromSender(env, shaykhPub))
-                DecryptedMessage(m.id, m.direction, m.createdAt, a.text, a.audioRef, a.audioKeyB64, a.audioNonceB64, m.readAt, m.replyTo)
+                DecryptedMessage(m.id, m.direction, m.createdAt, a.text, a.audioRef, a.audioKeyB64, a.audioNonceB64, m.readAt, m.replyTo, a.durationSec)
             } else {
                 // Our own question: text comes from local cache in 2E (TODO 2E).
                 DecryptedMessage(m.id, m.direction, m.createdAt, "", null, null, null, m.readAt, m.replyTo)
