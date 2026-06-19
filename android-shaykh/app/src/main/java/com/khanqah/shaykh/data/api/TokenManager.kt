@@ -41,6 +41,12 @@ class TokenManager(private val context: Context) {
         context.dataStore.edit { it[ACCESS] = access }
     }
 
+    /** Persist the rotated pair returned by /auth/refresh. The backend deletes the old
+     *  refresh token on every refresh, so the new one MUST be stored or the next refresh 401s. */
+    suspend fun saveRefreshedTokens(access: String, refresh: String) {
+        context.dataStore.edit { it[ACCESS] = access; it[REFRESH] = refresh }
+    }
+
     suspend fun saveDisplayName(name: String) {
         context.dataStore.edit { it[DISPLAY_NAME] = name }
     }

@@ -17,6 +17,8 @@ class ApiClient(private val tokenManager: TokenManager) {
         chain.proceed(req)
     }
 
+    private val refreshLock = Any()
+
     private val refreshAuthenticator = object : Authenticator {
         override fun authenticate(route: Route?, response: Response): Request? {
             if (response.code != 401) return null
@@ -24,17 +26,31 @@ class ApiClient(private val tokenManager: TokenManager) {
             // Already retried once with a refreshed token and still 401 → give up.
             if (response.priorResponse != null) return expire()
 
-            val rt = runBlocking { tokenManager.getRefreshToken() } ?: return expire()
-            return try {
-                val newTokens = runBlocking {
-                    buildBase().create(AdminApiService::class.java)
-                        .refreshToken(mapOf("refresh_token" to rt))
+            // The backend ROTATES refresh tokens. Serialize refreshes so concurrent 401s don't
+            // each spend the same refresh token (that race 401s every loser). A thread that finds
+            // the access token already changed just reuses it instead of refreshing again.
+            val sentToken = response.request.header("Authorization")?.removePrefix("Bearer ")
+            synchronized(refreshLock) {
+                val current = runBlocking { tokenManager.getAccessToken() }
+                if (current != null && current != sentToken) {
+                    return response.request.newBuilder().header("Authorization", "Bearer $current").build()
                 }
-                val newAccess = newTokens["access_token"] ?: return expire()
-                runBlocking { tokenManager.saveAccessToken(newAccess) }
-                response.request.newBuilder().header("Authorization", "Bearer $newAccess").build()
-            } catch (e: Exception) {
-                expire()
+                val rt = runBlocking { tokenManager.getRefreshToken() } ?: return expire()
+                return try {
+                    val newTokens = runBlocking {
+                        buildBase().create(AdminApiService::class.java)
+                            .refreshToken(mapOf("refresh_token" to rt))
+                    }
+                    val newAccess = newTokens["access_token"] ?: return expire()
+                    val newRefresh = newTokens["refresh_token"]
+                    runBlocking {
+                        if (newRefresh != null) tokenManager.saveRefreshedTokens(newAccess, newRefresh)
+                        else tokenManager.saveAccessToken(newAccess)
+                    }
+                    response.request.newBuilder().header("Authorization", "Bearer $newAccess").build()
+                } catch (e: Exception) {
+                    expire()
+                }
             }
         }
 
