@@ -27,19 +27,34 @@ class ShaykhQueueViewModel(
             repo.ensureRegistered()
             val threads = repo.pendingThreads()
             val out = ArrayList<IncomingQuestion>()
-            for (t in threads) runCatching { repo.openQuestion(t) }.getOrNull()?.let { out.add(it) }
+            for (t in threads) out += runCatching { repo.openThreadQuestions(t) }.getOrNull().orEmpty()
             questions.value = out
             state.value = QueueState.Ready
         } catch (e: Exception) { state.value = QueueState.Error(e.message ?: "خرابی") }
     }
 
-    fun playQuestion(q: IncomingQuestion) = viewModelScope.launch {
-        if (q.audioRef == null || q.audioKeyB64 == null || q.audioNonceB64 == null) return@launch
-        runCatching {
-            val bytes = repo.fetchAudio(q.audioRef!!, q.audioKeyB64!!, q.audioNonceB64!!)
-            audioPlayer.play(bytes)
-        }
+    private suspend fun fetchBytes(q: IncomingQuestion): ByteArray? {
+        if (q.audioRef == null || q.audioKeyB64 == null || q.audioNonceB64 == null) return null
+        return runCatching { repo.fetchAudio(q.audioRef!!, q.audioKeyB64!!, q.audioNonceB64!!) }.getOrNull()
     }
+
+    /** Always (re)start [q] from the beginning — used for auto-play when a card lands. */
+    fun play(q: IncomingQuestion) = viewModelScope.launch {
+        val bytes = fetchBytes(q) ?: return@launch
+        audioPlayer.start(q.messageId, bytes)
+    }
+
+    /** Toggle play/pause for [q]; if it isn't the loaded clip, start it. */
+    fun onPlayPause(q: IncomingQuestion) = viewModelScope.launch {
+        if (audioPlayer.playback.value.key == q.messageId) {
+            audioPlayer.toggle()
+            return@launch
+        }
+        val bytes = fetchBytes(q) ?: return@launch
+        audioPlayer.start(q.messageId, bytes)
+    }
+
+    fun seek(ms: Int) = audioPlayer.seekTo(ms)
 
     fun stopAudio() = audioPlayer.stop()
 

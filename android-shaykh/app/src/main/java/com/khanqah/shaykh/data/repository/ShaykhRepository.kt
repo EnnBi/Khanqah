@@ -58,23 +58,32 @@ class ShaykhRepository(
 
     suspend fun allThreads(): List<QaThreadDto> = api.listQaThreads()
 
-    suspend fun openQuestion(thread: QaThreadDto): IncomingQuestion {
+    /** All UNANSWERED questions in a thread, oldest first — so multiple voice notes (or
+     *  follow-ups) in one thread are each surfaced and none is lost. Questions sent before
+     *  the most recent answer are treated as already addressed and excluded. */
+    suspend fun openThreadQuestions(thread: QaThreadDto): List<IncomingQuestion> {
         ensureRegistered()
         val questionerPub = questionerKey(thread.userId)
-        val msgs = api.listQaMessages(thread.id)
-        val q = msgs.lastOrNull { it.direction == "q" && it.ciphertextInline != null }
-            ?: error("no question in thread")
-        val env = EncryptedEnvelope(
-            encCek = b64d(q.encCek), nonceKey = b64d(q.nonceKey),
-            noncePayload = b64d(q.noncePayload), ciphertext = b64d(q.ciphertextInline!!),
-        )
-        val qe: QuestionEnvelope = QaProtocol.decodeQuestion(crypto.decryptFromSender(env, questionerPub))
-        return IncomingQuestion(
-            threadId = thread.id, messageId = q.id, questionerUserId = thread.userId,
-            name = qe.name, phone = qe.phone, address = qe.address, text = qe.text,
-            audioRef = qe.audioRef, audioKeyB64 = qe.audioKeyB64, audioNonceB64 = qe.audioNonceB64,
-            createdAt = q.createdAt,
-        )
+        val msgs = api.listQaMessages(thread.id) // server returns created_at ASC
+        val lastAnswerAt = msgs.lastOrNull { it.direction == "a" }?.createdAt
+        return msgs
+            .filter {
+                it.direction == "q" && it.ciphertextInline != null &&
+                    (lastAnswerAt == null || it.createdAt > lastAnswerAt)
+            }
+            .map { q ->
+                val env = EncryptedEnvelope(
+                    encCek = b64d(q.encCek), nonceKey = b64d(q.nonceKey),
+                    noncePayload = b64d(q.noncePayload), ciphertext = b64d(q.ciphertextInline!!),
+                )
+                val qe: QuestionEnvelope = QaProtocol.decodeQuestion(crypto.decryptFromSender(env, questionerPub))
+                IncomingQuestion(
+                    threadId = thread.id, messageId = q.id, questionerUserId = thread.userId,
+                    name = qe.name, phone = qe.phone, address = qe.address, text = qe.text,
+                    audioRef = qe.audioRef, audioKeyB64 = qe.audioKeyB64, audioNonceB64 = qe.audioNonceB64,
+                    createdAt = q.createdAt,
+                )
+            }
     }
 
     suspend fun fetchAudio(audioRef: String, audioKeyB64: String, audioNonceB64: String): ByteArray =

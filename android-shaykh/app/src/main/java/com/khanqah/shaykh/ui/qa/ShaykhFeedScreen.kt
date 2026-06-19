@@ -40,13 +40,13 @@ fun ShaykhFeedScreen(vm: ShaykhQueueViewModel, onLogout: () -> Unit) {
             if (questions.isEmpty()) { CenterText("کوئی نیا سوال نہیں"); return }
             val pager = rememberPagerState(pageCount = { questions.size })
             LaunchedEffect(pager.currentPage, questions.size) {
-                questions.getOrNull(pager.currentPage)?.let { vm.stopAudio(); vm.playQuestion(it) }
+                questions.getOrNull(pager.currentPage)?.let { vm.play(it) }
             }
             var sheetFor by remember { mutableStateOf<IncomingQuestion?>(null) }
             VerticalPager(state = pager, modifier = Modifier.fillMaxSize()) { page ->
                 questions.getOrNull(page)?.let { q ->
                     QuestionCard(q = q, index = page, total = questions.size,
-                        onReplay = { vm.playQuestion(q) }, onAnswer = { sheetFor = q })
+                        vm = vm, onAnswer = { sheetFor = q })
                 }
             }
             sheetFor?.let { q -> AnswerSheet(vm = vm, question = q, onClose = { sheetFor = null }) }
@@ -63,8 +63,15 @@ private fun CenterText(text: String, onTap: (() -> Unit)? = null) {
 }
 
 @Composable
-private fun QuestionCard(q: IncomingQuestion, index: Int, total: Int, onReplay: () -> Unit, onAnswer: () -> Unit) {
+private fun QuestionCard(q: IncomingQuestion, index: Int, total: Int, vm: ShaykhQueueViewModel, onAnswer: () -> Unit) {
     val gold = MaterialTheme.colorScheme.tertiary
+    val playback by vm.audioPlayer.playback.collectAsState()
+    val active = playback.key == q.messageId
+    val playing = active && playback.isPlaying
+    val durationMs = if (active && playback.durationMs > 0) playback.durationMs else 0
+    val positionMs = if (active) playback.positionMs else 0
+    val fraction = if (durationMs > 0) (positionMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f
+
     Box(Modifier.fillMaxSize().padding(22.dp)) {
         Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -77,15 +84,29 @@ private fun QuestionCard(q: IncomingQuestion, index: Int, total: Int, onReplay: 
             }
             Spacer(Modifier.height(28.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-                Surface(onClick = onReplay, shape = CircleShape, color = gold, modifier = Modifier.size(96.dp)) {
-                    Box(contentAlignment = Alignment.Center) { Text("▶", fontSize = 38.sp, color = MaterialTheme.colorScheme.onTertiary) }
+                Surface(onClick = { vm.onPlayPause(q) }, shape = CircleShape, color = gold, modifier = Modifier.size(96.dp)) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(if (playing) "❚❚" else "▶", fontSize = 36.sp, color = MaterialTheme.colorScheme.onTertiary)
+                    }
                 }
-                Spacer(Modifier.height(10.dp))
-                Text("سوال سننے کے لیے دبائیں", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
-                Spacer(Modifier.height(22.dp))
+                Spacer(Modifier.height(16.dp))
+                Slider(
+                    value = fraction,
+                    onValueChange = { f -> if (active && durationMs > 0) vm.seek((f * durationMs).toInt()) },
+                    enabled = active,
+                    colors = SliderDefaults.colors(activeTrackColor = gold, thumbColor = gold),
+                    modifier = Modifier.fillMaxWidth(0.8f),
+                )
+                val secs = (if (active && positionMs > 0) positionMs else durationMs) / 1000
+                Text(
+                    "${(secs / 60).toUrduDigits()}:${(secs % 60).toUrduDigits().padStart(2, '۰')}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary,
+                )
+                Spacer(Modifier.height(18.dp))
                 if (q.text.isNotBlank())
                     Text(q.text, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center,
-                        modifier = Modifier.heightIn(max = 220.dp).verticalScroll(rememberScrollState()))
+                        modifier = Modifier.heightIn(max = 200.dp).verticalScroll(rememberScrollState()))
             }
             Button(onClick = onAnswer, modifier = Modifier.fillMaxWidth().height(60.dp), shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = gold, contentColor = MaterialTheme.colorScheme.onTertiary)) {
