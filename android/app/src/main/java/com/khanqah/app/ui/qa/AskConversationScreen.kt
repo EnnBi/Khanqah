@@ -49,12 +49,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import com.khanqah.app.qa.AudioRecorder
-import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -368,7 +366,6 @@ private fun formatClock(ms: Int): String {
 @Composable
 private fun FollowUpRecorder(vm: QaViewModel, threadId: String, isUrdu: Boolean) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     val recorder = remember { AudioRecorder(context) }
     val prefs = remember { QaPrefs(context) }
     var identity by remember { mutableStateOf(Triple("", "", "")) }
@@ -406,8 +403,15 @@ private fun FollowUpRecorder(vm: QaViewModel, threadId: String, isUrdu: Boolean)
         }
     }
 
-    // After a successful send, reset the bar.
-    LaunchedEffect(sendState) { if (sendState is SendState.Sent) reset() }
+    // After a successful send, reset the bar and refresh the conversation immediately
+    // (Sent fires after the message is cached + on the server, so the reload includes it).
+    LaunchedEffect(sendState) {
+        if (sendState is SendState.Sent) {
+            reset()
+            vm.loadMessages(threadId)
+            vm.resetSend()
+        }
+    }
 
     Row(
         modifier = Modifier
@@ -503,7 +507,7 @@ private fun FollowUpRecorder(vm: QaViewModel, threadId: String, isUrdu: Boolean)
                             out.writeBytes(bytes)
                             val (n, p, a) = identity
                             vm.sendRecorded(n, p, a, bytes, out.absolutePath, dur, threadId)
-                            scope.launch { kotlinx.coroutines.delay(600); vm.loadMessages(threadId) }
+                            // The conversation refreshes when SendState.Sent fires (see LaunchedEffect above).
                         } else reset()
                     },
                 contentAlignment = Alignment.Center,
