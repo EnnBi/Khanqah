@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -46,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.khanqah.app.ui.theme.CrimsonProFontFamily
@@ -197,6 +200,10 @@ private fun MessageBubble(item: ChatItem, ur: Boolean, vm: QaViewModel) {
                         modifier = Modifier.padding(bottom = 4.dp),
                     )
                 }
+                if (item.replyToId != null) {
+                    ReplyQuote(item = item, ur = ur, onBubble = onBubble)
+                    Spacer(Modifier.height(7.dp))
+                }
                 if (item.text.isNotBlank()) {
                     Text(
                         item.text,
@@ -227,6 +234,47 @@ private fun MessageBubble(item: ChatItem, ur: Boolean, vm: QaViewModel) {
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ReplyQuote(item: ChatItem, ur: Boolean, onBubble: Color) {
+    val accent = MaterialTheme.colorScheme.tertiary
+    val label = when {
+        item.replyToText != null -> item.replyToText
+        item.replyToIsAudio -> if (ur) "🎙 آواز کا سوال" else "🎙 Voice question"
+        else -> if (ur) "آپ کا سوال" else "Your question"
+    }
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(onBubble.copy(alpha = 0.08f))
+            .height(IntrinsicSize.Min),
+    ) {
+        Box(
+            modifier = Modifier
+                .width(3.dp)
+                .fillMaxHeight()
+                .background(accent),
+        )
+        Column(modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp)) {
+            Text(
+                if (ur) "آپ کے سوال کے جواب میں" else "Replying to your question",
+                fontFamily = if (ur) NastaleeqFontFamily else null,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = accent,
+            )
+            Text(
+                label,
+                fontFamily = NastaleeqFontFamily,
+                fontSize = 13.sp,
+                lineHeight = 20.sp,
+                color = onBubble.copy(alpha = 0.8f),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }

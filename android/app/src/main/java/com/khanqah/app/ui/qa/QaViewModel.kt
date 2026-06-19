@@ -21,6 +21,11 @@ data class ChatItem(
     val localAudioPath: String?,
     val createdAtIso: String,
     val read: Boolean,
+    // For answers: a quote of the question this replies to (WhatsApp-style). replyToId is set
+    // whenever the answer references a question; text/isAudio come from our local sent cache.
+    val replyToId: String? = null,
+    val replyToText: String? = null,
+    val replyToIsAudio: Boolean = false,
 )
 
 /** A thread enriched for the list UI: status + locally-cached question preview + unread flag.
@@ -82,11 +87,12 @@ class QaViewModel(
     fun loadMessages(threadId: String) = viewModelScope.launch {
         val server = runCatching { repo.threadMessages(threadId) }.getOrDefault(emptyList())
         val cached = dao.forThread(threadId).associateBy { it.messageId }
-        messages.value = server.map { m -> toChatItem(m, cached[m.id]) }
+        // For an answer, the quoted question is our own sent question → look it up by reply_to.
+        messages.value = server.map { m -> toChatItem(m, cached[m.id], m.replyTo?.let { cached[it] }) }
         server.filter { it.direction == "a" && it.readAt == null }.forEach { runCatching { repo.markRead(it.id) } }
     }
 
-    private fun toChatItem(m: DecryptedMessage, cache: SentQuestionEntity?): ChatItem {
+    private fun toChatItem(m: DecryptedMessage, cache: SentQuestionEntity?, repliedTo: SentQuestionEntity?): ChatItem {
         val fromMe = m.direction == "q"
         return ChatItem(
             id = m.id, fromMe = fromMe,
@@ -95,6 +101,9 @@ class QaViewModel(
             audioRef = m.audioRef, audioKeyB64 = m.audioKeyB64, audioNonceB64 = m.audioNonceB64,
             localAudioPath = cache?.audioPath,
             createdAtIso = m.createdAt, read = m.readAt != null,
+            replyToId = m.replyTo,
+            replyToText = repliedTo?.text?.takeIf { it.isNotBlank() },
+            replyToIsAudio = repliedTo?.audioPath != null,
         )
     }
 

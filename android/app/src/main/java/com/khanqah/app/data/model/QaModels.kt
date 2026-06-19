@@ -66,4 +66,5 @@ data class QaMessageDto(
     @SerializedName("byte_size") val byteSize: Long,
     @SerializedName("created_at") val createdAt: String,
     @SerializedName("read_at") val readAt: String?,
+    @SerializedName("reply_to") val replyTo: String? = null,
 )
