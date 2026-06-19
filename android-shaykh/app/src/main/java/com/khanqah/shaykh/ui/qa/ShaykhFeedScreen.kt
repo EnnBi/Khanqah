@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Mic
@@ -91,6 +92,30 @@ fun ShaykhFeedScreen(vm: ShaykhQueueViewModel, onLogout: () -> Unit) {
                     sheetFor?.let { q -> AnswerSheet(vm = vm, question = q, onClose = { sheetFor = null }) }
                 }
             }
+        }
+
+        // Log out — always reachable, top corner.
+        var showLogout by remember { mutableStateOf(false) }
+        IconButton(onClick = { showLogout = true }, modifier = Modifier.align(Alignment.TopEnd).padding(6.dp)) {
+            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Log out", tint = c.muted)
+        }
+        if (showLogout) {
+            AlertDialog(
+                onDismissRequest = { showLogout = false },
+                containerColor = c.card,
+                title = { Text("لاگ آؤٹ؟", fontFamily = NastaleeqFontFamily, fontWeight = FontWeight.Bold, color = c.text) },
+                text = { Text("دوبارہ سائن ان کرنا ہوگا", fontFamily = NastaleeqFontFamily, color = c.muted) },
+                confirmButton = {
+                    TextButton(onClick = { showLogout = false; onLogout() }) {
+                        Text("لاگ آؤٹ", fontFamily = NastaleeqFontFamily, fontWeight = FontWeight.Bold, color = c.coral)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showLogout = false }) {
+                        Text("منسوخ", fontFamily = NastaleeqFontFamily, color = c.muted)
+                    }
+                },
+            )
         }
     }
 }

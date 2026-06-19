@@ -22,12 +22,14 @@ import com.khanqah.admin.ui.schedule.ScheduleScreen
 import com.khanqah.admin.ui.settings.SettingsScreen
 import com.khanqah.admin.ui.team.TeamScreen
 import com.khanqah.admin.ui.upload.UploadScreen
+import kotlinx.coroutines.launch
 
 private val TAB_ROUTES = setOf("home", "content", "schedule", "more")
 
 @Composable
 fun AdminNavGraph(app: AdminApp, startDestination: String) {
     val navController = rememberNavController()
+    val moreScope = rememberCoroutineScope()
     val backstackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backstackEntry?.destination?.route
 
@@ -129,6 +131,12 @@ fun AdminNavGraph(app: AdminApp, startDestination: String) {
                     onNavigateCategories = { navController.navigate("categories") },
                     onNavigateBugs       = { navController.navigate("bugs") },
                     onNavigateSettings   = { navController.navigate("settings") },
+                    onLogout             = {
+                        moreScope.launch {
+                            app.authRepo.logout()
+                            app.tokenManager.notifyAuthExpired()
+                        }
+                    },
                 )
             }
             composable("team") {
