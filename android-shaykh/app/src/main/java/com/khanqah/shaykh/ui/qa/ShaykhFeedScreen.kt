@@ -282,7 +282,12 @@ private fun AnswerSheet(vm: ShaykhQueueViewModel, question: IncomingQuestion, on
 
             val ready = recordedBytes != null
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(if (!ready) "جواب ریکارڈ ہو رہا ہے" else "جواب تیار ہے",
+                Text(
+                    when {
+                        ready -> "جواب تیار ہے"
+                        recording -> "جواب ریکارڈ ہو رہا ہے"
+                        else -> "جواب ریکارڈ کریں"
+                    },
                     fontFamily = NastaleeqFontFamily, fontSize = 27.sp, fontWeight = FontWeight.Bold, color = c.text)
                 if (recording) { Spacer(Modifier.width(8.dp)); Box(Modifier.size(9.dp).clip(CircleShape).background(c.coral)) }
             }
