@@ -47,30 +47,35 @@ private fun clock(totalSec: Int) = "%d:%02d".format(totalSec / 60, totalSec % 60
 @Composable
 fun ShaykhFeedScreen(vm: ShaykhQueueViewModel, onLogout: () -> Unit) {
     SecureScreen()
+    val c = LocalShaykhColors.current
     val questions by vm.questions.collectAsState()
     val state by vm.state.collectAsState()
     LaunchedEffect(Unit) { vm.load() }
 
-    when (state) {
-        is QueueState.Loading -> LoadingSkeleton()
-        is QueueState.Error -> ErrorState(onRetry = { vm.load() })
-        is QueueState.Ready -> {
-            if (questions.isEmpty()) { EmptyState(); return }
-            val pager = rememberPagerState(pageCount = { questions.size })
-            LaunchedEffect(pager.currentPage, questions.size) {
-                questions.getOrNull(pager.currentPage)?.let { vm.play(it) }
-            }
-            var sheetFor by remember { mutableStateOf<IncomingQuestion?>(null) }
-            VerticalPager(state = pager, modifier = Modifier.fillMaxSize()) { page ->
-                questions.getOrNull(page)?.let { q ->
-                    QuestionCard(
-                        q = q, index = page, total = questions.size, vm = vm,
-                        onAnswer = { sheetFor = q },
-                        onDismiss = { vm.dismiss(q) },
-                    )
+    // Paint the emerald/parchment background — Compose screens don't inherit the window bg.
+    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(c.bg1, c.bg2)))) {
+        when (state) {
+            is QueueState.Loading -> LoadingSkeleton()
+            is QueueState.Error -> ErrorState(onRetry = { vm.load() })
+            is QueueState.Ready -> {
+                if (questions.isEmpty()) { EmptyState() } else {
+                    val pager = rememberPagerState(pageCount = { questions.size })
+                    LaunchedEffect(pager.currentPage, questions.size) {
+                        questions.getOrNull(pager.currentPage)?.let { vm.play(it) }
+                    }
+                    var sheetFor by remember { mutableStateOf<IncomingQuestion?>(null) }
+                    VerticalPager(state = pager, modifier = Modifier.fillMaxSize()) { page ->
+                        questions.getOrNull(page)?.let { q ->
+                            QuestionCard(
+                                q = q, index = page, total = questions.size, vm = vm,
+                                onAnswer = { sheetFor = q },
+                                onDismiss = { vm.dismiss(q) },
+                            )
+                        }
+                    }
+                    sheetFor?.let { q -> AnswerSheet(vm = vm, question = q, onClose = { sheetFor = null }) }
                 }
             }
-            sheetFor?.let { q -> AnswerSheet(vm = vm, question = q, onClose = { sheetFor = null }) }
         }
     }
 }
