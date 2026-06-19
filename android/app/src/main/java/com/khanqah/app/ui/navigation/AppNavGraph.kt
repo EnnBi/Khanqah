@@ -129,9 +129,13 @@ fun AppNavGraph(
     openAskThread: String? = null,
     onLanguageToggle: () -> Unit,
     onLogout: () -> Unit,
+    onLoginSuccess: () -> Unit = {},
 ) {
     val currentEntry by navController.currentBackStackEntryAsState()
     val currentRoute = currentEntry?.destination?.route
+    // Tracks whether the Login screen was reached via the Ask Hazrat auth gate, so login
+    // success can return there instead of dropping the user on Home.
+    var cameFromAsk by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val app = context.applicationContext as KhanqahApp
     val nowPlaying by app.nowPlayingManager.info.collectAsState()
@@ -304,7 +308,11 @@ fun AppNavGraph(
             composable(Screen.Login.route) {
                 LoginScreen(viewModel = authViewModel) {
                     app.onLoggedIn()
-                    navController.navigate(Screen.Home.route) {
+                    onLoginSuccess()
+                    // Return to where the user was headed (Ask Hazrat is the only auth gate),
+                    // falling back to Home. Drop Login from the back stack either way.
+                    val target = if (cameFromAsk) Screen.AskList.route else Screen.Home.route
+                    navController.navigate(target) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
                 }
@@ -470,7 +478,12 @@ fun AppNavGraph(
             }
             composable(Screen.AskList.route) {
                 if (!isLoggedIn) {
-                    androidx.compose.runtime.LaunchedEffect(Unit) { navController.navigate(Screen.Login.route) }
+                    androidx.compose.runtime.LaunchedEffect(Unit) {
+                        cameFromAsk = true
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(Screen.AskList.route) { inclusive = true }
+                        }
+                    }
                 } else {
                     val vm = remember { (context.applicationContext as com.khanqah.app.KhanqahApp).makeQaViewModel() }
                     AskThreadListScreen(vm,

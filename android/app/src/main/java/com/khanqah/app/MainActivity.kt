@@ -107,6 +107,16 @@ class MainActivity : ComponentActivity() {
                                 phone = ""
                             }
                         },
+                        onLoginSuccess = {
+                            // Flip synchronously so the Ask gate sees a logged-in state before it
+                            // composes (avoids a re-bounce to Login); refresh profile fields async.
+                            isLoggedIn = true
+                            scope.launch {
+                                userRole = app.authRepo.getRole()
+                                displayName = app.authRepo.getDisplayName()
+                                phone = app.authRepo.getPhone()
+                            }
+                        },
                     )
                 }
             }
