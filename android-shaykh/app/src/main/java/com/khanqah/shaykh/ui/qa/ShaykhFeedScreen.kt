@@ -37,7 +37,9 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -133,14 +135,19 @@ private fun QuestionCard(
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
             PlayRing(fraction = fraction, playing = playing, loading = loading, c = c, onClick = { vm.onPlayPause(q) })
             Spacer(Modifier.height(26.dp))
-            Waveform(seed = q.messageId.hashCode(), fraction = if (active) fraction else 0f, c = c,
-                modifier = Modifier.fillMaxWidth())
-            Spacer(Modifier.height(12.dp))
-            Row(Modifier.fillMaxWidth(.86f), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(clock(positionMs / 1000), fontFamily = FontFamily.SansSerif, fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold, color = if (playing) c.gold else c.muted)
-                Text(clock(totalSec), fontFamily = FontFamily.SansSerif, fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold, color = c.muted)
+            // Audio progress reads left-to-right even though the app is RTL.
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Waveform(seed = q.messageId.hashCode(), fraction = if (active) fraction else 0f, c = c,
+                        modifier = Modifier.fillMaxWidth())
+                    Spacer(Modifier.height(12.dp))
+                    Row(Modifier.fillMaxWidth(.86f), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(clock(positionMs / 1000), fontFamily = FontFamily.SansSerif, fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold, color = if (playing) c.gold else c.muted)
+                        Text(clock(totalSec), fontFamily = FontFamily.SansSerif, fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold, color = c.muted)
+                    }
+                }
             }
             if (q.text.isNotBlank()) {
                 Spacer(Modifier.height(20.dp))

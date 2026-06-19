@@ -23,7 +23,7 @@ val DarkShaykhColors = ShaykhColors(
     gold = Color(0xFFD4B06A), goldBright = Color(0xFFE8CD8E), goldDeep = Color(0xFFB8923F),
     text = Color(0xFFF5E9D0), muted = Color(0xFF9DB0A2), faint = Color(0xFF6E8278),
     border = Color(0xFF1A5248), coral = Color(0xFFE26D67), success = Color(0xFF7FCB9B),
-    ringTrack = Color(0xFF0E3D37), waveOff = Color(0xFF27574E), onGold = Color(0xFF04302C),
+    ringTrack = Color(0xFF0E3D37), waveOff = Color(0xFF27574E), onGold = Color(0xFF0B4A43),
     errorContainer = Color(0xFF3D1825), onError = Color(0xFFFAEBD7),
 )
 
@@ -34,6 +34,6 @@ val LightShaykhColors = ShaykhColors(
     gold = Color(0xFFB8923F), goldBright = Color(0xFFC8A24A), goldDeep = Color(0xFF9A7B2E),
     text = Color(0xFF0C3A34), muted = Color(0xFF5E6F62), faint = Color(0xFF9AA89A),
     border = Color(0x210B4A43), coral = Color(0xFFC0544E), success = Color(0xFF2F7D4F),
-    ringTrack = Color(0x1F0B4A43), waveOff = Color(0xFFD8CDB4), onGold = Color(0xFF2A2206),
+    ringTrack = Color(0x1F0B4A43), waveOff = Color(0xFFD8CDB4), onGold = Color(0xFF0B4A43),
     errorContainer = Color(0xFFF6E3E1), onError = Color(0xFF5A1A1A),
 )
