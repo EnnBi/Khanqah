@@ -99,7 +99,7 @@ private fun QuestionCard(q: IncomingQuestion, index: Int, total: Int, vm: Shaykh
                 )
                 val secs = (if (active && positionMs > 0) positionMs else durationMs) / 1000
                 Text(
-                    "${(secs / 60).toUrduDigits()}:${(secs % 60).toUrduDigits().padStart(2, '۰')}",
+                    "%d:%02d".format(secs / 60, secs % 60),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.secondary,
                 )
@@ -146,7 +146,7 @@ private fun AnswerSheet(vm: ShaykhQueueViewModel, question: IncomingQuestion, on
             Text(if (recordedBytes == null) "جواب ریکارڈ کریں" else "جواب تیار ہے", style = MaterialTheme.typography.headlineMedium)
             Spacer(Modifier.height(20.dp))
             val mm = elapsed / 60; val ss = elapsed % 60
-            Text("${mm.toUrduDigits()}:${ss.toUrduDigits().padStart(2, '۰')}", style = MaterialTheme.typography.displaySmall)
+            Text("%d:%02d".format(mm, ss), style = MaterialTheme.typography.displaySmall)
             Spacer(Modifier.height(20.dp))
             Surface(
                 onClick = {
