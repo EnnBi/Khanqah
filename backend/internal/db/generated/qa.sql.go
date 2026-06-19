@@ -377,6 +377,67 @@ func (q *Queries) ListThreadsForUser(ctx context.Context, userID pgtype.UUID) ([
 	return items, nil
 }
 
+const listThreadsForUserWithMeta = `-- name: ListThreadsForUserWithMeta :many
+SELECT t.id, t.user_id, t.shaykh_id, t.status, t.created_at, t.last_message_at,
+  (SELECT count(*) FROM qa_messages a
+     WHERE a.thread_id = t.id AND a.direction = 'a'
+       AND a.recipient_id = $1 AND a.read_at IS NULL)::bigint AS unread_answers,
+  COALESCE((
+     SELECT EXISTS(
+       SELECT 1 FROM qa_messages ans
+       WHERE ans.direction = 'a' AND ans.reply_to = lastq.id
+     )
+     FROM (
+       SELECT q.id FROM qa_messages q
+       WHERE q.thread_id = t.id AND q.direction = 'q'
+       ORDER BY q.created_at DESC LIMIT 1
+     ) lastq
+  ), false)::boolean AS newest_question_answered
+FROM qa_threads t
+WHERE t.user_id = $1
+ORDER BY t.last_message_at DESC
+`
+
+type ListThreadsForUserWithMetaRow struct {
+	ID                     pgtype.UUID        `json:"id"`
+	UserID                 pgtype.UUID        `json:"user_id"`
+	ShaykhID               pgtype.UUID        `json:"shaykh_id"`
+	Status                 string             `json:"status"`
+	CreatedAt              pgtype.Timestamptz `json:"created_at"`
+	LastMessageAt          pgtype.Timestamptz `json:"last_message_at"`
+	UnreadAnswers          int64              `json:"unread_answers"`
+	NewestQuestionAnswered bool               `json:"newest_question_answered"`
+}
+
+func (q *Queries) ListThreadsForUserWithMeta(ctx context.Context, recipientID pgtype.UUID) ([]ListThreadsForUserWithMetaRow, error) {
+	rows, err := q.db.Query(ctx, listThreadsForUserWithMeta, recipientID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListThreadsForUserWithMetaRow
+	for rows.Next() {
+		var i ListThreadsForUserWithMetaRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.ShaykhID,
+			&i.Status,
+			&i.CreatedAt,
+			&i.LastMessageAt,
+			&i.UnreadAnswers,
+			&i.NewestQuestionAnswered,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const markMessageRead = `-- name: MarkMessageRead :exec
 UPDATE qa_messages SET read_at = NOW()
 WHERE id = $1 AND read_at IS NULL

@@ -192,14 +192,14 @@ func ListQAThreads(pool *pgxpool.Pool) http.HandlerFunc {
 			writeJSON(w, http.StatusOK, rows)
 			return
 		}
-		rows, err := q.ListThreadsForUser(r.Context(), id)
+		rows, err := q.ListThreadsForUserWithMeta(r.Context(), id)
 		if err != nil {
-			log.Printf("qa ListThreadsForUser(%q): %v", claims.UserID, err)
+			log.Printf("qa ListThreadsForUserWithMeta(%q): %v", claims.UserID, err)
 			writeError(w, http.StatusInternalServerError, "internal error")
 			return
 		}
 		if rows == nil {
-			rows = []dbgen.QaThread{}
+			rows = []dbgen.ListThreadsForUserWithMetaRow{}
 		}
 		writeJSON(w, http.StatusOK, rows)
 	}

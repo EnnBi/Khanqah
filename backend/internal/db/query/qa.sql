@@ -17,6 +17,26 @@ SELECT * FROM qa_threads
 WHERE user_id = $1
 ORDER BY last_message_at DESC;
 
+-- name: ListThreadsForUserWithMeta :many
+SELECT t.*,
+  (SELECT count(*) FROM qa_messages a
+     WHERE a.thread_id = t.id AND a.direction = 'a'
+       AND a.recipient_id = $1 AND a.read_at IS NULL)::bigint AS unread_answers,
+  COALESCE((
+     SELECT EXISTS(
+       SELECT 1 FROM qa_messages ans
+       WHERE ans.direction = 'a' AND ans.reply_to = lastq.id
+     )
+     FROM (
+       SELECT q.id FROM qa_messages q
+       WHERE q.thread_id = t.id AND q.direction = 'q'
+       ORDER BY q.created_at DESC LIMIT 1
+     ) lastq
+  ), false)::boolean AS newest_question_answered
+FROM qa_threads t
+WHERE t.user_id = $1
+ORDER BY t.last_message_at DESC;
+
 -- name: ListThreadsForShaykh :many
 SELECT * FROM qa_threads
 WHERE shaykh_id = $1
