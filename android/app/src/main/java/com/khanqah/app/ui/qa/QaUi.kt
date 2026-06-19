@@ -52,6 +52,9 @@ fun pendingChipColors(): ChipColors = if (isSystemInDarkTheme())
 else
     ChipColors(Color(0xFFF5E9C8), Color(0xFF9A7B2E))
 
+/** Voice-note length as m:ss (e.g. 14 -> "0:14", 75 -> "1:15"). */
+fun formatDuration(seconds: Int): String = "%d:%02d".format(seconds / 60, seconds % 60)
+
 /** Compact relative time for the thread list ("2h ago", "Yesterday", "14 Jun"). */
 fun relativeThreadTime(iso: String): String = try {
     val instant = java.time.Instant.parse(iso)

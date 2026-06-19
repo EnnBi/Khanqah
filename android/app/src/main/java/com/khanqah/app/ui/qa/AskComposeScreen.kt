@@ -271,7 +271,7 @@ fun AskComposeScreen(
                     val bytes = recordedBytes
                     val path = recordedPath
                     if (bytes != null && path != null) {
-                        vm.sendRecorded(name, phone, address, bytes, path, threadId)
+                        vm.sendRecorded(name, phone, address, bytes, path, elapsedSec, threadId)
                     }
                 },
             )

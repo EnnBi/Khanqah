@@ -8,7 +8,7 @@ import com.khanqah.app.data.db.entities.CategoryEntity
 import com.khanqah.app.data.db.entities.ContentEntity
 import com.khanqah.app.data.db.entities.SentQuestionEntity
 
-@Database(entities = [ContentEntity::class, CategoryEntity::class, SentQuestionEntity::class], version = 3)
+@Database(entities = [ContentEntity::class, CategoryEntity::class, SentQuestionEntity::class], version = 4)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun contentDao(): ContentDao
     abstract fun categoryDao(): CategoryDao

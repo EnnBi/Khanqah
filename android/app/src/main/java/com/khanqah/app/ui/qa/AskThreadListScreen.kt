@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -167,9 +168,10 @@ private fun ThreadCard(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    avatarChar,
-                    fontFamily = NastaleeqFontFamily,
-                    fontSize = 18.sp,
+                    if (row.seq > 0) row.seq.toString() else avatarChar,
+                    fontFamily = if (row.seq > 0) null else NastaleeqFontFamily,
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.tertiary,
                 )
             }
@@ -199,6 +201,14 @@ private fun ThreadCard(
                         bg = chip.bg,
                         fg = chip.fg,
                     )
+                    if (row.durationSec > 0) {
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            "🎙 ${formatDuration(row.durationSec)}",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.secondary,
+                        )
+                    }
                     Spacer(Modifier.weight(1f))
                     Text(
                         relativeThreadTime(row.lastMessageAt),

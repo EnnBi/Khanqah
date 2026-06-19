@@ -37,6 +37,8 @@ data class ThreadRow(
     val preview: String,
     val isAudio: Boolean,
     val unread: Boolean,
+    val seq: Int = 0,          // stable per-user question number (1 = earliest)
+    val durationSec: Int = 0,  // voice-note length, for the list label
 )
 
 sealed interface SendState {
@@ -62,6 +64,9 @@ class QaViewModel(
     fun loadThreads() = viewModelScope.launch {
         val list = runCatching { repo.listThreads() }.getOrNull() ?: return@launch
         val seen = prefs.loadSeenThreads()
+        // Stable question numbers: earliest-created thread is Q1, regardless of display order.
+        val seqByThread = list.sortedBy { it.createdAt }
+            .withIndex().associate { (i, t) -> t.id to (i + 1) }
         threadRows.value = list.map { t ->
             val original = dao.forThread(t.id).minByOrNull { it.createdAt }
             val answered = t.status.equals("answered", ignoreCase = true)
@@ -72,6 +77,8 @@ class QaViewModel(
                 preview = original?.text?.takeIf { it.isNotBlank() } ?: "",
                 isAudio = original != null && original.text.isBlank() && original.audioPath != null,
                 unread = answered && !seen.contains(t.id),
+                seq = seqByThread[t.id] ?: 0,
+                durationSec = original?.durationSec ?: 0,
             )
         }
     }
@@ -126,12 +133,12 @@ class QaViewModel(
             }
         }
 
-    fun sendRecorded(name: String, phone: String, address: String, audioBytes: ByteArray, audioPath: String, threadId: String?) =
+    fun sendRecorded(name: String, phone: String, address: String, audioBytes: ByteArray, audioPath: String, durationSec: Int, threadId: String?) =
         viewModelScope.launch {
             try {
                 sendState.value = SendState.Sending
                 val resp = repo.sendAudioQuestion(name, phone, address, "", audioBytes, threadId)
-                dao.upsert(SentQuestionEntity(resp.id, resp.threadId, "", audioPath, System.currentTimeMillis()))
+                dao.upsert(SentQuestionEntity(resp.id, resp.threadId, "", audioPath, System.currentTimeMillis(), durationSec))
                 sendState.value = SendState.Sent
             } catch (e: ShaykhKeyChangedException) {
                 sendState.value = SendState.Error("Hazrat's security key changed. Please contact support before sending.")

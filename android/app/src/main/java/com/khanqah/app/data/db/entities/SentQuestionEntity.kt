@@ -12,4 +12,5 @@ data class SentQuestionEntity(
     val text: String,
     val audioPath: String?,
     val createdAt: Long,
+    val durationSec: Int = 0,
 )
