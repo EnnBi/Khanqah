@@ -18,5 +18,8 @@ class UrduPipeline(
         return PreparedQuestion(urduText = urdu, audioBytes = audio)
     }
 
+    /** Best-effort translation of a short field (name/address) to Urdu for the Shaykh's view. */
+    suspend fun toUrdu(text: String): String = translator.toUrdu(text)
+
     suspend fun canSpeakUrdu(): Boolean = runCatching { tts.isUrduAvailable() }.getOrDefault(false)
 }

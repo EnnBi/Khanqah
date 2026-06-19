@@ -117,19 +117,22 @@ private fun QuestionCard(
         Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // header
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text("${(index + 1).toUrduDigits()} / ${total.toUrduDigits()}",
-                fontFamily = NastaleeqFontFamily, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = c.gold)
-            Text("⋮", fontSize = 20.sp, color = c.text.copy(alpha = .7f))
+        // header — a prominent "Question N of total" pill
+        Box(
+            Modifier.clip(RoundedCornerShape(22.dp)).background(c.card2)
+                .border(1.dp, c.border, RoundedCornerShape(22.dp))
+                .padding(horizontal = 18.dp, vertical = 7.dp),
+        ) {
+            Text("سوال ${(index + 1).toUrduDigits()} / ${total.toUrduDigits()}",
+                fontFamily = NastaleeqFontFamily, fontSize = 19.sp, fontWeight = FontWeight.Bold, color = c.gold)
         }
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(16.dp))
         // identity
         Text(q.name, fontFamily = NastaleeqFontFamily, fontSize = 35.sp, fontWeight = FontWeight.Bold,
             color = c.text, textAlign = TextAlign.Center, lineHeight = 50.sp)
         val sub = listOfNotNull(q.address.takeIf { it.isNotBlank() }).joinToString(" · ")
-        if (sub.isNotBlank()) Text(sub, fontFamily = NastaleeqFontFamily, fontSize = 18.sp,
-            fontWeight = FontWeight.Medium, color = c.muted, textAlign = TextAlign.Center)
+        if (sub.isNotBlank()) Text(sub, fontFamily = NastaleeqFontFamily, fontSize = 19.sp,
+            fontWeight = FontWeight.Bold, color = c.muted, textAlign = TextAlign.Center)
 
         // stage
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
@@ -386,9 +389,7 @@ private fun LoadingSkeleton() {
     val c = LocalShaykhColors.current
     @Composable fun sk(mod: Modifier) = Box(mod.clip(RoundedCornerShape(8.dp)).background(c.card2))
     Column(Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            sk(Modifier.size(width = 44.dp, height = 16.dp)); Text("⋮", fontSize = 20.sp, color = c.faint)
-        }
+        sk(Modifier.size(width = 96.dp, height = 32.dp).clip(RoundedCornerShape(22.dp)))
         Spacer(Modifier.height(18.dp))
         sk(Modifier.size(width = 150.dp, height = 26.dp)); Spacer(Modifier.height(10.dp)); sk(Modifier.size(width = 90.dp, height = 14.dp))
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {

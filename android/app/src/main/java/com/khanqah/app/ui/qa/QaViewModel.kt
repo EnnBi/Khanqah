@@ -148,7 +148,9 @@ class QaViewModel(
         val o = outbox.value.find { it.tempId == tempId } ?: return@launch
         try {
             val bytes = java.io.File(o.audioPath).readBytes()
-            val resp = repo.sendAudioQuestion(o.name, o.phone, o.address, "", bytes, o.threadId)
+            val nameUr = runCatching { pipeline.toUrdu(o.name) }.getOrDefault(o.name)
+            val addrUr = runCatching { pipeline.toUrdu(o.address) }.getOrDefault(o.address)
+            val resp = repo.sendAudioQuestion(nameUr, o.phone, addrUr, "", bytes, o.threadId)
             dao.upsert(SentQuestionEntity(resp.id, resp.threadId, "", o.audioPath, System.currentTimeMillis(), o.durationSec))
             outbox.value = outbox.value.filter { it.tempId != tempId }   // confirmed → drop optimistic
             loadMessages(o.threadId)                                     // reload shows the real message
@@ -199,7 +201,9 @@ class QaViewModel(
         viewModelScope.launch {
             try {
                 sendState.value = SendState.Sending
-                val resp = repo.sendAudioQuestion(name, phone, address, "", audioBytes, threadId)
+                val nameUr = runCatching { pipeline.toUrdu(name) }.getOrDefault(name)
+                val addrUr = runCatching { pipeline.toUrdu(address) }.getOrDefault(address)
+                val resp = repo.sendAudioQuestion(nameUr, phone, addrUr, "", audioBytes, threadId)
                 dao.upsert(SentQuestionEntity(resp.id, resp.threadId, "", audioPath, System.currentTimeMillis(), durationSec))
                 sendState.value = SendState.Sent
             } catch (e: ShaykhKeyChangedException) {
