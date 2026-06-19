@@ -22,6 +22,11 @@ class ShaykhQueueViewModel(
     val state = MutableStateFlow<QueueState>(QueueState.Loading)
     val answerState = MutableStateFlow<AnswerState>(AnswerState.Idle)
 
+    /** messageId currently being fetched/decrypted (show a spinner on its play control). */
+    val loadingKey = MutableStateFlow<String?>(null)
+    // Decrypted audio cached per message so re-landing / replay is instant.
+    private val audioCache = HashMap<String, ByteArray>()
+
     fun load() = viewModelScope.launch {
         state.value = QueueState.Loading
         try {
@@ -38,7 +43,14 @@ class ShaykhQueueViewModel(
 
     private suspend fun fetchBytes(q: IncomingQuestion): ByteArray? {
         if (q.audioRef == null || q.audioKeyB64 == null || q.audioNonceB64 == null) return null
-        return runCatching { repo.fetchAudio(q.audioRef!!, q.audioKeyB64!!, q.audioNonceB64!!) }.getOrNull()
+        audioCache[q.messageId]?.let { return it }
+        loadingKey.value = q.messageId
+        return try {
+            runCatching { repo.fetchAudio(q.audioRef!!, q.audioKeyB64!!, q.audioNonceB64!!) }
+                .getOrNull()?.also { audioCache[q.messageId] = it }
+        } finally {
+            if (loadingKey.value == q.messageId) loadingKey.value = null
+        }
     }
 
     /** Always (re)start [q] from the beginning — used for auto-play when a card lands. */

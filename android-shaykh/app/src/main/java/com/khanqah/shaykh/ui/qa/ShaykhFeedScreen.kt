@@ -69,6 +69,10 @@ fun ShaykhFeedScreen(vm: ShaykhQueueViewModel, onLogout: () -> Unit) {
             is QueueState.Ready -> {
                 if (questions.isEmpty()) { EmptyState() } else {
                     val pager = rememberPagerState(pageCount = { questions.size })
+                    // Stop the current clip the moment the user starts swiping away.
+                    LaunchedEffect(pager.isScrollInProgress) {
+                        if (pager.isScrollInProgress) vm.stopAudio()
+                    }
                     LaunchedEffect(pager.currentPage, questions.size) {
                         questions.getOrNull(pager.currentPage)?.let { vm.play(it) }
                     }
@@ -98,8 +102,10 @@ private fun QuestionCard(
 ) {
     val c = LocalShaykhColors.current
     val playback by vm.audioPlayer.playback.collectAsState()
+    val loadingKey by vm.loadingKey.collectAsState()
     val active = playback.key == q.messageId
     val playing = active && playback.isPlaying
+    val loading = loadingKey == q.messageId && !playing
     val durationMs = if (active && playback.durationMs > 0) playback.durationMs else 0
     val positionMs = if (active) playback.positionMs else 0
     val fraction = if (durationMs > 0) (positionMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f
@@ -125,7 +131,7 @@ private fun QuestionCard(
 
         // stage
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-            PlayRing(fraction = fraction, playing = playing, c = c, onClick = { vm.onPlayPause(q) })
+            PlayRing(fraction = fraction, playing = playing, loading = loading, c = c, onClick = { vm.onPlayPause(q) })
             Spacer(Modifier.height(26.dp))
             Waveform(seed = q.messageId.hashCode(), fraction = if (active) fraction else 0f, c = c,
                 modifier = Modifier.fillMaxWidth())
@@ -153,7 +159,7 @@ private fun QuestionCard(
 }
 
 @Composable
-private fun PlayRing(fraction: Float, playing: Boolean, c: com.khanqah.shaykh.ui.theme.ShaykhColors, onClick: () -> Unit) {
+private fun PlayRing(fraction: Float, playing: Boolean, loading: Boolean, c: com.khanqah.shaykh.ui.theme.ShaykhColors, onClick: () -> Unit) {
     Box(contentAlignment = Alignment.Center) {
         Canvas(Modifier.size(124.dp)) {
             val stroke = 5.dp.toPx()
@@ -171,9 +177,13 @@ private fun PlayRing(fraction: Float, playing: Boolean, c: com.khanqah.shaykh.ui
                 .clickable(onClick = onClick),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(if (playing) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                contentDescription = if (playing) "Pause" else "Play",
-                tint = c.onGold, modifier = Modifier.size(40.dp))
+            if (loading) {
+                CircularProgressIndicator(color = c.onGold, strokeWidth = 3.dp, modifier = Modifier.size(34.dp))
+            } else {
+                Icon(if (playing) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                    contentDescription = if (playing) "Pause" else "Play",
+                    tint = c.onGold, modifier = Modifier.size(40.dp))
+            }
         }
     }
 }
