@@ -18,8 +18,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -330,7 +330,7 @@ private fun AnswerSheet(vm: ShaykhQueueViewModel, question: IncomingQuestion, on
                     RoundCtrl(Icons.Filled.Refresh, "دوبارہ", c, big = false, enabled = !sending) {
                         vm.audioPlayer.stop(); recordedBytes = null; amps.clear(); elapsed = 0
                     }
-                    RoundCtrl(Icons.AutoMirrored.Filled.Send, if (sending) "…" else "بھیجیں", c, big = true, gold = true, enabled = !sending) {
+                    RoundCtrl(Icons.Filled.Send, if (sending) "…" else "بھیجیں", c, big = true, gold = true, enabled = !sending) {
                         vm.audioPlayer.stop(); recordedBytes?.let { vm.sendAnswer(question, it, "", elapsed) }
                     }
                     RoundCtrl(if (previewPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow, "سنیں", c, big = false, enabled = !sending) {
