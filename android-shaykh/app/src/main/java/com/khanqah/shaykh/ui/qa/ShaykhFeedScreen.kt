@@ -16,6 +16,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,6 +35,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -103,15 +112,15 @@ private fun QuestionCard(
         // header
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Text("${(index + 1).toUrduDigits()} / ${total.toUrduDigits()}",
-                fontFamily = NastaleeqFontFamily, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = c.gold)
+                fontFamily = NastaleeqFontFamily, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = c.gold)
             Text("⋮", fontSize = 20.sp, color = c.text.copy(alpha = .7f))
         }
         Spacer(Modifier.height(14.dp))
         // identity
-        Text(q.name, fontFamily = NastaleeqFontFamily, fontSize = 31.sp, fontWeight = FontWeight.Bold,
-            color = c.text, textAlign = TextAlign.Center, lineHeight = 44.sp)
+        Text(q.name, fontFamily = NastaleeqFontFamily, fontSize = 35.sp, fontWeight = FontWeight.Bold,
+            color = c.text, textAlign = TextAlign.Center, lineHeight = 50.sp)
         val sub = listOfNotNull(q.address.takeIf { it.isNotBlank() }).joinToString(" · ")
-        if (sub.isNotBlank()) Text(sub, fontFamily = NastaleeqFontFamily, fontSize = 15.sp,
+        if (sub.isNotBlank()) Text(sub, fontFamily = NastaleeqFontFamily, fontSize = 18.sp,
             fontWeight = FontWeight.Medium, color = c.muted, textAlign = TextAlign.Center)
 
         // stage
@@ -129,7 +138,7 @@ private fun QuestionCard(
             }
             if (q.text.isNotBlank()) {
                 Spacer(Modifier.height(20.dp))
-                Text(q.text, fontFamily = NastaleeqFontFamily, fontSize = 21.sp, lineHeight = 40.sp,
+                Text(q.text, fontFamily = NastaleeqFontFamily, fontSize = 24.sp, lineHeight = 46.sp,
                     color = c.text.copy(alpha = .92f), textAlign = TextAlign.Center,
                     modifier = Modifier.heightIn(max = 150.dp).verticalScroll(rememberScrollState()))
             }
@@ -138,7 +147,7 @@ private fun QuestionCard(
         // footer: leave + answer
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
             GhostButton("چھوڑ دیں", c, Modifier.weight(1f), onClick = onDismiss)
-            GoldButton("جواب دیں", c, Modifier.weight(1.3f), trailing = "🎙", onClick = onAnswer)
+            GoldButton("جواب دیں", c, Modifier.weight(1.3f), trailing = Icons.Filled.Mic, onClick = onAnswer)
         }
     }
 }
@@ -162,7 +171,9 @@ private fun PlayRing(fraction: Float, playing: Boolean, c: com.khanqah.shaykh.ui
                 .clickable(onClick = onClick),
             contentAlignment = Alignment.Center,
         ) {
-            Text(if (playing) "❚❚" else "▶", fontSize = 32.sp, color = c.onGold, fontWeight = FontWeight.Bold)
+            Icon(if (playing) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                contentDescription = if (playing) "Pause" else "Play",
+                tint = c.onGold, modifier = Modifier.size(40.dp))
         }
     }
 }
@@ -226,35 +237,35 @@ private fun AnswerSheet(vm: ShaykhQueueViewModel, question: IncomingQuestion, on
             val ready = recordedBytes != null
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(if (!ready) "جواب ریکارڈ ہو رہا ہے" else "جواب تیار ہے",
-                    fontFamily = NastaleeqFontFamily, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = c.text)
+                    fontFamily = NastaleeqFontFamily, fontSize = 27.sp, fontWeight = FontWeight.Bold, color = c.text)
                 if (recording) { Spacer(Modifier.width(8.dp)); Box(Modifier.size(9.dp).clip(CircleShape).background(c.coral)) }
             }
 
             if (!ready) {
-                Text(clock(elapsed), fontFamily = FontFamily.SansSerif, fontSize = 48.sp, fontWeight = FontWeight.Bold, color = c.text)
+                Text(clock(elapsed), fontFamily = FontFamily.SansSerif, fontSize = 54.sp, fontWeight = FontWeight.Bold, color = c.text)
                 LiveWave(amps = amps, color = c.gold, modifier = Modifier.fillMaxWidth())
             } else {
                 Waveform(seed = question.messageId.hashCode() + 7, fraction = 0f, c = c, modifier = Modifier.fillMaxWidth())
-                Text("${clock(elapsed)} · سننے کے لیے دبائیں", fontFamily = NastaleeqFontFamily, fontSize = 15.sp,
+                Text("${clock(elapsed)} · سننے کے لیے دبائیں", fontFamily = NastaleeqFontFamily, fontSize = 17.sp,
                     fontWeight = FontWeight.SemiBold, color = c.muted)
             }
 
             Spacer(Modifier.height(4.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
                 if (!ready) {
-                    RoundCtrl("✕", "منسوخ", c, big = false) { if (recording) recorder.cancel(); onClose() }
-                    RoundCtrl(if (recording) "■" else "🎙", if (recording) "روکیں" else "ریکارڈ", c, big = true, danger = recording) {
+                    RoundCtrl(Icons.Filled.Close, "منسوخ", c, big = false) { if (recording) recorder.cancel(); onClose() }
+                    RoundCtrl(if (recording) Icons.Filled.Stop else Icons.Filled.Mic, if (recording) "روکیں" else "ریکارڈ", c, big = true, danger = recording) {
                         if (recording) { recordedBytes = recorder.stop(); recording = false }
                         else if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) begin()
                         else micPermission.launch(Manifest.permission.RECORD_AUDIO)
                     }
                     Spacer(Modifier.size(56.dp))
                 } else {
-                    RoundCtrl("↺", "دوبارہ", c, big = false, enabled = !sending) { recordedBytes = null; amps.clear(); elapsed = 0 }
-                    RoundCtrl(if (sending) "…" else "↑", if (sending) "…" else "بھیجیں", c, big = true, gold = true, enabled = !sending) {
+                    RoundCtrl(Icons.Filled.Refresh, "دوبارہ", c, big = false, enabled = !sending) { recordedBytes = null; amps.clear(); elapsed = 0 }
+                    RoundCtrl(Icons.AutoMirrored.Filled.Send, if (sending) "…" else "بھیجیں", c, big = true, gold = true, enabled = !sending) {
                         recordedBytes?.let { vm.sendAnswer(question, it, "", elapsed) }
                     }
-                    RoundCtrl("▶", "سنیں", c, big = false, enabled = !sending) {
+                    RoundCtrl(Icons.Filled.PlayArrow, "سنیں", c, big = false, enabled = !sending) {
                         recordedBytes?.let { vm.audioPlayer.start("answer_preview", it) }
                     }
                 }
@@ -278,7 +289,7 @@ private fun LiveWave(amps: List<Int>, color: Color, modifier: Modifier = Modifie
 }
 
 @Composable
-private fun RoundCtrl(glyph: String, label: String, c: com.khanqah.shaykh.ui.theme.ShaykhColors,
+private fun RoundCtrl(icon: ImageVector, label: String, c: com.khanqah.shaykh.ui.theme.ShaykhColors,
                       big: Boolean, gold: Boolean = false, danger: Boolean = false, enabled: Boolean = true, onClick: () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(7.dp)) {
         val size = if (big) 74.dp else 56.dp
@@ -288,28 +299,26 @@ private fun RoundCtrl(glyph: String, label: String, c: com.khanqah.shaykh.ui.the
             else -> Modifier.background(c.card2)
         }
         Box(
-            Modifier.size(size).clip(CircleShape).then(bg)
-                .then(if (gold || danger) Modifier else Modifier.padding(0.dp))
-                .clickable(enabled = enabled, onClick = onClick),
+            Modifier.size(size).clip(CircleShape).then(bg).clickable(enabled = enabled, onClick = onClick),
             contentAlignment = Alignment.Center,
         ) {
-            Text(glyph, fontSize = if (big) 26.sp else 22.sp,
-                color = if (gold || danger) (if (danger) Color.White else c.onGold) else c.text)
+            Icon(icon, contentDescription = label, modifier = Modifier.size(if (big) 30.dp else 24.dp),
+                tint = if (danger) Color.White else if (gold) c.onGold else c.text)
         }
-        Text(label, fontFamily = NastaleeqFontFamily, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = c.muted)
+        Text(label, fontFamily = NastaleeqFontFamily, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = c.muted)
     }
 }
 
 /* ─────────────────────────── States ─────────────────────────── */
 
 @Composable
-private fun GoldButton(textUrdu: String, c: com.khanqah.shaykh.ui.theme.ShaykhColors, modifier: Modifier = Modifier, trailing: String? = null, onClick: () -> Unit) {
-    Box(modifier.height(62.dp).clip(RoundedCornerShape(18.dp))
+private fun GoldButton(textUrdu: String, c: com.khanqah.shaykh.ui.theme.ShaykhColors, modifier: Modifier = Modifier, trailing: ImageVector? = null, onClick: () -> Unit) {
+    Box(modifier.height(64.dp).clip(RoundedCornerShape(18.dp))
         .background(Brush.linearGradient(listOf(c.goldBright, c.gold))).clickable(onClick = onClick),
         contentAlignment = Alignment.Center) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(textUrdu, fontFamily = NastaleeqFontFamily, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = c.onGold)
-            if (trailing != null) Text(trailing, fontSize = 18.sp)
+            Text(textUrdu, fontFamily = NastaleeqFontFamily, fontSize = 25.sp, fontWeight = FontWeight.Bold, color = c.onGold)
+            if (trailing != null) Icon(trailing, contentDescription = null, tint = c.onGold, modifier = Modifier.size(22.dp))
         }
     }
 }
@@ -319,7 +328,7 @@ private fun GhostButton(textUrdu: String, c: com.khanqah.shaykh.ui.theme.ShaykhC
     Box(modifier.height(62.dp).clip(RoundedCornerShape(18.dp))
         .border(1.5.dp, c.border, RoundedCornerShape(18.dp)).clickable(onClick = onClick),
         contentAlignment = Alignment.Center) {
-        Text(textUrdu, fontFamily = NastaleeqFontFamily, fontSize = 21.sp, fontWeight = FontWeight.Bold, color = c.muted)
+        Text(textUrdu, fontFamily = NastaleeqFontFamily, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = c.muted)
     }
 }
 
@@ -331,8 +340,8 @@ private fun EmptyState() {
             Box(Modifier.size(100.dp).clip(CircleShape).background(c.card2).border(1.5.dp, c.border, CircleShape), contentAlignment = Alignment.Center) {
                 Text("۰", fontFamily = NastaleeqFontFamily, fontSize = 42.sp, color = c.gold)
             }
-            Text("اس وقت کوئی نیا سوال نہیں", fontFamily = NastaleeqFontFamily, fontSize = 26.sp, fontWeight = FontWeight.Bold, color = c.text, textAlign = TextAlign.Center, lineHeight = 48.sp)
-            Text("جب کوئی سوال آئے گا وہ یہاں ظاہر ہوگا", fontFamily = NastaleeqFontFamily, fontSize = 19.sp, fontWeight = FontWeight.Medium, color = c.muted, textAlign = TextAlign.Center, lineHeight = 40.sp)
+            Text("اس وقت کوئی نیا سوال نہیں", fontFamily = NastaleeqFontFamily, fontSize = 30.sp, fontWeight = FontWeight.Bold, color = c.text, textAlign = TextAlign.Center, lineHeight = 56.sp)
+            Text("جب کوئی سوال آئے گا وہ یہاں ظاہر ہوگا", fontFamily = NastaleeqFontFamily, fontSize = 22.sp, fontWeight = FontWeight.Medium, color = c.muted, textAlign = TextAlign.Center, lineHeight = 40.sp)
         }
     }
 }
@@ -345,11 +354,11 @@ private fun ErrorState(onRetry: () -> Unit) {
             Box(Modifier.size(100.dp).clip(CircleShape).background(c.card2).border(1.5.dp, c.coral, CircleShape), contentAlignment = Alignment.Center) {
                 Text("⟳", fontSize = 42.sp, color = c.coral)
             }
-            Text("سوالات لوڈ نہیں ہو سکے", fontFamily = NastaleeqFontFamily, fontSize = 26.sp, fontWeight = FontWeight.Bold, color = c.text, textAlign = TextAlign.Center, lineHeight = 48.sp)
-            Text("انٹرنیٹ کنکشن چیک کریں", fontFamily = NastaleeqFontFamily, fontSize = 19.sp, fontWeight = FontWeight.Medium, color = c.muted, textAlign = TextAlign.Center)
+            Text("سوالات لوڈ نہیں ہو سکے", fontFamily = NastaleeqFontFamily, fontSize = 30.sp, fontWeight = FontWeight.Bold, color = c.text, textAlign = TextAlign.Center, lineHeight = 56.sp)
+            Text("انٹرنیٹ کنکشن چیک کریں", fontFamily = NastaleeqFontFamily, fontSize = 22.sp, fontWeight = FontWeight.Medium, color = c.muted, textAlign = TextAlign.Center)
             Spacer(Modifier.height(2.dp))
             Box(Modifier.height(56.dp).clip(RoundedCornerShape(16.dp)).background(Brush.linearGradient(listOf(c.goldBright, c.gold))).clickable(onClick = onRetry).padding(horizontal = 32.dp), contentAlignment = Alignment.Center) {
-                Text("دوبارہ کوشش کریں", fontFamily = NastaleeqFontFamily, fontSize = 21.sp, fontWeight = FontWeight.Bold, color = c.onGold)
+                Text("دوبارہ کوشش کریں", fontFamily = NastaleeqFontFamily, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = c.onGold)
             }
         }
     }
