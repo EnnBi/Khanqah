@@ -39,6 +39,9 @@ class AudioRecorder(private val context: Context) {
         return file
     }
 
+    /** Current peak amplitude (0..32767) for a live waveform; 0 if not recording. */
+    fun amplitude(): Int = try { recorder?.maxAmplitude ?: 0 } catch (_: Exception) { 0 }
+
     fun stop(): ByteArray? {
         val file = outputFile
         return try {

@@ -15,6 +15,7 @@ sealed interface AnswerState { data object Idle: AnswerState; data object Sendin
 class ShaykhQueueViewModel(
     private val repo: ShaykhRepository,
     val audioPlayer: AudioPlayer,
+    private val dismissStore: DismissStore,
 ) : ViewModel() {
 
     val questions = MutableStateFlow<List<IncomingQuestion>>(emptyList())
@@ -28,8 +29,9 @@ class ShaykhQueueViewModel(
             val threads = repo.pendingThreads()
             val out = ArrayList<IncomingQuestion>()
             for (t in threads) out += runCatching { repo.openThreadQuestions(t) }.getOrNull().orEmpty()
-            // Oldest question first across all threads, so the earliest unanswered note leads.
-            questions.value = out.sortedBy { it.createdAt }
+            val dismissed = dismissStore.load()
+            // Oldest question first across all threads; hide ones Hazrat chose to leave.
+            questions.value = out.filter { it.messageId !in dismissed }.sortedBy { it.createdAt }
             state.value = QueueState.Ready
         } catch (e: Exception) { state.value = QueueState.Error(e.message ?: "خرابی") }
     }
@@ -68,6 +70,13 @@ class ShaykhQueueViewModel(
             questions.value = questions.value.filter { it.messageId != q.messageId }
             answerState.value = AnswerState.Sent
         } catch (e: Exception) { answerState.value = AnswerState.Error(e.message ?: "بھیجنے میں خرابی") }
+    }
+
+    /** Leave a question ("چھوڑ دیں"): remember it on-device and drop it from the queue. */
+    fun dismiss(q: IncomingQuestion) = viewModelScope.launch {
+        dismissStore.add(q.messageId)
+        if (audioPlayer.playback.value.key == q.messageId) audioPlayer.stop()
+        questions.value = questions.value.filter { it.messageId != q.messageId }
     }
 
     fun resetAnswer() { answerState.value = AnswerState.Idle }

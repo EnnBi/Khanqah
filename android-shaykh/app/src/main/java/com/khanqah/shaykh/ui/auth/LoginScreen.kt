@@ -78,18 +78,18 @@ fun LoginScreen(viewModel: AuthViewModel, onSuccess: () -> Unit) {
         Spacer(Modifier.height(20.dp))
 
         Text(
-            "KHANQAH ADMIN",
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontSize = 11.sp,
-                letterSpacing = 0.14.sp,
-                fontWeight = FontWeight.Bold,
+            "Khanqah Hazrat",
+            style = MaterialTheme.typography.headlineMedium.copy(
+                fontFamily = FontFamily.Serif,
+                fontSize = 30.sp,
+                fontWeight = FontWeight.SemiBold,
             ),
-            color = gold,
+            color = onBg,
         )
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(6.dp))
         Text(
-            "Editors, admins & broadcasters only",
-            style = MaterialTheme.typography.bodySmall,
+            "Listen and answer privately",
+            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.secondary,
             textAlign = TextAlign.Center,
         )
@@ -177,7 +177,7 @@ fun LoginScreen(viewModel: AuthViewModel, onSuccess: () -> Unit) {
                 )
             else
                 Text(
-                    if (isOtpStep) "Verify" else "Send OTP",
+                    if (isOtpStep) "Verify" else "Send code",
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
                 )
         }

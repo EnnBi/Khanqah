@@ -28,8 +28,9 @@ class ShaykhApp : Application() {
         val qaCrypto = com.khanqah.shaykh.crypto.QaCrypto(identityKeyStore)
         shaykhRepo = ShaykhRepository(apiClient.service, identityKeyStore, qaCrypto)
 
+        val dismissStore = com.khanqah.shaykh.ui.qa.DismissStore(this)
         makeQueueViewModel = {
-            com.khanqah.shaykh.ui.qa.ShaykhQueueViewModel(shaykhRepo, com.khanqah.shaykh.qa.AudioPlayer(this))
+            com.khanqah.shaykh.ui.qa.ShaykhQueueViewModel(shaykhRepo, com.khanqah.shaykh.qa.AudioPlayer(this), dismissStore)
         }
 
         CoroutineScope(Dispatchers.IO).launch {
