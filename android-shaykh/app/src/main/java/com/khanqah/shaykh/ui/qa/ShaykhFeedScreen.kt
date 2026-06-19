@@ -254,6 +254,13 @@ private fun AnswerSheet(vm: ShaykhQueueViewModel, question: IncomingQuestion, on
     val answerState by vm.answerState.collectAsState()
     val sending = answerState is AnswerState.Sending
 
+    // Preview playback of the recorded answer ("سنیں").
+    val playback by vm.audioPlayer.playback.collectAsState()
+    val previewing = playback.key == "answer_preview"
+    val previewPlaying = previewing && playback.isPlaying
+    val previewFrac = if (previewing && playback.durationMs > 0)
+        (playback.positionMs.toFloat() / playback.durationMs).coerceIn(0f, 1f) else 0f
+
     fun begin() {
         amps.clear(); elapsed = 0; recordedBytes = null
         runCatching { recorder.start(onMaxReached = { recordedBytes = recorder.stop(); recording = false }) }
@@ -273,7 +280,7 @@ private fun AnswerSheet(vm: ShaykhQueueViewModel, question: IncomingQuestion, on
     LaunchedEffect(answerState) { if (answerState is AnswerState.Sent) { vm.resetAnswer(); onClose() } }
 
     ModalBottomSheet(
-        onDismissRequest = { if (recording) recorder.cancel(); onClose() },
+        onDismissRequest = { if (recording) recorder.cancel(); vm.audioPlayer.stop(); onClose() },
         containerColor = c.card,
         dragHandle = { Box(Modifier.padding(top = 12.dp).size(width = 38.dp, height = 4.dp).clip(RoundedCornerShape(3.dp)).background(c.border)) },
     ) {
@@ -296,9 +303,11 @@ private fun AnswerSheet(vm: ShaykhQueueViewModel, question: IncomingQuestion, on
                 Text(clock(elapsed), fontFamily = FontFamily.SansSerif, fontSize = 54.sp, fontWeight = FontWeight.Bold, color = c.text)
                 LiveWave(amps = amps, color = c.gold, modifier = Modifier.fillMaxWidth())
             } else {
-                Waveform(seed = question.messageId.hashCode() + 7, fraction = 0f, c = c, modifier = Modifier.fillMaxWidth())
-                Text("${clock(elapsed)} · سننے کے لیے دبائیں", fontFamily = NastaleeqFontFamily, fontSize = 17.sp,
-                    fontWeight = FontWeight.SemiBold, color = c.muted)
+                Waveform(seed = question.messageId.hashCode() + 7, fraction = previewFrac, c = c, modifier = Modifier.fillMaxWidth())
+                Text(
+                    if (previewing) "${clock(playback.positionMs / 1000)} / ${clock(elapsed)}"
+                    else "${clock(elapsed)} · سننے کے لیے دبائیں",
+                    fontFamily = NastaleeqFontFamily, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = c.muted)
             }
 
             Spacer(Modifier.height(4.dp))
@@ -312,12 +321,15 @@ private fun AnswerSheet(vm: ShaykhQueueViewModel, question: IncomingQuestion, on
                     }
                     Spacer(Modifier.size(56.dp))
                 } else {
-                    RoundCtrl(Icons.Filled.Refresh, "دوبارہ", c, big = false, enabled = !sending) { recordedBytes = null; amps.clear(); elapsed = 0 }
-                    RoundCtrl(Icons.AutoMirrored.Filled.Send, if (sending) "…" else "بھیجیں", c, big = true, gold = true, enabled = !sending) {
-                        recordedBytes?.let { vm.sendAnswer(question, it, "", elapsed) }
+                    RoundCtrl(Icons.Filled.Refresh, "دوبارہ", c, big = false, enabled = !sending) {
+                        vm.audioPlayer.stop(); recordedBytes = null; amps.clear(); elapsed = 0
                     }
-                    RoundCtrl(Icons.Filled.PlayArrow, "سنیں", c, big = false, enabled = !sending) {
-                        recordedBytes?.let { vm.audioPlayer.start("answer_preview", it) }
+                    RoundCtrl(Icons.AutoMirrored.Filled.Send, if (sending) "…" else "بھیجیں", c, big = true, gold = true, enabled = !sending) {
+                        vm.audioPlayer.stop(); recordedBytes?.let { vm.sendAnswer(question, it, "", elapsed) }
+                    }
+                    RoundCtrl(if (previewPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow, "سنیں", c, big = false, enabled = !sending) {
+                        if (previewing) vm.audioPlayer.toggle()
+                        else recordedBytes?.let { vm.audioPlayer.start("answer_preview", it) }
                     }
                 }
             }
