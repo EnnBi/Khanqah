@@ -131,15 +131,23 @@ class QaViewModel(
             }
         }
 
-    fun playAnswerAudio(item: ChatItem) = viewModelScope.launch {
+    /** Play/pause the clip for [item]. If it's already the loaded clip, toggle; otherwise
+     *  fetch+decrypt its bytes and start. */
+    fun onPlayPause(item: ChatItem) = viewModelScope.launch {
+        if (audioPlayer.playback.value.key == item.id) {
+            audioPlayer.toggle()
+            return@launch
+        }
         runCatching {
             val bytes = if (item.fromMe && item.localAudioPath != null)
                 java.io.File(item.localAudioPath).readBytes()
             else
                 repo.fetchAudio(item.audioRef!!, item.audioKeyB64!!, item.audioNonceB64!!)
-            audioPlayer.play(bytes)
+            audioPlayer.start(item.id, bytes)
         }
     }
+
+    fun seek(ms: Int) = audioPlayer.seekTo(ms)
 
     fun resetSend() { sendState.value = SendState.Idle }
 

@@ -23,12 +23,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -48,7 +51,6 @@ import androidx.compose.ui.unit.sp
 import com.khanqah.app.ui.theme.CrimsonProFontFamily
 import com.khanqah.app.ui.theme.NastaleeqFontFamily
 import com.khanqah.app.ui.utils.LocalIsUrdu
-import kotlin.math.abs
 
 private sealed interface ConvEntry {
     data class DayHeader(val label: String) : ConvEntry
@@ -206,7 +208,7 @@ private fun MessageBubble(item: ChatItem, ur: Boolean, vm: QaViewModel) {
                 }
                 if (item.hasAudio) {
                     if (item.text.isNotBlank()) Spacer(Modifier.height(8.dp))
-                    AudioRow(item = item, mine = mine, onBubble = onBubble, onPlay = { vm.playAnswerAudio(item) })
+                    AudioRow(item = item, onBubble = onBubble, vm = vm)
                 }
                 Spacer(Modifier.height(6.dp))
                 Row(
@@ -230,53 +232,62 @@ private fun MessageBubble(item: ChatItem, ur: Boolean, vm: QaViewModel) {
 }
 
 @Composable
-private fun AudioRow(item: ChatItem, mine: Boolean, onBubble: Color, onPlay: () -> Unit) {
+private fun AudioRow(item: ChatItem, onBubble: Color, vm: QaViewModel) {
+    val playback by vm.audioPlayer.playback.collectAsState()
+    val active = playback.key == item.id
+    val playing = active && playback.isPlaying
+    val durationMs = if (active && playback.durationMs > 0) playback.durationMs else 0
+    val positionMs = if (active) playback.positionMs else 0
+    val fraction = if (durationMs > 0) (positionMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f
+
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(11.dp),
-        modifier = Modifier.widthIn(min = 170.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = Modifier.widthIn(min = 200.dp),
     ) {
         Box(
             modifier = Modifier
-                .size(38.dp)
+                .size(40.dp)
                 .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.tertiary)
-                .clickable(onClick = onPlay),
+                .clickable { vm.onPlayPause(item) },
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                Icons.Filled.PlayArrow,
-                contentDescription = "Play",
+                if (playing) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                contentDescription = if (playing) "Pause" else "Play",
                 tint = MaterialTheme.colorScheme.onTertiary,
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(22.dp),
             )
         }
-        Waveform(seed = item.id.hashCode(), color = onBubble, modifier = Modifier.weight(1f))
+        Column(modifier = Modifier.weight(1f)) {
+            Slider(
+                value = fraction,
+                onValueChange = { f -> if (active && durationMs > 0) vm.seek((f * durationMs).toInt()) },
+                enabled = active,
+                colors = SliderDefaults.colors(
+                    thumbColor = MaterialTheme.colorScheme.tertiary,
+                    activeTrackColor = MaterialTheme.colorScheme.tertiary,
+                    inactiveTrackColor = onBubble.copy(alpha = 0.25f),
+                    disabledThumbColor = onBubble.copy(alpha = 0.55f),
+                    disabledActiveTrackColor = MaterialTheme.colorScheme.tertiary,
+                    disabledInactiveTrackColor = onBubble.copy(alpha = 0.25f),
+                ),
+                modifier = Modifier.fillMaxWidth().height(20.dp),
+            )
+            Text(
+                formatClock(if (active && positionMs > 0) positionMs else durationMs),
+                fontSize = 10.sp,
+                color = onBubble.copy(alpha = 0.65f),
+            )
+        }
     }
 }
 
-@Composable
-private fun Waveform(seed: Int, color: Color, modifier: Modifier = Modifier) {
-    // Deterministic decorative bars so each clip looks distinct but stable across recompositions.
-    val heights = remember(seed) {
-        val rnd = java.util.Random(seed.toLong())
-        List(22) { 4 + abs(rnd.nextInt() % 18) }
-    }
-    Row(
-        modifier = modifier.height(22.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
-    ) {
-        heights.forEach { h ->
-            Box(
-                modifier = Modifier
-                    .width(3.dp)
-                    .height(h.dp)
-                    .clip(RoundedCornerShape(3.dp))
-                    .background(color.copy(alpha = 0.5f)),
-            )
-        }
-    }
+private fun formatClock(ms: Int): String {
+    if (ms <= 0) return "0:00"
+    val totalSec = ms / 1000
+    return "%d:%02d".format(totalSec / 60, totalSec % 60)
 }
 
 @Composable
