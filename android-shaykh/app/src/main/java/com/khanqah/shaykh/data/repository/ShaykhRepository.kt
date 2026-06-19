@@ -59,17 +59,20 @@ class ShaykhRepository(
     suspend fun allThreads(): List<QaThreadDto> = api.listQaThreads()
 
     /** All UNANSWERED questions in a thread, oldest first — so multiple voice notes (or
-     *  follow-ups) in one thread are each surfaced and none is lost. Questions sent before
-     *  the most recent answer are treated as already addressed and excluded. */
+     *  follow-ups) in one thread are each surfaced and none is lost. A question counts as
+     *  answered only when an answer points back at it via reply_to, so answering the latest
+     *  follow-up no longer hides the earlier ones. */
     suspend fun openThreadQuestions(thread: QaThreadDto): List<IncomingQuestion> {
         ensureRegistered()
         val questionerPub = questionerKey(thread.userId)
         val msgs = api.listQaMessages(thread.id) // server returns created_at ASC
-        val lastAnswerAt = msgs.lastOrNull { it.direction == "a" }?.createdAt
+        val answeredQuestionIds = msgs
+            .filter { it.direction == "a" && it.replyTo != null }
+            .mapNotNull { it.replyTo }
+            .toSet()
         return msgs
             .filter {
-                it.direction == "q" && it.ciphertextInline != null &&
-                    (lastAnswerAt == null || it.createdAt > lastAnswerAt)
+                it.direction == "q" && it.ciphertextInline != null && it.id !in answeredQuestionIds
             }
             .map { q ->
                 val env = EncryptedEnvelope(
@@ -97,7 +100,7 @@ class ShaykhRepository(
             cipher.doFinal(enc)
         }
 
-    suspend fun sendAnswer(thread: QaThreadDto, answerText: String, answerAudio: ByteArray?): SendMessageResponse =
+    suspend fun sendAnswer(thread: QaThreadDto, replyToMessageId: String, answerText: String, answerAudio: ByteArray?): SendMessageResponse =
         withContext(Dispatchers.IO) {
             ensureRegistered()
             val questionerPub = questionerKey(thread.userId)
@@ -128,7 +131,7 @@ class ShaykhRepository(
                     threadId = thread.id, direction = "a", contentType = "text",
                     ciphertextInline = e.b64(e.ciphertext),
                     encCek = e.b64(e.encCek), nonceKey = e.b64(e.nonceKey), noncePayload = e.b64(e.noncePayload),
-                    senderKeyId = myKeyId!!, byteSize = 0,
+                    senderKeyId = myKeyId!!, byteSize = 0, replyTo = replyToMessageId,
                 )
             )
         }

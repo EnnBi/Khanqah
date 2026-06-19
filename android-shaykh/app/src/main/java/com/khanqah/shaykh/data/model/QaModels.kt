@@ -35,6 +35,7 @@ data class SendMessageRequest(
     @SerializedName("nonce_payload") val noncePayload: String,
     @SerializedName("sender_key_id") val senderKeyId: String,
     @SerializedName("byte_size") val byteSize: Long = 0,
+    @SerializedName("reply_to") val replyTo: String? = null,
 )
 data class SendMessageResponse(
     val id: String,
@@ -66,6 +67,7 @@ data class QaMessageDto(
     @SerializedName("byte_size") val byteSize: Long,
     @SerializedName("created_at") val createdAt: String,
     @SerializedName("read_at") val readAt: String?,
+    @SerializedName("reply_to") val replyTo: String? = null,
 )
 
 data class UserKeyResponse(

@@ -28,7 +28,8 @@ class ShaykhQueueViewModel(
             val threads = repo.pendingThreads()
             val out = ArrayList<IncomingQuestion>()
             for (t in threads) out += runCatching { repo.openThreadQuestions(t) }.getOrNull().orEmpty()
-            questions.value = out
+            // Oldest question first across all threads, so the earliest unanswered note leads.
+            questions.value = out.sortedBy { it.createdAt }
             state.value = QueueState.Ready
         } catch (e: Exception) { state.value = QueueState.Error(e.message ?: "خرابی") }
     }
@@ -62,8 +63,9 @@ class ShaykhQueueViewModel(
         answerState.value = AnswerState.Sending
         try {
             val thread = QaThreadDto(q.threadId, q.questionerUserId, "", "open", "", "")
-            repo.sendAnswer(thread, text, audioBytes)
-            questions.value = questions.value.filter { it.threadId != q.threadId }
+            repo.sendAnswer(thread, q.messageId, text, audioBytes)
+            // Remove only the answered question, not the whole thread — other follow-ups remain.
+            questions.value = questions.value.filter { it.messageId != q.messageId }
             answerState.value = AnswerState.Sent
         } catch (e: Exception) { answerState.value = AnswerState.Error(e.message ?: "بھیجنے میں خرابی") }
     }
