@@ -335,6 +335,7 @@ type QaMessage struct {
 	CreatedAt        pgtype.Timestamptz `json:"created_at"`
 	DeliveredAt      pgtype.Timestamptz `json:"delivered_at"`
 	ReadAt           pgtype.Timestamptz `json:"read_at"`
+	ReplyTo          pgtype.UUID        `json:"reply_to"`
 }
 
 type QaThread struct {

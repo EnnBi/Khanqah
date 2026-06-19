@@ -20,6 +20,7 @@ type MessageRequest struct {
 	NoncePayload     string `json:"nonce_payload"`      // base64
 	SenderKeyID      string `json:"sender_key_id"`      // device_keys.id
 	ByteSize         int64  `json:"byte_size"`
+	ReplyTo          string `json:"reply_to"`           // answers: id of the question being answered
 }
 
 // CanAccessThread reports whether requester is a participant of a thread owned

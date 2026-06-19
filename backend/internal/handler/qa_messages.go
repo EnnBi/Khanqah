@@ -113,6 +113,16 @@ func SendQAMessage(pool *pgxpool.Pool, fcmClient *fcm.Client) http.HandlerFunc {
 			recipientID = thread.UserID
 		}
 
+		// Answers reference the specific question they answer, so each question in a
+		// thread is resolved independently (multiple follow-ups don't collapse).
+		var replyTo pgtype.UUID
+		if req.ReplyTo != "" {
+			if err := replyTo.Scan(req.ReplyTo); err != nil {
+				writeError(w, http.StatusBadRequest, "invalid reply_to")
+				return
+			}
+		}
+
 		msg, err := q.CreateQAMessage(r.Context(), dbgen.CreateQAMessageParams{
 			ThreadID:         thread.ID,
 			SenderID:         senderID,
@@ -126,15 +136,20 @@ func SendQAMessage(pool *pgxpool.Pool, fcmClient *fcm.Client) http.HandlerFunc {
 			NoncePayload:     qa.DecodeField(req.NoncePayload),
 			SenderKeyID:      senderKeyID,
 			ByteSize:         req.ByteSize,
+			ReplyTo:          replyTo,
 		})
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, "internal error")
 			return
 		}
 
+		// A thread is "answered" only once every question in it has been answered;
+		// otherwise it stays "open" so the shaykh still sees the remaining questions.
 		newStatus := "open"
 		if req.Direction == "a" {
-			newStatus = "answered"
+			if remaining, err := q.CountUnansweredQuestions(r.Context(), thread.ID); err == nil && remaining == 0 {
+				newStatus = "answered"
+			}
 		}
 		_ = q.TouchThread(r.Context(), dbgen.TouchThreadParams{ID: thread.ID, Status: newStatus})
 		_ = q.CreateAuditLog(r.Context(), dbgen.CreateAuditLogParams{

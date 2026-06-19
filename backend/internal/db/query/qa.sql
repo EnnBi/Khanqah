@@ -29,9 +29,17 @@ UPDATE qa_threads SET last_message_at = NOW(), status = $2 WHERE id = $1;
 INSERT INTO qa_messages (
   thread_id, sender_id, recipient_id, direction, content_type,
   ciphertext_ref, ciphertext_inline, enc_cek, nonce_key, nonce_payload,
-  sender_key_id, byte_size
-) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+  sender_key_id, byte_size, reply_to
+) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
 RETURNING *;
+
+-- name: CountUnansweredQuestions :one
+SELECT count(*) FROM qa_messages q
+WHERE q.thread_id = $1 AND q.direction = 'q'
+  AND NOT EXISTS (
+    SELECT 1 FROM qa_messages a
+    WHERE a.direction = 'a' AND a.reply_to = q.id
+  );
 
 -- name: ListMessagesByThread :many
 SELECT * FROM qa_messages

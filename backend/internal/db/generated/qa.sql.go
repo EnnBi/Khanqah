@@ -11,6 +11,22 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const countUnansweredQuestions = `-- name: CountUnansweredQuestions :one
+SELECT count(*) FROM qa_messages q
+WHERE q.thread_id = $1 AND q.direction = 'q'
+  AND NOT EXISTS (
+    SELECT 1 FROM qa_messages a
+    WHERE a.direction = 'a' AND a.reply_to = q.id
+  )
+`
+
+func (q *Queries) CountUnansweredQuestions(ctx context.Context, threadID pgtype.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, countUnansweredQuestions, threadID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createAuditLog = `-- name: CreateAuditLog :exec
 INSERT INTO qa_audit_log (user_id, event_type, device_id, ip)
 VALUES ($1, $2, $3, $4)
@@ -37,9 +53,9 @@ const createQAMessage = `-- name: CreateQAMessage :one
 INSERT INTO qa_messages (
   thread_id, sender_id, recipient_id, direction, content_type,
   ciphertext_ref, ciphertext_inline, enc_cek, nonce_key, nonce_payload,
-  sender_key_id, byte_size
-) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
-RETURNING id, thread_id, sender_id, recipient_id, direction, content_type, ciphertext_ref, ciphertext_inline, enc_cek, nonce_key, nonce_payload, sender_key_id, byte_size, created_at, delivered_at, read_at
+  sender_key_id, byte_size, reply_to
+) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+RETURNING id, thread_id, sender_id, recipient_id, direction, content_type, ciphertext_ref, ciphertext_inline, enc_cek, nonce_key, nonce_payload, sender_key_id, byte_size, created_at, delivered_at, read_at, reply_to
 `
 
 type CreateQAMessageParams struct {
@@ -55,6 +71,7 @@ type CreateQAMessageParams struct {
 	NoncePayload     []byte      `json:"nonce_payload"`
 	SenderKeyID      pgtype.UUID `json:"sender_key_id"`
 	ByteSize         int64       `json:"byte_size"`
+	ReplyTo          pgtype.UUID `json:"reply_to"`
 }
 
 func (q *Queries) CreateQAMessage(ctx context.Context, arg CreateQAMessageParams) (QaMessage, error) {
@@ -71,6 +88,7 @@ func (q *Queries) CreateQAMessage(ctx context.Context, arg CreateQAMessageParams
 		arg.NoncePayload,
 		arg.SenderKeyID,
 		arg.ByteSize,
+		arg.ReplyTo,
 	)
 	var i QaMessage
 	err := row.Scan(
@@ -90,6 +108,7 @@ func (q *Queries) CreateQAMessage(ctx context.Context, arg CreateQAMessageParams
 		&i.CreatedAt,
 		&i.DeliveredAt,
 		&i.ReadAt,
+		&i.ReplyTo,
 	)
 	return i, err
 }
@@ -120,7 +139,7 @@ func (q *Queries) CreateQAThread(ctx context.Context, arg CreateQAThreadParams) 
 }
 
 const getMessageByCiphertextRef = `-- name: GetMessageByCiphertextRef :one
-SELECT m.id, m.thread_id, m.sender_id, m.recipient_id, m.direction, m.content_type, m.ciphertext_ref, m.ciphertext_inline, m.enc_cek, m.nonce_key, m.nonce_payload, m.sender_key_id, m.byte_size, m.created_at, m.delivered_at, m.read_at, t.user_id AS thread_user_id, t.shaykh_id AS thread_shaykh_id
+SELECT m.id, m.thread_id, m.sender_id, m.recipient_id, m.direction, m.content_type, m.ciphertext_ref, m.ciphertext_inline, m.enc_cek, m.nonce_key, m.nonce_payload, m.sender_key_id, m.byte_size, m.created_at, m.delivered_at, m.read_at, m.reply_to, t.user_id AS thread_user_id, t.shaykh_id AS thread_shaykh_id
 FROM qa_messages m JOIN qa_threads t ON t.id = m.thread_id
 WHERE m.ciphertext_ref = $1
 LIMIT 1
@@ -143,6 +162,7 @@ type GetMessageByCiphertextRefRow struct {
 	CreatedAt        pgtype.Timestamptz `json:"created_at"`
 	DeliveredAt      pgtype.Timestamptz `json:"delivered_at"`
 	ReadAt           pgtype.Timestamptz `json:"read_at"`
+	ReplyTo          pgtype.UUID        `json:"reply_to"`
 	ThreadUserID     pgtype.UUID        `json:"thread_user_id"`
 	ThreadShaykhID   pgtype.UUID        `json:"thread_shaykh_id"`
 }
@@ -167,6 +187,7 @@ func (q *Queries) GetMessageByCiphertextRef(ctx context.Context, ciphertextRef *
 		&i.CreatedAt,
 		&i.DeliveredAt,
 		&i.ReadAt,
+		&i.ReplyTo,
 		&i.ThreadUserID,
 		&i.ThreadShaykhID,
 	)
@@ -174,7 +195,7 @@ func (q *Queries) GetMessageByCiphertextRef(ctx context.Context, ciphertextRef *
 }
 
 const getMessageByID = `-- name: GetMessageByID :one
-SELECT id, thread_id, sender_id, recipient_id, direction, content_type, ciphertext_ref, ciphertext_inline, enc_cek, nonce_key, nonce_payload, sender_key_id, byte_size, created_at, delivered_at, read_at FROM qa_messages WHERE id = $1
+SELECT id, thread_id, sender_id, recipient_id, direction, content_type, ciphertext_ref, ciphertext_inline, enc_cek, nonce_key, nonce_payload, sender_key_id, byte_size, created_at, delivered_at, read_at, reply_to FROM qa_messages WHERE id = $1
 `
 
 func (q *Queries) GetMessageByID(ctx context.Context, id pgtype.UUID) (QaMessage, error) {
@@ -197,6 +218,7 @@ func (q *Queries) GetMessageByID(ctx context.Context, id pgtype.UUID) (QaMessage
 		&i.CreatedAt,
 		&i.DeliveredAt,
 		&i.ReadAt,
+		&i.ReplyTo,
 	)
 	return i, err
 }
@@ -246,7 +268,7 @@ func (q *Queries) GetThreadByID(ctx context.Context, id pgtype.UUID) (QaThread, 
 }
 
 const listMessagesByThread = `-- name: ListMessagesByThread :many
-SELECT id, thread_id, sender_id, recipient_id, direction, content_type, ciphertext_ref, ciphertext_inline, enc_cek, nonce_key, nonce_payload, sender_key_id, byte_size, created_at, delivered_at, read_at FROM qa_messages
+SELECT id, thread_id, sender_id, recipient_id, direction, content_type, ciphertext_ref, ciphertext_inline, enc_cek, nonce_key, nonce_payload, sender_key_id, byte_size, created_at, delivered_at, read_at, reply_to FROM qa_messages
 WHERE thread_id = $1
 ORDER BY created_at ASC
 `
@@ -277,6 +299,7 @@ func (q *Queries) ListMessagesByThread(ctx context.Context, threadID pgtype.UUID
 			&i.CreatedAt,
 			&i.DeliveredAt,
 			&i.ReadAt,
+			&i.ReplyTo,
 		); err != nil {
 			return nil, err
 		}
