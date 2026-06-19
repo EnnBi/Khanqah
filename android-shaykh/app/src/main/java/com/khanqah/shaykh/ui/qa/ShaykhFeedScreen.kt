@@ -96,7 +96,7 @@ fun ShaykhFeedScreen(vm: ShaykhQueueViewModel, onLogout: () -> Unit) {
 
         // Log out — always reachable, top corner.
         var showLogout by remember { mutableStateOf(false) }
-        IconButton(onClick = { showLogout = true }, modifier = Modifier.align(Alignment.TopEnd).padding(6.dp)) {
+        IconButton(onClick = { showLogout = true }, modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(6.dp)) {
             Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Log out", tint = c.muted)
         }
         if (showLogout) {
@@ -139,19 +139,20 @@ private fun QuestionCard(
     val totalSec = if (durationMs > 0) durationMs / 1000 else q.audioRef?.let { 0 } ?: 0
 
     Column(
-        Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 16.dp),
+        Modifier.fillMaxSize().statusBarsPadding().padding(horizontal = 24.dp, vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        Spacer(Modifier.height(8.dp))
         // header — a prominent "Question N of total" pill
         Box(
-            Modifier.clip(RoundedCornerShape(22.dp)).background(c.card2)
-                .border(1.dp, c.border, RoundedCornerShape(22.dp))
-                .padding(horizontal = 18.dp, vertical = 7.dp),
+            Modifier.clip(RoundedCornerShape(24.dp)).background(c.card2)
+                .border(1.dp, c.border, RoundedCornerShape(24.dp))
+                .padding(horizontal = 22.dp, vertical = 10.dp),
         ) {
             Text("سوال ${(index + 1).toUrduDigits()} / ${total.toUrduDigits()}",
-                fontFamily = NastaleeqFontFamily, fontSize = 19.sp, fontWeight = FontWeight.Bold, color = c.gold)
+                fontFamily = NastaleeqFontFamily, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = c.gold)
         }
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(34.dp))
         // identity
         Text(q.name, fontFamily = NastaleeqFontFamily, fontSize = 35.sp, fontWeight = FontWeight.Bold,
             color = c.text, textAlign = TextAlign.Center, lineHeight = 50.sp)
@@ -413,8 +414,9 @@ private fun ErrorState(onRetry: () -> Unit) {
 private fun LoadingSkeleton() {
     val c = LocalShaykhColors.current
     @Composable fun sk(mod: Modifier) = Box(mod.clip(RoundedCornerShape(8.dp)).background(c.card2))
-    Column(Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        sk(Modifier.size(width = 96.dp, height = 32.dp).clip(RoundedCornerShape(22.dp)))
+    Column(Modifier.fillMaxSize().statusBarsPadding().padding(horizontal = 24.dp, vertical = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Spacer(Modifier.height(8.dp))
+        sk(Modifier.size(width = 110.dp, height = 40.dp).clip(RoundedCornerShape(24.dp)))
         Spacer(Modifier.height(18.dp))
         sk(Modifier.size(width = 150.dp, height = 26.dp)); Spacer(Modifier.height(10.dp)); sk(Modifier.size(width = 90.dp, height = 14.dp))
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
