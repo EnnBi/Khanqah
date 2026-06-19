@@ -239,14 +239,37 @@ private fun MessageBubble(item: ChatItem, ur: Boolean, vm: QaViewModel) {
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(
-                        shortTime(item.createdAtIso),
-                        fontSize = 10.sp,
-                        color = onBubble.copy(alpha = 0.65f),
-                    )
-                    if (mine) {
-                        Spacer(Modifier.width(4.dp))
-                        Text("✓✓", fontSize = 10.sp, color = onBubble.copy(alpha = 0.65f))
+                    when {
+                        mine && item.sendStatus == SendStatus.SENDING -> Text(
+                            if (ur) "بھیجا جا رہا ہے…" else "Sending…",
+                            fontFamily = if (ur) NastaleeqFontFamily else null,
+                            fontSize = 10.sp, color = onBubble.copy(alpha = 0.65f),
+                        )
+                        mine && item.sendStatus == SendStatus.FAILED -> Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                if (ur) "ناکام" else "Failed",
+                                fontSize = 10.sp, color = MaterialTheme.colorScheme.error,
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                if (ur) "دوبارہ" else "Retry",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.tertiary,
+                                modifier = Modifier.clickable { vm.retryFollowUp(item.id) },
+                            )
+                        }
+                        else -> {
+                            Text(
+                                shortTime(item.createdAtIso),
+                                fontSize = 10.sp,
+                                color = onBubble.copy(alpha = 0.65f),
+                            )
+                            if (mine) {
+                                Spacer(Modifier.width(4.dp))
+                                Text("✓✓", fontSize = 10.sp, color = onBubble.copy(alpha = 0.65f))
+                            }
+                        }
                     }
                 }
             }
@@ -374,8 +397,6 @@ private fun FollowUpRecorder(vm: QaViewModel, threadId: String, isUrdu: Boolean)
     var recording by remember { mutableStateOf(false) }
     var elapsed by remember { mutableIntStateOf(0) }
     val amps = remember { mutableStateListOf<Int>() }
-    val sendState by vm.sendState.collectAsState()
-    val sending = sendState is SendState.Preparing || sendState is SendState.Sending
 
     fun reset() { recording = false; elapsed = 0; amps.clear() }
 
@@ -403,16 +424,6 @@ private fun FollowUpRecorder(vm: QaViewModel, threadId: String, isUrdu: Boolean)
         }
     }
 
-    // After a successful send, reset the bar and refresh the conversation immediately
-    // (Sent fires after the message is cached + on the server, so the reload includes it).
-    LaunchedEffect(sendState) {
-        if (sendState is SendState.Sent) {
-            reset()
-            vm.loadMessages(threadId)
-            vm.resetSend()
-        }
-    }
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -431,8 +442,7 @@ private fun FollowUpRecorder(vm: QaViewModel, threadId: String, isUrdu: Boolean)
                     .padding(horizontal = 16.dp, vertical = 12.dp),
             ) {
                 Text(
-                    if (sending) (if (isUrdu) "بھیجا جا رہا ہے…" else "Sending…")
-                    else (if (isUrdu) "مزید سوال ریکارڈ کریں…" else "Record a follow-up…"),
+                    if (isUrdu) "مزید سوال ریکارڈ کریں…" else "Record a follow-up…",
                     fontFamily = if (isUrdu) NastaleeqFontFamily else null,
                     fontSize = if (isUrdu) 14.sp else 13.sp,
                     color = MaterialTheme.colorScheme.secondary,
@@ -443,7 +453,7 @@ private fun FollowUpRecorder(vm: QaViewModel, threadId: String, isUrdu: Boolean)
                     .size(44.dp)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.primary)
-                    .clickable(enabled = !sending) {
+                    .clickable {
                         if (androidx.core.content.ContextCompat.checkSelfPermission(
                                 context, android.Manifest.permission.RECORD_AUDIO
                             ) == android.content.pm.PackageManager.PERMISSION_GRANTED
@@ -501,14 +511,14 @@ private fun FollowUpRecorder(vm: QaViewModel, threadId: String, isUrdu: Boolean)
                     .clickable {
                         val bytes = recorder.stop()
                         val dur = elapsed
-                        recording = false
                         if (bytes != null) {
                             val out = java.io.File(context.cacheDir, "qa_sent_${System.currentTimeMillis()}.m4a")
                             out.writeBytes(bytes)
                             val (n, p, a) = identity
-                            vm.sendRecorded(n, p, a, bytes, out.absolutePath, dur, threadId)
-                            // The conversation refreshes when SendState.Sent fires (see LaunchedEffect above).
-                        } else reset()
+                            // Optimistic: appears in the chat as "Sending…" right away; resolves in the VM.
+                            vm.sendFollowUp(n, p, a, out.absolutePath, dur, threadId)
+                        }
+                        reset() // bar returns to idle immediately; the note now lives in the chat
                     },
                 contentAlignment = Alignment.Center,
             ) {

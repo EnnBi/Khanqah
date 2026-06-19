@@ -12,6 +12,8 @@ import com.khanqah.app.qa.UrduPipeline
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
+enum class SendStatus { SENT, SENDING, FAILED }
+
 data class ChatItem(
     val id: String,
     val fromMe: Boolean,
@@ -21,6 +23,7 @@ data class ChatItem(
     val localAudioPath: String?,
     val createdAtIso: String,
     val read: Boolean,
+    val sendStatus: SendStatus = SendStatus.SENT, // optimistic state for our own pending sends
     val durationSec: Int = 0,   // voice-note length shown on the bubble (own=cache, answer=envelope)
     // For answers: a quote of the question this replies to (WhatsApp-style). replyToId is set
     // whenever the answer references a question; text/isAudio come from our local sent cache.
@@ -64,6 +67,18 @@ class QaViewModel(
     val messages = MutableStateFlow<List<ChatItem>>(emptyList())
     val sendState: MutableStateFlow<SendState> = MutableStateFlow(SendState.Idle)
 
+    // Optimistic outbox: follow-up notes appear in the chat immediately as "sending", and stay
+    // (as "failed", with retry) across polls until the server confirms them.
+    private data class Outbox(
+        val tempId: String, val threadId: String,
+        val name: String, val phone: String, val address: String,
+        val audioPath: String, val durationSec: Int,
+        val createdAtIso: String, val status: SendStatus,
+    )
+    private val outbox = MutableStateFlow<List<Outbox>>(emptyList())
+    private var currentThreadId: String? = null
+    private var serverItems: List<ChatItem> = emptyList()
+
     fun loadThreads() = viewModelScope.launch {
         val list = runCatching { repo.listThreads() }.getOrNull() ?: return@launch
         // Stable question numbers: earliest-created thread is Q1, regardless of display order.
@@ -87,11 +102,60 @@ class QaViewModel(
     }
 
     fun loadMessages(threadId: String) = viewModelScope.launch {
+        currentThreadId = threadId
         val server = runCatching { repo.threadMessages(threadId) }.getOrDefault(emptyList())
         val cached = dao.forThread(threadId).associateBy { it.messageId }
         // For an answer, the quoted question is our own sent question → look it up by reply_to.
-        messages.value = server.map { m -> toChatItem(m, cached[m.id], m.replyTo?.let { cached[it] }) }
+        serverItems = server.map { m -> toChatItem(m, cached[m.id], m.replyTo?.let { cached[it] }) }
+        recomputeMessages()
         server.filter { it.direction == "a" && it.readAt == null }.forEach { runCatching { repo.markRead(it.id) } }
+    }
+
+    /** messages shown = confirmed server items + any still-pending/failed outbox items for the thread. */
+    private fun recomputeMessages() {
+        val tid = currentThreadId
+        val pending = outbox.value.filter { it.threadId == tid }.map { o ->
+            ChatItem(
+                id = o.tempId, fromMe = true, text = "", hasAudio = true,
+                audioRef = null, audioKeyB64 = null, audioNonceB64 = null,
+                localAudioPath = o.audioPath, createdAtIso = o.createdAtIso, read = false,
+                sendStatus = o.status, durationSec = o.durationSec,
+            )
+        }
+        messages.value = serverItems + pending
+    }
+
+    /** Send a follow-up optimistically: it shows in the chat immediately, then resolves. */
+    fun sendFollowUp(name: String, phone: String, address: String, audioPath: String, durationSec: Int, threadId: String) {
+        val temp = Outbox(
+            tempId = "outbox-" + System.nanoTime(), threadId = threadId,
+            name = name, phone = phone, address = address,
+            audioPath = audioPath, durationSec = durationSec,
+            createdAtIso = java.time.Instant.now().toString(), status = SendStatus.SENDING,
+        )
+        outbox.value = outbox.value + temp
+        recomputeMessages()
+        dispatchOutbox(temp.tempId)
+    }
+
+    fun retryFollowUp(tempId: String) {
+        outbox.value = outbox.value.map { if (it.tempId == tempId) it.copy(status = SendStatus.SENDING) else it }
+        recomputeMessages()
+        dispatchOutbox(tempId)
+    }
+
+    private fun dispatchOutbox(tempId: String) = viewModelScope.launch {
+        val o = outbox.value.find { it.tempId == tempId } ?: return@launch
+        try {
+            val bytes = java.io.File(o.audioPath).readBytes()
+            val resp = repo.sendAudioQuestion(o.name, o.phone, o.address, "", bytes, o.threadId)
+            dao.upsert(SentQuestionEntity(resp.id, resp.threadId, "", o.audioPath, System.currentTimeMillis(), o.durationSec))
+            outbox.value = outbox.value.filter { it.tempId != tempId }   // confirmed → drop optimistic
+            loadMessages(o.threadId)                                     // reload shows the real message
+        } catch (e: Exception) {
+            outbox.value = outbox.value.map { if (it.tempId == tempId) it.copy(status = SendStatus.FAILED) else it }
+            recomputeMessages()
+        }
     }
 
     private fun toChatItem(m: DecryptedMessage, cache: SentQuestionEntity?, repliedTo: SentQuestionEntity?): ChatItem {
