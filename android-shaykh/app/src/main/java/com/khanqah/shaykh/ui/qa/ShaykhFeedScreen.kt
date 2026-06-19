@@ -301,13 +301,19 @@ private fun AnswerSheet(vm: ShaykhQueueViewModel, question: IncomingQuestion, on
 
             if (!ready) {
                 Text(clock(elapsed), fontFamily = FontFamily.SansSerif, fontSize = 54.sp, fontWeight = FontWeight.Bold, color = c.text)
-                LiveWave(amps = amps, color = c.gold, modifier = Modifier.fillMaxWidth())
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                    LiveWave(amps = amps, color = c.gold, modifier = Modifier.fillMaxWidth())
+                }
             } else {
-                Waveform(seed = question.messageId.hashCode() + 7, fraction = previewFrac, c = c, modifier = Modifier.fillMaxWidth())
-                Text(
-                    if (previewing) "${clock(playback.positionMs / 1000)} / ${clock(elapsed)}"
-                    else "${clock(elapsed)} · سننے کے لیے دبائیں",
-                    fontFamily = NastaleeqFontFamily, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = c.muted)
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Waveform(seed = question.messageId.hashCode() + 7, fraction = previewFrac, c = c, modifier = Modifier.fillMaxWidth())
+                        Text(
+                            if (previewing) "${clock(playback.positionMs / 1000)} / ${clock(elapsed)}"
+                            else "${clock(elapsed)} · سننے کے لیے دبائیں",
+                            fontFamily = NastaleeqFontFamily, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = c.muted)
+                    }
+                }
             }
 
             Spacer(Modifier.height(4.dp))
