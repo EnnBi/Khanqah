@@ -53,25 +53,39 @@ class ShaykhQueueViewModel(
         }
     }
 
+    // The clip the user currently wants to hear. A fetch that finishes after the user has
+    // moved on (rapid scrolling) is discarded instead of starting stale audio.
+    @Volatile private var requestedKey: String? = null
+    private var playJob: kotlinx.coroutines.Job? = null
+
     /** Always (re)start [q] from the beginning — used for auto-play when a card lands. */
-    fun play(q: IncomingQuestion) = viewModelScope.launch {
-        val bytes = fetchBytes(q) ?: return@launch
-        audioPlayer.start(q.messageId, bytes)
+    fun play(q: IncomingQuestion) {
+        requestedKey = q.messageId
+        playJob?.cancel()
+        playJob = viewModelScope.launch {
+            val bytes = fetchBytes(q) ?: return@launch
+            if (requestedKey == q.messageId) audioPlayer.start(q.messageId, bytes)
+        }
     }
 
     /** Toggle play/pause for [q]; if it isn't the loaded clip, start it. */
-    fun onPlayPause(q: IncomingQuestion) = viewModelScope.launch {
-        if (audioPlayer.playback.value.key == q.messageId) {
-            audioPlayer.toggle()
-            return@launch
+    fun onPlayPause(q: IncomingQuestion) {
+        if (audioPlayer.playback.value.key == q.messageId) { audioPlayer.toggle(); return }
+        requestedKey = q.messageId
+        playJob?.cancel()
+        playJob = viewModelScope.launch {
+            val bytes = fetchBytes(q) ?: return@launch
+            if (requestedKey == q.messageId) audioPlayer.start(q.messageId, bytes)
         }
-        val bytes = fetchBytes(q) ?: return@launch
-        audioPlayer.start(q.messageId, bytes)
     }
 
     fun seek(ms: Int) = audioPlayer.seekTo(ms)
 
-    fun stopAudio() = audioPlayer.stop()
+    fun stopAudio() {
+        requestedKey = null
+        playJob?.cancel()
+        audioPlayer.stop()
+    }
 
     fun sendAnswer(q: IncomingQuestion, audioBytes: ByteArray?, text: String, durationSec: Int = 0) = viewModelScope.launch {
         answerState.value = AnswerState.Sending
