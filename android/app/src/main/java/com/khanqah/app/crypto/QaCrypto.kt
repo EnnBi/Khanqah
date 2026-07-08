@@ -28,7 +28,11 @@ data class EncryptedEnvelope(
  */
 class QaCrypto(private val identity: IdentityKeyStore) {
 
-    private val sodium = Sodium.lazy
+    // Deferred: touching Sodium.lazy loads the libsodium/JNA native library. Accessing it only
+    // inside crypto calls (not at construction) means the app can start without loading it —
+    // important because lazysodium 5.1/JNA 5.14 aren't 16 KB-page aligned and crash dlopen on
+    // Android 15 (16 KB pages) at launch. See KhanqahApp which builds QaCrypto eagerly.
+    private val sodium get() = Sodium.lazy
     private val rng = SecureRandom()
     private val gcmTagBits = 128
 
