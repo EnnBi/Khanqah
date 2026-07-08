@@ -344,7 +344,9 @@ fun AppNavGraph(
                     onComingSoonClick = { title ->
                         navController.navigate(Screen.ComingSoon.route(title))
                     },
-                    onAskHazrat = { navController.navigate(Screen.AskList.route) },
+                    // Ask Hazrat is hidden for the Play Store launch — route the tile to the
+                    // existing "Coming Soon" screen. The QA feature code stays intact for later.
+                    onAskHazrat = { navController.navigate(Screen.ComingSoon.route(if (isUrdu) "حضرت سے سوال" else "Ask Hazrat")) },
                     onCategoryTypeClick = { query ->
                         val cat = libraryViewModel.categories.value.firstOrNull { c ->
                             c.type.equals(query, ignoreCase = true) ||
