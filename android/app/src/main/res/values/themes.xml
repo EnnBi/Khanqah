@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <style name="Theme.Khanqah" parent="android:Theme.Material.Light.NoActionBar" />
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- The app manages its own light/dark entirely in Compose (KhanqahTheme), so opt out of
+         OS "Force Dark" — otherwise dark-mode devices (esp. MIUI) auto-invert colours, e.g.
+         turning the selected bottom-nav item's dark-emerald text white. -->
+    <style name="Theme.Khanqah" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:forceDarkAllowed" tools:targetApi="q">false</item>
+    </style>
 
     <style name="Theme.Khanqah.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/ic_launcher_background</item>
