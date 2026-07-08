@@ -346,23 +346,29 @@ private fun LanguageToggleRow(isUrdu: Boolean, onToggle: () -> Unit) {
                 tonalElevation = 0.dp,
                 modifier = Modifier.height(30.dp),
             ) {
-                Row(modifier = Modifier.padding(2.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxHeight().padding(2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     listOf("EN" to false, "اردو" to true).forEach { (label, isSelected) ->
+                        val active = isSelected == isUrdu
                         Box(
                             modifier = Modifier
+                                .fillMaxHeight()
                                 .clip(RoundedCornerShape(50))
-                                .background(if (isSelected == isUrdu) gold else Color.Transparent)
-                                .clickable { if (isSelected != isUrdu) onToggle() }
-                                .padding(horizontal = 12.dp, vertical = 4.dp),
+                                .background(if (active) gold else Color.Transparent)
+                                .clickable { if (!active) onToggle() }
+                                .padding(horizontal = 12.dp),
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(
                                 label,
                                 style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 11.sp,
+                                    fontFamily = if (label == "اردو") NastaleeqFontFamily else null,
+                                    fontSize = if (label == "اردو") 13.sp else 11.sp,
                                     fontWeight = FontWeight.SemiBold,
                                 ),
-                                color = if (isSelected == isUrdu) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.secondary,
+                                color = if (active) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.secondary,
                             )
                         }
                     }
