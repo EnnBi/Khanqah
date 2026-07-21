@@ -30,8 +30,8 @@
             android:name=".PlaybackControlReceiver"
             android:exported="false">
             <intent-filter>
-                <action android:name="com.khanqah.app.PLAYBACK_TOGGLE" />
-                <action android:name="com.khanqah.app.PLAYBACK_STOP" />
+                <action android:name="com.ennbi.khanqah.PLAYBACK_TOGGLE" />
+                <action android:name="com.ennbi.khanqah.PLAYBACK_STOP" />
             </intent-filter>
         </receiver>
 

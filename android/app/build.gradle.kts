@@ -14,10 +14,10 @@ val keystoreProps = Properties().apply {
 }
 
 android {
-    namespace = "com.khanqah.app"
+    namespace = "com.ennbi.khanqah"
     compileSdk = 35
     defaultConfig {
-        applicationId = "com.khanqah.app"
+        applicationId = "com.ennbi.khanqah"
         minSdk = 26
         targetSdk = 35
         versionCode = 1
