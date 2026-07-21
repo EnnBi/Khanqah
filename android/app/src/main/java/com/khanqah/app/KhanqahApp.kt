@@ -17,6 +17,7 @@ import com.khanqah.app.ui.library.LibraryViewModel
 import com.khanqah.app.ui.player.PlayerViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class KhanqahApp : Application() {
@@ -27,6 +28,7 @@ class KhanqahApp : Application() {
     lateinit var progressRepo: ProgressRepository
     lateinit var qaRepo: QaRepository
     lateinit var makeQaViewModel: () -> com.khanqah.app.ui.qa.QaViewModel
+    lateinit var settingsStore: com.khanqah.app.data.SettingsStore
     lateinit var authViewModel: AuthViewModel
     lateinit var homeViewModel: HomeViewModel
     lateinit var libraryViewModel: LibraryViewModel
@@ -37,8 +39,14 @@ class KhanqahApp : Application() {
         super.onCreate()
         ListeningForegroundService.createChannel(this)
         PlaybackNotificationService.createChannel(this)
-        FirebaseMessaging.getInstance().subscribeToTopic("broadcast_live")
-        FirebaseMessaging.getInstance().subscribeToTopic("content_upload")
+        settingsStore = com.khanqah.app.data.SettingsStore(this)
+        // Subscribe to broadcast topics only if the user hasn't turned notifications off.
+        CoroutineScope(Dispatchers.IO).launch {
+            if (settingsStore.notificationsEnabled.first()) {
+                FirebaseMessaging.getInstance().subscribeToTopic("broadcast_live")
+                FirebaseMessaging.getInstance().subscribeToTopic("content_upload")
+            }
+        }
         val db = AppDatabase.getInstance(this)
         tokenManager = TokenManager(this)
         val apiClient = ApiClient(tokenManager)
@@ -72,6 +80,17 @@ class KhanqahApp : Application() {
             if (uid.isNotBlank()) {
                 FirebaseMessaging.getInstance().subscribeToTopic("user-$uid")
                 runCatching { qaRepo.ensureRegistered() }
+            }
+        }
+    }
+
+    /** Persist the notifications preference and (un)subscribe the broadcast topics. */
+    fun setNotifications(on: Boolean) {
+        CoroutineScope(Dispatchers.IO).launch {
+            settingsStore.setNotificationsEnabled(on)
+            val fm = FirebaseMessaging.getInstance()
+            listOf("broadcast_live", "content_upload").forEach {
+                if (on) fm.subscribeToTopic(it) else fm.unsubscribeFromTopic(it)
             }
         }
     }

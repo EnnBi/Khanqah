@@ -73,6 +73,9 @@ sealed class Screen(val route: String) {
     object ComingSoon : Screen("coming_soon/{title}") {
         fun route(title: String) = "coming_soon/${title.encodeUrl()}"
     }
+    object About : Screen("about/{title}") {
+        fun route(title: String) = "about/${title.encodeUrl()}"
+    }
     object BayanTab  : Screen("tab_bayan")
     object ClipsTab  : Screen("tab_clips")
     object BooksTab  : Screen("tab_books")
@@ -412,8 +415,11 @@ fun AppNavGraph(
                     phone = phone,
                     role = userRole,
                     isUrdu = isUrdu,
+                    settingsStore = app.settingsStore,
                     onLanguageToggle = onLanguageToggle,
+                    onSetNotifications = { app.setNotifications(it) },
                     onLoginClick = { navController.navigate(Screen.Login.route) },
+                    onAbout = { title -> navController.navigate(Screen.About.route(title)) },
                     onLogout = onLogout,
                 )
             }
@@ -429,6 +435,10 @@ fun AppNavGraph(
             composable(Screen.ComingSoon.route) { backStack ->
                 val title = backStack.arguments?.getString("title")?.decodeUrl() ?: ""
                 ComingSoonScreen(title = title)
+            }
+            composable(Screen.About.route) { backStack ->
+                val title = backStack.arguments?.getString("title")?.decodeUrl() ?: ""
+                com.khanqah.app.ui.common.AboutScreen(title = title, onBack = { navController.popBackStack() })
             }
             composable(Screen.BayanTab.route) {
                 val cats by libraryViewModel.categories.collectAsState()

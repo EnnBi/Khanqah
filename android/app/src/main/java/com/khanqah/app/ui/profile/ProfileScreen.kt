@@ -11,12 +11,19 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -24,10 +31,12 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.khanqah.app.data.SettingsStore
 import com.khanqah.app.ui.theme.CrimsonProFontFamily
 import com.khanqah.app.ui.theme.NastaleeqFontFamily
 import com.khanqah.app.ui.utils.LocalIsUrdu
 import com.khanqah.app.ui.utils.ProfileStr
+import kotlinx.coroutines.launch
 
 @Composable
 fun ProfileScreen(
@@ -36,14 +45,26 @@ fun ProfileScreen(
     phone: String,
     role: String?,
     isUrdu: Boolean,
+    settingsStore: SettingsStore,
     onLanguageToggle: () -> Unit,
+    onSetNotifications: (Boolean) -> Unit,
     onLoginClick: () -> Unit,
+    onAbout: (String) -> Unit,
     onLogout: () -> Unit,
 ) {
+    val scope = rememberCoroutineScope()
+    val themeMode by settingsStore.themeMode.collectAsState(initial = SettingsStore.ThemeMode.SYSTEM)
+    val speed by settingsStore.playbackSpeed.collectAsState(initial = 1.0f)
+    val skip by settingsStore.skipIntervalSec.collectAsState(initial = 15)
+    val notif by settingsStore.notificationsEnabled.collectAsState(initial = true)
+    var showThemeDialog by remember { mutableStateOf(false) }
+    var showSpeedDialog by remember { mutableStateOf(false) }
+    var showSkipDialog by remember { mutableStateOf(false) }
     val gold = MaterialTheme.colorScheme.tertiary
     val bg = MaterialTheme.colorScheme.background
     val card = MaterialTheme.colorScheme.surface
     val heroBg = MaterialTheme.colorScheme.primary
+    val darkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
 
     Column(
         modifier = Modifier
@@ -83,7 +104,8 @@ fun ProfileScreen(
                             fontWeight = FontWeight.Bold,
                             fontSize = if (isUrdu) 32.sp else 28.sp,
                         ),
-                        color = MaterialTheme.colorScheme.onBackground,
+                        // Header band is always dark green (primary), so keep the title cream in both themes.
+                        color = Color(0xFFF5F3EE),
                     )
                     Text(
                         " ${if (isUrdu) ProfileStr.SETTINGS_UR else ProfileStr.SETTINGS_EN}",
@@ -185,13 +207,16 @@ fun ProfileScreen(
                         )
                     }
                 } else {
+                    // Emerald button in light mode, gold in dark — each with a contrasting label.
+                    val signInBg = if (darkTheme) gold else MaterialTheme.colorScheme.primary
+                    val signInFg = if (darkTheme) Color(0xFF0F2E24) else Color(0xFFF5F3EE)
                     Button(
                         onClick = onLoginClick,
                         shape = RoundedCornerShape(8.dp),
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = gold.copy(alpha = 0.15f),
-                            contentColor = gold,
+                            containerColor = signInBg,
+                            contentColor = signInFg,
                         ),
                         elevation = ButtonDefaults.buttonElevation(0.dp),
                     ) {
@@ -231,13 +256,18 @@ fun ProfileScreen(
             Column {
                 LanguageToggleRow(isUrdu = isUrdu, onToggle = onLanguageToggle)
                 RowDivider()
-                SettingRow(if (isUrdu) ProfileStr.APPEARANCE_UR  else ProfileStr.APPEARANCE_EN,  "DARK")
+                SettingRow(if (isUrdu) ProfileStr.APPEARANCE_UR else ProfileStr.APPEARANCE_EN,
+                    themeLabel(themeMode, isUrdu)) { showThemeDialog = true }
                 RowDivider()
-                SettingRow(if (isUrdu) ProfileStr.SPEED_UR       else ProfileStr.SPEED_EN,       "1.0×")
+                SettingRow(if (isUrdu) ProfileStr.SPEED_UR else ProfileStr.SPEED_EN,
+                    speedLabel(speed)) { showSpeedDialog = true }
                 RowDivider()
-                SettingRow(if (isUrdu) ProfileStr.NOTIF_UR       else ProfileStr.NOTIF_EN,       "On")
+                SettingRow(if (isUrdu) ProfileStr.NOTIF_UR else ProfileStr.NOTIF_EN,
+                    if (notif) (if (isUrdu) "آن" else "On") else (if (isUrdu) "آف" else "Off")) {
+                    onSetNotifications(!notif)
+                }
                 RowDivider()
-                SettingRow(if (isUrdu) ProfileStr.SKIP_UR        else ProfileStr.SKIP_EN,        "15s")
+                SettingRow(if (isUrdu) ProfileStr.SKIP_UR else ProfileStr.SKIP_EN, "${skip}s") { showSkipDialog = true }
             }
         }
 
@@ -261,14 +291,106 @@ fun ProfileScreen(
             tonalElevation = 0.dp,
         ) {
             Column {
-                AboutRow(if (isUrdu) ProfileStr.ABOUT_UR else ProfileStr.ABOUT_EN)
+                val aboutLabel = if (isUrdu) ProfileStr.ABOUT_UR else ProfileStr.ABOUT_EN
+                val bioLabel = if (isUrdu) ProfileStr.BIO_UR else ProfileStr.BIO_EN
+                AboutRow(aboutLabel) { onAbout(aboutLabel) }
                 RowDivider()
-                AboutRow(if (isUrdu) ProfileStr.BIO_UR else ProfileStr.BIO_EN)
+                AboutRow(bioLabel) { onAbout(bioLabel) }
             }
         }
 
         Spacer(Modifier.height(32.dp))
     }
+
+    if (showThemeDialog) {
+        ChoiceDialog(
+            title = if (isUrdu) ProfileStr.APPEARANCE_UR else ProfileStr.APPEARANCE_EN,
+            options = SettingsStore.ThemeMode.entries.map { it to themeLabel(it, isUrdu) },
+            selected = themeMode,
+            isUrdu = isUrdu,
+            onSelect = { scope.launch { settingsStore.setThemeMode(it) }; showThemeDialog = false },
+            onDismiss = { showThemeDialog = false },
+        )
+    }
+    if (showSpeedDialog) {
+        ChoiceDialog(
+            title = if (isUrdu) ProfileStr.SPEED_UR else ProfileStr.SPEED_EN,
+            options = listOf(0.75f, 1.0f, 1.25f, 1.5f, 2.0f).map { it to speedLabel(it) },
+            selected = speed,
+            isUrdu = isUrdu,
+            onSelect = { scope.launch { settingsStore.setPlaybackSpeed(it) }; showSpeedDialog = false },
+            onDismiss = { showSpeedDialog = false },
+        )
+    }
+    if (showSkipDialog) {
+        ChoiceDialog(
+            title = if (isUrdu) ProfileStr.SKIP_UR else ProfileStr.SKIP_EN,
+            options = listOf(10, 15, 30, 45).map { it to "${it}s" },
+            selected = skip,
+            isUrdu = isUrdu,
+            onSelect = { scope.launch { settingsStore.setSkipInterval(it) }; showSkipDialog = false },
+            onDismiss = { showSkipDialog = false },
+        )
+    }
+}
+
+private fun themeLabel(mode: SettingsStore.ThemeMode, ur: Boolean): String = when (mode) {
+    SettingsStore.ThemeMode.SYSTEM -> if (ur) "سسٹم" else "System"
+    SettingsStore.ThemeMode.LIGHT -> if (ur) "روشن" else "Light"
+    SettingsStore.ThemeMode.DARK -> if (ur) "تاریک" else "Dark"
+}
+
+private fun speedLabel(s: Float): String =
+    if (s == s.toInt().toFloat()) "${s.toInt()}×" else "${s}×"
+
+@Composable
+private fun <T> ChoiceDialog(
+    title: String,
+    options: List<Pair<T, String>>,
+    selected: T,
+    isUrdu: Boolean,
+    onSelect: (T) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surface,
+        title = {
+            Text(title, fontFamily = if (isUrdu) NastaleeqFontFamily else null,
+                fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+        },
+        text = {
+            Column {
+                options.forEach { (value, label) ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onSelect(value) }
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(
+                            selected = value == selected,
+                            onClick = { onSelect(value) },
+                            colors = RadioButtonDefaults.colors(
+                                selectedColor = MaterialTheme.colorScheme.tertiary,
+                                unselectedColor = MaterialTheme.colorScheme.secondary,
+                            ),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(label, fontFamily = if (isUrdu) NastaleeqFontFamily else null,
+                            fontSize = if (isUrdu) 16.sp else 14.sp,
+                            color = MaterialTheme.colorScheme.onSurface)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(if (isUrdu) "بند کریں" else "Close", color = MaterialTheme.colorScheme.tertiary)
+            }
+        },
+    )
 }
 
 @Composable
@@ -379,12 +501,12 @@ private fun LanguageToggleRow(isUrdu: Boolean, onToggle: () -> Unit) {
 }
 
 @Composable
-private fun SettingRow(label: String, value: String) {
-    val gold = MaterialTheme.colorScheme.tertiary
+private fun SettingRow(label: String, value: String, onClick: (() -> Unit)? = null) {
     val ur = LocalIsUrdu.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(horizontal = 16.dp, vertical = 13.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
@@ -418,11 +540,12 @@ private fun SettingRow(label: String, value: String) {
 }
 
 @Composable
-private fun AboutRow(label: String) {
+private fun AboutRow(label: String, onClick: () -> Unit) {
     val ur = LocalIsUrdu.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 13.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,

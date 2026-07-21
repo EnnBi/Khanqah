@@ -33,6 +33,17 @@ class PlayerViewModel(
     private var playerOwned = true
     private var progressJob: Job? = null
 
+    private val settings get() = (context.applicationContext as KhanqahApp).settingsStore
+
+    init {
+        // Apply the saved playback speed and keep it in sync if the user changes it.
+        viewModelScope.launch { settings.playbackSpeed.collect { s -> _player.value?.setPlaybackSpeed(s) } }
+    }
+
+    private fun applyPlaybackSpeed() = viewModelScope.launch {
+        _player.value?.setPlaybackSpeed(settings.playbackSpeedNow())
+    }
+
     fun load(id: String) = viewModelScope.launch {
         val c = contentRepo.getContent(id)
         _content.value = c
@@ -47,6 +58,7 @@ class PlayerViewModel(
         if (nowPlayingManager.info.value?.contentId == id && nowPlayingManager.player != null) {
             _player.value = nowPlayingManager.player
             playerOwned = false
+            applyPlaybackSpeed()
             return@launch
         }
 
@@ -69,6 +81,7 @@ class PlayerViewModel(
             .build()
         _player.value = p
         playerOwned = true
+        applyPlaybackSpeed()
 
         p.setMediaItem(MediaItem.fromUri(c.mediaUrl))
         p.prepare()

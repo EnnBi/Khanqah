@@ -15,6 +15,8 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Replay10
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
+import com.khanqah.app.KhanqahApp
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -247,6 +249,9 @@ private fun AudioFullScreen(
     var durationMs  by remember { mutableLongStateOf(0L) }
     var isPlaying   by remember { mutableStateOf(false) }
     var isBuffering by remember { mutableStateOf(true) }
+    val skipSec by (LocalContext.current.applicationContext as KhanqahApp)
+        .settingsStore.skipIntervalSec.collectAsState(initial = 15)
+    val skipMs = skipSec * 1000L
 
     LaunchedEffect(player) {
         while (true) {
@@ -347,7 +352,7 @@ private fun AudioFullScreen(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                IconButton(onClick = { player.seekTo((player.currentPosition - 10_000L).coerceAtLeast(0L)) }, modifier = Modifier.size(54.dp)) {
+                IconButton(onClick = { player.seekTo((player.currentPosition - skipMs).coerceAtLeast(0L)) }, modifier = Modifier.size(54.dp)) {
                     Icon(Icons.Filled.Replay10, null, tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(30.dp))
                 }
                 Spacer(Modifier.width(24.dp))
@@ -373,7 +378,7 @@ private fun AudioFullScreen(
                     }
                 }
                 Spacer(Modifier.width(24.dp))
-                IconButton(onClick = { player.seekTo(player.currentPosition + 10_000L) }, modifier = Modifier.size(54.dp)) {
+                IconButton(onClick = { player.seekTo(player.currentPosition + skipMs) }, modifier = Modifier.size(54.dp)) {
                     Icon(Icons.Filled.Forward10, null, tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(30.dp))
                 }
             }

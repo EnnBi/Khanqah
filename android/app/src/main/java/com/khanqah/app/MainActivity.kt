@@ -6,8 +6,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalLayoutDirection
+import com.khanqah.app.data.SettingsStore
 import androidx.compose.ui.unit.LayoutDirection
 import com.khanqah.app.ui.navigation.AppNavGraph
 import com.khanqah.app.ui.theme.KhanqahTheme
@@ -44,6 +46,7 @@ class MainActivity : ComponentActivity() {
         val initialName     = runBlocking { app.authRepo.getDisplayName() }
         val initialPhone    = runBlocking { app.authRepo.getPhone() }
         val initialLanguage = runBlocking { app.tokenManager.getLanguage() }
+        val initialTheme    = runBlocking { app.settingsStore.themeModeNow() }
         if (intent?.action == ListeningForegroundService.ACTION_OPEN_LIVE) {
             openLiveState.value = true
         }
@@ -56,7 +59,13 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            KhanqahTheme {
+            val themeMode by app.settingsStore.themeMode.collectAsState(initial = initialTheme)
+            val darkTheme = when (themeMode) {
+                SettingsStore.ThemeMode.LIGHT -> false
+                SettingsStore.ThemeMode.DARK -> true
+                SettingsStore.ThemeMode.SYSTEM -> isSystemInDarkTheme()
+            }
+            KhanqahTheme(darkTheme = darkTheme) {
                 val live      by app.homeViewModel.live.collectAsState()
                 val schedule  by app.homeViewModel.schedule.collectAsState()
                 val language  by app.tokenManager.observeLanguage().collectAsState(initial = initialLanguage)
