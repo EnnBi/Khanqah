@@ -1,4 +1,4 @@
-package com.khanqah.app.ui.common
+package com.ennbi.khanqah.ui.common
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -18,8 +18,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.khanqah.app.ui.theme.NastaleeqFontFamily
-import com.khanqah.app.ui.utils.LocalIsUrdu
+import com.ennbi.khanqah.ui.theme.NastaleeqFontFamily
+import com.ennbi.khanqah.ui.utils.LocalIsUrdu
 
 /** Simple content page for the About section. Body text is filled in per [title]. */
 @OptIn(ExperimentalMaterial3Api::class)

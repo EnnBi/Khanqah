@@ -1,4 +1,4 @@
-package com.khanqah.app.ui.player
+package com.ennbi.khanqah.ui.player
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
@@ -7,11 +7,11 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
-import com.khanqah.app.KhanqahApp
-import com.khanqah.app.NowPlayingInfo
-import com.khanqah.app.data.model.Content
-import com.khanqah.app.data.repository.ContentRepository
-import com.khanqah.app.data.repository.ProgressRepository
+import com.ennbi.khanqah.KhanqahApp
+import com.ennbi.khanqah.NowPlayingInfo
+import com.ennbi.khanqah.data.model.Content
+import com.ennbi.khanqah.data.repository.ContentRepository
+import com.ennbi.khanqah.data.repository.ProgressRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow

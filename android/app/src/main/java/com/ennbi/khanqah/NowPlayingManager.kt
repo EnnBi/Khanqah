@@ -1,4 +1,4 @@
-package com.khanqah.app
+package com.ennbi.khanqah
 
 import androidx.media3.exoplayer.ExoPlayer
 import kotlinx.coroutines.flow.MutableStateFlow

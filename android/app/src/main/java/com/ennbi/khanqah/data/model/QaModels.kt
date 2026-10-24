@@ -1,4 +1,4 @@
-package com.khanqah.app.data.model
+package com.ennbi.khanqah.data.model
 
 import com.google.gson.annotations.SerializedName
 

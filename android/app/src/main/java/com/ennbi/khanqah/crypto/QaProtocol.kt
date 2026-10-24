@@ -1,4 +1,4 @@
-package com.khanqah.app.crypto
+package com.ennbi.khanqah.crypto
 
 import com.google.gson.Gson
 

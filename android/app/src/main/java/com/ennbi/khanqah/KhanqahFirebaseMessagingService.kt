@@ -1,4 +1,4 @@
-package com.khanqah.app
+package com.ennbi.khanqah
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -92,7 +92,7 @@ class KhanqahFirebaseMessagingService : FirebaseMessagingService() {
     companion object {
         private const val CHANNEL_ID = "khanqah_updates"
         private const val ASK_CHANNEL_ID = "khanqah_ask"
-        const val ACTION_OPEN_ASK = "com.khanqah.app.OPEN_ASK"
+        const val ACTION_OPEN_ASK = "com.ennbi.khanqah.OPEN_ASK"
         const val EXTRA_THREAD_ID = "ask_thread_id"
     }
 }

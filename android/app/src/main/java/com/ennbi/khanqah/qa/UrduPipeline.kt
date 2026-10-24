@@ -1,4 +1,4 @@
-package com.khanqah.app.qa
+package com.ennbi.khanqah.qa
 
 import android.content.Context
 

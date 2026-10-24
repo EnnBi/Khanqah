@@ -1,4 +1,4 @@
-package com.khanqah.app
+package com.ennbi.khanqah
 
 import android.content.Intent
 import android.os.Bundle
@@ -9,11 +9,11 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalLayoutDirection
-import com.khanqah.app.data.SettingsStore
+import com.ennbi.khanqah.data.SettingsStore
 import androidx.compose.ui.unit.LayoutDirection
-import com.khanqah.app.ui.navigation.AppNavGraph
-import com.khanqah.app.ui.theme.KhanqahTheme
-import com.khanqah.app.ui.utils.LocalIsUrdu
+import com.ennbi.khanqah.ui.navigation.AppNavGraph
+import com.ennbi.khanqah.ui.theme.KhanqahTheme
+import com.ennbi.khanqah.ui.utils.LocalIsUrdu
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 

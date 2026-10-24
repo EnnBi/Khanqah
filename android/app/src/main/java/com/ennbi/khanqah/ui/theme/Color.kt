@@ -1,4 +1,4 @@
-package com.khanqah.app.ui.theme
+package com.ennbi.khanqah.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

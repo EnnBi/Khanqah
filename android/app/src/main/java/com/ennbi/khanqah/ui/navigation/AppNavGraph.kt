@@ -1,4 +1,4 @@
-package com.khanqah.app.ui.navigation
+package com.ennbi.khanqah.ui.navigation
 
 import android.content.Intent
 import androidx.compose.foundation.layout.*
@@ -16,7 +16,7 @@ import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material.icons.outlined.MicNone
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.PlayCircleOutline
-import com.khanqah.app.ui.common.ComingSoonScreen
+import com.ennbi.khanqah.ui.common.ComingSoonScreen
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -26,35 +26,35 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.khanqah.app.KhanqahApp
-import com.khanqah.app.PlaybackNotificationService
-import com.khanqah.app.ui.theme.NastaleeqFontFamily
+import com.ennbi.khanqah.KhanqahApp
+import com.ennbi.khanqah.PlaybackNotificationService
+import com.ennbi.khanqah.ui.theme.NastaleeqFontFamily
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.khanqah.app.data.model.LiveSession
-import com.khanqah.app.data.model.ScheduledSession
-import com.khanqah.app.ui.auth.AuthViewModel
-import com.khanqah.app.ui.auth.LoginScreen
-import com.khanqah.app.ui.home.HomeScreen
-import com.khanqah.app.ui.home.HomeViewModel
-import com.khanqah.app.ui.qa.AskComposeScreen
-import com.khanqah.app.ui.qa.AskConversationScreen
-import com.khanqah.app.ui.qa.AskThreadListScreen
-import com.khanqah.app.ui.library.CategoryDetailScreen
-import com.khanqah.app.ui.library.CategoryDetailViewModel
-import com.khanqah.app.ui.library.LibraryScreen
-import com.khanqah.app.ui.library.LibraryViewModel
-import com.khanqah.app.ui.live.LiveScreen
-import com.khanqah.app.ui.player.MiniPlayerBar
-import com.khanqah.app.ui.player.PlayerScreen
-import com.khanqah.app.ui.player.PlayerViewModel
-import com.khanqah.app.ui.profile.ProfileScreen
-import com.khanqah.app.ui.schedule.ScheduleScreen
-import com.khanqah.app.ui.utils.LocalIsUrdu
-import com.khanqah.app.ui.utils.Tabs
+import com.ennbi.khanqah.data.model.LiveSession
+import com.ennbi.khanqah.data.model.ScheduledSession
+import com.ennbi.khanqah.ui.auth.AuthViewModel
+import com.ennbi.khanqah.ui.auth.LoginScreen
+import com.ennbi.khanqah.ui.home.HomeScreen
+import com.ennbi.khanqah.ui.home.HomeViewModel
+import com.ennbi.khanqah.ui.qa.AskComposeScreen
+import com.ennbi.khanqah.ui.qa.AskConversationScreen
+import com.ennbi.khanqah.ui.qa.AskThreadListScreen
+import com.ennbi.khanqah.ui.library.CategoryDetailScreen
+import com.ennbi.khanqah.ui.library.CategoryDetailViewModel
+import com.ennbi.khanqah.ui.library.LibraryScreen
+import com.ennbi.khanqah.ui.library.LibraryViewModel
+import com.ennbi.khanqah.ui.live.LiveScreen
+import com.ennbi.khanqah.ui.player.MiniPlayerBar
+import com.ennbi.khanqah.ui.player.PlayerScreen
+import com.ennbi.khanqah.ui.player.PlayerViewModel
+import com.ennbi.khanqah.ui.profile.ProfileScreen
+import com.ennbi.khanqah.ui.schedule.ScheduleScreen
+import com.ennbi.khanqah.ui.utils.LocalIsUrdu
+import com.ennbi.khanqah.ui.utils.Tabs
 
 sealed class Screen(val route: String) {
     object Login        : Screen("login")
@@ -187,7 +187,7 @@ fun AppNavGraph(
     LaunchedEffect(liveSession) {
         if (liveSession == null) {
             app.liveStreamPlayer.release()
-            context.stopService(Intent(context, com.khanqah.app.ListeningForegroundService::class.java))
+            context.stopService(Intent(context, com.ennbi.khanqah.ListeningForegroundService::class.java))
         }
     }
     val noBottomNavRoutes = setOf(
@@ -329,8 +329,8 @@ fun AppNavGraph(
                         if (session != null) {
                             app.liveStreamPlayer.ensure(session.streamUrl, context)
                             context.startForegroundService(
-                                Intent(context, com.khanqah.app.ListeningForegroundService::class.java)
-                                    .putExtra(com.khanqah.app.ListeningForegroundService.EXTRA_TITLE, session.titleEn)
+                                Intent(context, com.ennbi.khanqah.ListeningForegroundService::class.java)
+                                    .putExtra(com.ennbi.khanqah.ListeningForegroundService.EXTRA_TITLE, session.titleEn)
                             )
                         }
                         navController.navigate(Screen.Live.route)
@@ -400,7 +400,7 @@ fun AppNavGraph(
                     context    = ctx,
                     onExitLive = {
                         app.liveStreamPlayer.release()
-                        ctx.stopService(Intent(ctx, com.khanqah.app.ListeningForegroundService::class.java))
+                        ctx.stopService(Intent(ctx, com.ennbi.khanqah.ListeningForegroundService::class.java))
                         navController.popBackStack()
                     },
                     pingLive   = { homeViewModel.pingLive() },
@@ -438,7 +438,7 @@ fun AppNavGraph(
             }
             composable(Screen.About.route) { backStack ->
                 val title = backStack.arguments?.getString("title")?.decodeUrl() ?: ""
-                com.khanqah.app.ui.common.AboutScreen(title = title, onBack = { navController.popBackStack() })
+                com.ennbi.khanqah.ui.common.AboutScreen(title = title, onBack = { navController.popBackStack() })
             }
             composable(Screen.BayanTab.route) {
                 val cats by libraryViewModel.categories.collectAsState()
@@ -497,7 +497,7 @@ fun AppNavGraph(
                         }
                     }
                 } else {
-                    val vm = remember { (context.applicationContext as com.khanqah.app.KhanqahApp).makeQaViewModel() }
+                    val vm = remember { (context.applicationContext as com.ennbi.khanqah.KhanqahApp).makeQaViewModel() }
                     AskThreadListScreen(vm,
                         onAskNew = { navController.navigate(Screen.AskCompose.route()) },
                         onOpenThread = { navController.navigate(Screen.AskConversation.route(it)) },
@@ -509,7 +509,7 @@ fun AppNavGraph(
                 arguments = listOf(androidx.navigation.navArgument("threadId") { nullable = true; defaultValue = null; type = androidx.navigation.NavType.StringType })
             ) { back ->
                 val threadId = back.arguments?.getString("threadId")
-                val vm = remember { (context.applicationContext as com.khanqah.app.KhanqahApp).makeQaViewModel() }
+                val vm = remember { (context.applicationContext as com.ennbi.khanqah.KhanqahApp).makeQaViewModel() }
                 AskComposeScreen(vm, threadId, onSent = { navController.popBackStack() }, onBack = { navController.popBackStack() })
             }
             composable(
@@ -517,7 +517,7 @@ fun AppNavGraph(
                 arguments = listOf(androidx.navigation.navArgument("threadId") { type = androidx.navigation.NavType.StringType })
             ) { back ->
                 val threadId = back.arguments?.getString("threadId") ?: return@composable
-                val vm = remember { (context.applicationContext as com.khanqah.app.KhanqahApp).makeQaViewModel() }
+                val vm = remember { (context.applicationContext as com.ennbi.khanqah.KhanqahApp).makeQaViewModel() }
                 AskConversationScreen(vm, threadId, onBack = { navController.popBackStack() })
             }
         }

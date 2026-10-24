@@ -1,20 +1,20 @@
-package com.khanqah.app
+package com.ennbi.khanqah
 
 import android.app.Application
 import com.google.firebase.messaging.FirebaseMessaging
-import com.khanqah.app.data.api.ApiClient
-import com.khanqah.app.data.api.TokenManager
-import com.khanqah.app.data.db.AppDatabase
-import com.khanqah.app.data.repository.AuthRepository
-import com.khanqah.app.data.repository.CategoryRepository
-import com.khanqah.app.data.repository.ContentRepository
-import com.khanqah.app.data.repository.ProgressRepository
-import com.khanqah.app.data.repository.QaRepository
-import com.khanqah.app.ui.auth.AuthViewModel
-import com.khanqah.app.ui.home.HomeViewModel
-import com.khanqah.app.ui.library.CategoryDetailViewModel
-import com.khanqah.app.ui.library.LibraryViewModel
-import com.khanqah.app.ui.player.PlayerViewModel
+import com.ennbi.khanqah.data.api.ApiClient
+import com.ennbi.khanqah.data.api.TokenManager
+import com.ennbi.khanqah.data.db.AppDatabase
+import com.ennbi.khanqah.data.repository.AuthRepository
+import com.ennbi.khanqah.data.repository.CategoryRepository
+import com.ennbi.khanqah.data.repository.ContentRepository
+import com.ennbi.khanqah.data.repository.ProgressRepository
+import com.ennbi.khanqah.data.repository.QaRepository
+import com.ennbi.khanqah.ui.auth.AuthViewModel
+import com.ennbi.khanqah.ui.home.HomeViewModel
+import com.ennbi.khanqah.ui.library.CategoryDetailViewModel
+import com.ennbi.khanqah.ui.library.LibraryViewModel
+import com.ennbi.khanqah.ui.player.PlayerViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -27,8 +27,8 @@ class KhanqahApp : Application() {
     lateinit var categoryRepo: CategoryRepository
     lateinit var progressRepo: ProgressRepository
     lateinit var qaRepo: QaRepository
-    lateinit var makeQaViewModel: () -> com.khanqah.app.ui.qa.QaViewModel
-    lateinit var settingsStore: com.khanqah.app.data.SettingsStore
+    lateinit var makeQaViewModel: () -> com.ennbi.khanqah.ui.qa.QaViewModel
+    lateinit var settingsStore: com.ennbi.khanqah.data.SettingsStore
     lateinit var authViewModel: AuthViewModel
     lateinit var homeViewModel: HomeViewModel
     lateinit var libraryViewModel: LibraryViewModel
@@ -39,7 +39,7 @@ class KhanqahApp : Application() {
         super.onCreate()
         ListeningForegroundService.createChannel(this)
         PlaybackNotificationService.createChannel(this)
-        settingsStore = com.khanqah.app.data.SettingsStore(this)
+        settingsStore = com.ennbi.khanqah.data.SettingsStore(this)
         // Subscribe to broadcast topics only if the user hasn't turned notifications off.
         CoroutineScope(Dispatchers.IO).launch {
             if (settingsStore.notificationsEnabled.first()) {
@@ -54,16 +54,16 @@ class KhanqahApp : Application() {
         contentRepo = ContentRepository(apiClient.service, db)
         categoryRepo = CategoryRepository(apiClient.service, db)
         progressRepo = ProgressRepository(apiClient.service)
-        val identityKeyStore = com.khanqah.app.crypto.IdentityKeyStore(this)
-        val qaCrypto = com.khanqah.app.crypto.QaCrypto(identityKeyStore)
-        val shaykhKeyStore = com.khanqah.app.data.api.ShaykhKeyStore(this)
+        val identityKeyStore = com.ennbi.khanqah.crypto.IdentityKeyStore(this)
+        val qaCrypto = com.ennbi.khanqah.crypto.QaCrypto(identityKeyStore)
+        val shaykhKeyStore = com.ennbi.khanqah.data.api.ShaykhKeyStore(this)
         qaRepo = QaRepository(apiClient.service, identityKeyStore, qaCrypto, shaykhKeyStore)
-        val urduPipeline = com.khanqah.app.qa.UrduPipeline(this)
+        val urduPipeline = com.ennbi.khanqah.qa.UrduPipeline(this)
         val sentQuestionDao = db.sentQuestionDao()
-        val qaPrefs = com.khanqah.app.ui.qa.QaPrefs(this)
+        val qaPrefs = com.ennbi.khanqah.ui.qa.QaPrefs(this)
         makeQaViewModel = {
-            com.khanqah.app.ui.qa.QaViewModel(
-                qaRepo, urduPipeline, sentQuestionDao, com.khanqah.app.qa.AudioPlayer(this), qaPrefs
+            com.ennbi.khanqah.ui.qa.QaViewModel(
+                qaRepo, urduPipeline, sentQuestionDao, com.ennbi.khanqah.qa.AudioPlayer(this), qaPrefs
             )
         }
         authViewModel = AuthViewModel(authRepo)

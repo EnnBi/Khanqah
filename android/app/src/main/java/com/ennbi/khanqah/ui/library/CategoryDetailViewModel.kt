@@ -1,10 +1,10 @@
-package com.khanqah.app.ui.library
+package com.ennbi.khanqah.ui.library
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.khanqah.app.data.model.Progress
-import com.khanqah.app.data.repository.ContentRepository
-import com.khanqah.app.data.repository.ProgressRepository
+import com.ennbi.khanqah.data.model.Progress
+import com.ennbi.khanqah.data.repository.ContentRepository
+import com.ennbi.khanqah.data.repository.ProgressRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow

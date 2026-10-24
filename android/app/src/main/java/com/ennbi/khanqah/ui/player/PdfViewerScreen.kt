@@ -1,4 +1,4 @@
-package com.khanqah.app.ui.player
+package com.ennbi.khanqah.ui.player
 
 import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer

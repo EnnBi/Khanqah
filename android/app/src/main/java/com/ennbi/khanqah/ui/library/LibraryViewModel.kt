@@ -1,10 +1,10 @@
-package com.khanqah.app.ui.library
+package com.ennbi.khanqah.ui.library
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.khanqah.app.data.db.entities.ContentEntity
-import com.khanqah.app.data.repository.CategoryRepository
-import com.khanqah.app.data.repository.ContentRepository
+import com.ennbi.khanqah.data.db.entities.ContentEntity
+import com.ennbi.khanqah.data.repository.CategoryRepository
+import com.ennbi.khanqah.data.repository.ContentRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch

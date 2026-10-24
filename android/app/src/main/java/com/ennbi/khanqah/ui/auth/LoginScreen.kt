@@ -1,4 +1,4 @@
-package com.khanqah.app.ui.auth
+package com.ennbi.khanqah.ui.auth
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -23,8 +23,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.khanqah.app.R
-import com.khanqah.app.ui.theme.NastaleeqFontFamily
+import com.ennbi.khanqah.R
+import com.ennbi.khanqah.ui.theme.NastaleeqFontFamily
 
 @Composable
 fun LoginScreen(viewModel: AuthViewModel, onSuccess: () -> Unit) {

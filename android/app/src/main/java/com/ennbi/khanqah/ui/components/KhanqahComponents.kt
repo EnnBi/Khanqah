@@ -1,4 +1,4 @@
-package com.khanqah.app.ui.components
+package com.ennbi.khanqah.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*

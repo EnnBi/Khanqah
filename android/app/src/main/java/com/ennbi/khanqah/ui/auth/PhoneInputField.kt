@@ -1,4 +1,4 @@
-package com.khanqah.app.ui.auth
+package com.ennbi.khanqah.ui.auth
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border

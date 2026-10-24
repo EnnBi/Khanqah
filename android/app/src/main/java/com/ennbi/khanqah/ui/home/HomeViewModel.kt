@@ -1,11 +1,11 @@
-package com.khanqah.app.ui.home
+package com.ennbi.khanqah.ui.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.khanqah.app.data.api.ApiService
-import com.khanqah.app.data.model.LiveSession
-import com.khanqah.app.data.model.ScheduledSession
-import com.khanqah.app.data.repository.ContentRepository
+import com.ennbi.khanqah.data.api.ApiService
+import com.ennbi.khanqah.data.model.LiveSession
+import com.ennbi.khanqah.data.model.ScheduledSession
+import com.ennbi.khanqah.data.repository.ContentRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow

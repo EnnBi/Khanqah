@@ -1,4 +1,4 @@
-package com.khanqah.app.crypto
+package com.ennbi.khanqah.crypto
 
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties

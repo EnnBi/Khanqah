@@ -1,12 +1,12 @@
-package com.khanqah.app.data.db
+package com.ennbi.khanqah.data.db
 
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import com.khanqah.app.data.db.entities.CategoryEntity
-import com.khanqah.app.data.db.entities.ContentEntity
-import com.khanqah.app.data.db.entities.SentQuestionEntity
+import com.ennbi.khanqah.data.db.entities.CategoryEntity
+import com.ennbi.khanqah.data.db.entities.ContentEntity
+import com.ennbi.khanqah.data.db.entities.SentQuestionEntity
 
 @Database(entities = [ContentEntity::class, CategoryEntity::class, SentQuestionEntity::class], version = 4)
 abstract class AppDatabase : RoomDatabase() {

@@ -1,4 +1,4 @@
-package com.khanqah.app.ui.home
+package com.ennbi.khanqah.ui.home
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
@@ -36,13 +36,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.khanqah.app.R
-import com.khanqah.app.data.db.entities.ContentEntity
-import com.khanqah.app.ui.components.TypeIconSquare
-import com.khanqah.app.ui.theme.CrimsonProFontFamily
-import com.khanqah.app.ui.theme.NastaleeqFontFamily
-import com.khanqah.app.ui.utils.HomeStr
-import com.khanqah.app.ui.utils.LocalIsUrdu
+import com.ennbi.khanqah.R
+import com.ennbi.khanqah.data.db.entities.ContentEntity
+import com.ennbi.khanqah.ui.components.TypeIconSquare
+import com.ennbi.khanqah.ui.theme.CrimsonProFontFamily
+import com.ennbi.khanqah.ui.theme.NastaleeqFontFamily
+import com.ennbi.khanqah.ui.utils.HomeStr
+import com.ennbi.khanqah.ui.utils.LocalIsUrdu
 
 @Composable
 fun HomeScreen(
@@ -383,7 +383,7 @@ private fun LiveDot() {
     }
 }
 
-private fun nextOccurrenceInstant(session: com.khanqah.app.data.model.ScheduledSession): java.time.Instant? {
+private fun nextOccurrenceInstant(session: com.ennbi.khanqah.data.model.ScheduledSession): java.time.Instant? {
     return try {
         val base = java.time.Instant.parse(session.scheduledAt)
         val now  = java.time.Instant.now()

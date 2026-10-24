@@ -1,9 +1,9 @@
-package com.khanqah.app.data.repository
+package com.ennbi.khanqah.data.repository
 
-import com.khanqah.app.data.api.ApiService
-import com.khanqah.app.data.db.AppDatabase
-import com.khanqah.app.data.db.entities.ContentEntity
-import com.khanqah.app.data.model.Content
+import com.ennbi.khanqah.data.api.ApiService
+import com.ennbi.khanqah.data.db.AppDatabase
+import com.ennbi.khanqah.data.db.entities.ContentEntity
+import com.ennbi.khanqah.data.model.Content
 import kotlinx.coroutines.flow.Flow
 
 class ContentRepository(private val api: ApiService, private val db: AppDatabase) {

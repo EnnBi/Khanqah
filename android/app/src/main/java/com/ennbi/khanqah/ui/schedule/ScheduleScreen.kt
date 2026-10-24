@@ -1,4 +1,4 @@
-package com.khanqah.app.ui.schedule
+package com.ennbi.khanqah.ui.schedule
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -14,10 +14,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.khanqah.app.data.model.ScheduledSession
-import com.khanqah.app.ui.theme.NastaleeqFontFamily
-import com.khanqah.app.ui.utils.LocalIsUrdu
-import com.khanqah.app.ui.utils.ScheduleStr
+import com.ennbi.khanqah.data.model.ScheduledSession
+import com.ennbi.khanqah.ui.theme.NastaleeqFontFamily
+import com.ennbi.khanqah.ui.utils.LocalIsUrdu
+import com.ennbi.khanqah.ui.utils.ScheduleStr
 
 @Composable
 fun ScheduleScreen(sessions: List<ScheduledSession>) {

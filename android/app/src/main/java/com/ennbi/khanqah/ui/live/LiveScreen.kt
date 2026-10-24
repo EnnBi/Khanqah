@@ -1,4 +1,4 @@
-package com.khanqah.app.ui.live
+package com.ennbi.khanqah.ui.live
 
 import android.content.Context
 import androidx.compose.animation.core.*
@@ -34,7 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
-import com.khanqah.app.data.model.LiveSession
+import com.ennbi.khanqah.data.model.LiveSession
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope

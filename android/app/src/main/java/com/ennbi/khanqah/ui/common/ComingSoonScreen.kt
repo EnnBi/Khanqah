@@ -1,4 +1,4 @@
-package com.khanqah.app.ui.common
+package com.ennbi.khanqah.ui.common
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -16,7 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.khanqah.app.ui.theme.CrimsonProFontFamily
+import com.ennbi.khanqah.ui.theme.CrimsonProFontFamily
 
 @Composable
 fun ComingSoonScreen(title: String) {

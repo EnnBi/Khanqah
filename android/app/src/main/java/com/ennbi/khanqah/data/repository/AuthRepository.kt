@@ -1,8 +1,8 @@
-package com.khanqah.app.data.repository
+package com.ennbi.khanqah.data.repository
 
-import com.khanqah.app.data.api.ApiService
-import com.khanqah.app.data.api.TokenManager
-import com.khanqah.app.data.model.AuthResponse
+import com.ennbi.khanqah.data.api.ApiService
+import com.ennbi.khanqah.data.api.TokenManager
+import com.ennbi.khanqah.data.model.AuthResponse
 
 class AuthRepository(private val api: ApiService, private val tokenManager: TokenManager) {
 

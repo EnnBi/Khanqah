@@ -1,4 +1,4 @@
-package com.khanqah.app.data
+package com.ennbi.khanqah.data
 
 import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey

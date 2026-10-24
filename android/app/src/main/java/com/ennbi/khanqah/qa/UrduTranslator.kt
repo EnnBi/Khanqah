@@ -1,4 +1,4 @@
-package com.khanqah.app.qa
+package com.ennbi.khanqah.qa
 
 import com.google.mlkit.nl.languageid.LanguageIdentification
 import com.google.mlkit.nl.translate.TranslateLanguage

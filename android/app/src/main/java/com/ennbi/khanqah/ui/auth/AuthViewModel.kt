@@ -1,8 +1,8 @@
-package com.khanqah.app.ui.auth
+package com.ennbi.khanqah.ui.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.khanqah.app.data.repository.AuthRepository
+import com.ennbi.khanqah.data.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch

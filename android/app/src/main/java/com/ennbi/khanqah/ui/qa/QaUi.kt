@@ -1,4 +1,4 @@
-package com.khanqah.app.ui.qa
+package com.ennbi.khanqah.ui.qa
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable

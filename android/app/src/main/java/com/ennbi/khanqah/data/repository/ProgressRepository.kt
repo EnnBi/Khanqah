@@ -1,8 +1,8 @@
-package com.khanqah.app.data.repository
+package com.ennbi.khanqah.data.repository
 
-import com.khanqah.app.data.api.ApiService
-import com.khanqah.app.data.model.Progress
-import com.khanqah.app.data.model.UpsertProgressRequest
+import com.ennbi.khanqah.data.api.ApiService
+import com.ennbi.khanqah.data.model.Progress
+import com.ennbi.khanqah.data.model.UpsertProgressRequest
 
 class ProgressRepository(private val api: ApiService) {
     private val cache = mutableMapOf<String, Progress>()

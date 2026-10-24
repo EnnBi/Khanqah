@@ -1,4 +1,4 @@
-package com.khanqah.app.ui.qa
+package com.ennbi.khanqah.ui.qa
 
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -55,10 +55,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.text.KeyboardOptions
-import com.khanqah.app.qa.AudioRecorder
-import com.khanqah.app.ui.theme.CrimsonProFontFamily
-import com.khanqah.app.ui.theme.NastaleeqFontFamily
-import com.khanqah.app.ui.utils.LocalIsUrdu
+import com.ennbi.khanqah.qa.AudioRecorder
+import com.ennbi.khanqah.ui.theme.CrimsonProFontFamily
+import com.ennbi.khanqah.ui.theme.NastaleeqFontFamily
+import com.ennbi.khanqah.ui.utils.LocalIsUrdu
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File

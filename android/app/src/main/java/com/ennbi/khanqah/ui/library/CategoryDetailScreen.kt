@@ -1,4 +1,4 @@
-package com.khanqah.app.ui.library
+package com.ennbi.khanqah.ui.library
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,9 +20,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.khanqah.app.ui.components.ContentRow
-import com.khanqah.app.ui.theme.NastaleeqFontFamily
-import com.khanqah.app.ui.utils.LocalIsUrdu
+import com.ennbi.khanqah.ui.components.ContentRow
+import com.ennbi.khanqah.ui.theme.NastaleeqFontFamily
+import com.ennbi.khanqah.ui.utils.LocalIsUrdu
 
 @Composable
 fun CategoryDetailScreen(

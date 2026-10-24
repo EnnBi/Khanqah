@@ -1,4 +1,4 @@
-package com.khanqah.app
+package com.ennbi.khanqah
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -20,7 +20,7 @@ class PlaybackControlReceiver : BroadcastReceiver() {
     }
 
     companion object {
-        const val ACTION_TOGGLE = "com.khanqah.app.PLAYBACK_TOGGLE"
-        const val ACTION_STOP   = "com.khanqah.app.PLAYBACK_STOP"
+        const val ACTION_TOGGLE = "com.ennbi.khanqah.PLAYBACK_TOGGLE"
+        const val ACTION_STOP   = "com.ennbi.khanqah.PLAYBACK_STOP"
     }
 }

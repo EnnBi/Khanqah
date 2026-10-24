@@ -1,4 +1,4 @@
-package com.khanqah.app.ui.player
+package com.ennbi.khanqah.ui.player
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,7 +16,7 @@ import androidx.compose.material.icons.filled.Replay10
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
-import com.khanqah.app.KhanqahApp
+import com.ennbi.khanqah.KhanqahApp
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,10 +36,10 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
-import com.khanqah.app.data.model.Topic
-import com.khanqah.app.ui.components.TypeIconSquare
-import com.khanqah.app.ui.theme.CrimsonProFontFamily
-import com.khanqah.app.ui.utils.LocalIsUrdu
+import com.ennbi.khanqah.data.model.Topic
+import com.ennbi.khanqah.ui.components.TypeIconSquare
+import com.ennbi.khanqah.ui.theme.CrimsonProFontFamily
+import com.ennbi.khanqah.ui.utils.LocalIsUrdu
 import kotlinx.coroutines.delay
 
 private fun detectIsVideo(isVideoFlag: Boolean, type: String, url: String): Boolean {

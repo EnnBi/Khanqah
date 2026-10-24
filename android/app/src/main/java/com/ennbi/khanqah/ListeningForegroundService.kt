@@ -1,4 +1,4 @@
-package com.khanqah.app
+package com.ennbi.khanqah
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -41,7 +41,7 @@ class ListeningForegroundService : Service() {
         const val CHANNEL_ID      = "listening_live"
         const val NOTIF_ID        = 3001
         const val EXTRA_TITLE     = "title"
-        const val ACTION_OPEN_LIVE = "com.khanqah.app.OPEN_LIVE"
+        const val ACTION_OPEN_LIVE = "com.ennbi.khanqah.OPEN_LIVE"
 
         fun createChannel(ctx: android.content.Context) {
             val mgr = ctx.getSystemService(NotificationManager::class.java)

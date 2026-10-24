@@ -15,13 +15,13 @@ val keystoreProps = Properties().apply {
 
 android {
     namespace = "com.ennbi.khanqah"
-    compileSdk = 35
+    compileSdk = 36
     defaultConfig {
         applicationId = "com.ennbi.khanqah"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 1
-        versionName = "2.0.0"
+        targetSdk = 36
+        versionCode = 5
+        versionName = "2.0.4"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     signingConfigs {

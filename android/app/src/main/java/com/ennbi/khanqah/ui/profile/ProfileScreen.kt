@@ -1,4 +1,4 @@
-package com.khanqah.app.ui.profile
+package com.ennbi.khanqah.ui.profile
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -31,11 +31,11 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.khanqah.app.data.SettingsStore
-import com.khanqah.app.ui.theme.CrimsonProFontFamily
-import com.khanqah.app.ui.theme.NastaleeqFontFamily
-import com.khanqah.app.ui.utils.LocalIsUrdu
-import com.khanqah.app.ui.utils.ProfileStr
+import com.ennbi.khanqah.data.SettingsStore
+import com.ennbi.khanqah.ui.theme.CrimsonProFontFamily
+import com.ennbi.khanqah.ui.theme.NastaleeqFontFamily
+import com.ennbi.khanqah.ui.utils.LocalIsUrdu
+import com.ennbi.khanqah.ui.utils.ProfileStr
 import kotlinx.coroutines.launch
 
 @Composable

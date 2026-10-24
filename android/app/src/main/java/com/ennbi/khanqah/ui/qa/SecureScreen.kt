@@ -1,4 +1,4 @@
-package com.khanqah.app.ui.qa
+package com.ennbi.khanqah.ui.qa
 
 import android.app.Activity
 import android.view.WindowManager

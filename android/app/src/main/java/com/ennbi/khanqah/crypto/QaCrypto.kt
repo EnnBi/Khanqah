@@ -1,4 +1,4 @@
-package com.khanqah.app.crypto
+package com.ennbi.khanqah.crypto
 
 import android.util.Base64
 import com.goterl.lazysodium.interfaces.Box

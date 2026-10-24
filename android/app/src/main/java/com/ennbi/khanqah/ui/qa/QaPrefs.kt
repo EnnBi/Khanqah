@@ -1,4 +1,4 @@
-package com.khanqah.app.ui.qa
+package com.ennbi.khanqah.ui.qa
 
 import android.content.Context
 import androidx.datastore.preferences.core.edit

@@ -1,4 +1,4 @@
-package com.khanqah.app.crypto
+package com.ennbi.khanqah.crypto
 
 import android.content.Context
 import android.util.Base64

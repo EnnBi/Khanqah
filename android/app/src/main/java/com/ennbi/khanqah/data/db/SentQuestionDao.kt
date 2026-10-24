@@ -1,10 +1,10 @@
-package com.khanqah.app.data.db
+package com.ennbi.khanqah.data.db
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.khanqah.app.data.db.entities.SentQuestionEntity
+import com.ennbi.khanqah.data.db.entities.SentQuestionEntity
 
 @Dao
 interface SentQuestionDao {

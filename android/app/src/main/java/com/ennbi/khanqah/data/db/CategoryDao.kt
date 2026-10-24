@@ -1,7 +1,7 @@
-package com.khanqah.app.data.db
+package com.ennbi.khanqah.data.db
 
 import androidx.room.*
-import com.khanqah.app.data.db.entities.CategoryEntity
+import com.ennbi.khanqah.data.db.entities.CategoryEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao

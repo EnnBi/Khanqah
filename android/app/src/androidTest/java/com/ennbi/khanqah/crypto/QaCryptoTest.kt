@@ -1,4 +1,4 @@
-package com.khanqah.app.crypto
+package com.ennbi.khanqah.crypto
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry

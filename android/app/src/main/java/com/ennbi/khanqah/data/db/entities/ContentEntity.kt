@@ -1,4 +1,4 @@
-package com.khanqah.app.data.db.entities
+package com.ennbi.khanqah.data.db.entities
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

@@ -1,4 +1,4 @@
-package com.khanqah.app.data.api
+package com.ennbi.khanqah.data.api
 
 import kotlinx.coroutines.runBlocking
 import okhttp3.Authenticator

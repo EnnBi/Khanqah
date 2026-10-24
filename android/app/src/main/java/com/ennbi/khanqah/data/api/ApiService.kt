@@ -1,6 +1,6 @@
-package com.khanqah.app.data.api
+package com.ennbi.khanqah.data.api
 
-import com.khanqah.app.data.model.*
+import com.ennbi.khanqah.data.model.*
 import retrofit2.http.*
 
 interface ApiService {

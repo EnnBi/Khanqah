@@ -1,4 +1,4 @@
-package com.khanqah.app
+package com.ennbi.khanqah
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -96,7 +96,7 @@ class PlaybackNotificationService : Service() {
         const val NOTIF_ID          = 2
         const val EXTRA_TITLE       = "extra_title"
         const val EXTRA_TYPE        = "extra_type"
-        const val ACTION_OPEN_PLAYER = "com.khanqah.app.OPEN_PLAYER"
+        const val ACTION_OPEN_PLAYER = "com.ennbi.khanqah.OPEN_PLAYER"
 
         fun createChannel(context: android.content.Context) {
             val ch = NotificationChannel(

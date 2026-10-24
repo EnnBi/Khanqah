@@ -1,4 +1,4 @@
-package com.khanqah.app.ui.utils
+package com.ennbi.khanqah.ui.utils
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf

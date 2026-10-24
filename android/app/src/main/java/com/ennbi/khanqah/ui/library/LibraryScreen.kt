@@ -1,4 +1,4 @@
-package com.khanqah.app.ui.library
+package com.ennbi.khanqah.ui.library
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -28,13 +28,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.khanqah.app.data.db.entities.CategoryEntity
-import com.khanqah.app.ui.components.ContentRow
-import com.khanqah.app.ui.components.TypeIconSquare
-import com.khanqah.app.ui.theme.CrimsonProFontFamily
-import com.khanqah.app.ui.theme.NastaleeqFontFamily
-import com.khanqah.app.ui.utils.LibraryStr
-import com.khanqah.app.ui.utils.LocalIsUrdu
+import com.ennbi.khanqah.data.db.entities.CategoryEntity
+import com.ennbi.khanqah.ui.components.ContentRow
+import com.ennbi.khanqah.ui.components.TypeIconSquare
+import com.ennbi.khanqah.ui.theme.CrimsonProFontFamily
+import com.ennbi.khanqah.ui.theme.NastaleeqFontFamily
+import com.ennbi.khanqah.ui.utils.LibraryStr
+import com.ennbi.khanqah.ui.utils.LocalIsUrdu
 
 @Composable
 fun LibraryScreen(

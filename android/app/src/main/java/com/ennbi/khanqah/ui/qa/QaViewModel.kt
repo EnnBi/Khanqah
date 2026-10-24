@@ -1,14 +1,14 @@
-package com.khanqah.app.ui.qa
+package com.ennbi.khanqah.ui.qa
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.khanqah.app.data.db.SentQuestionDao
-import com.khanqah.app.data.db.entities.SentQuestionEntity
-import com.khanqah.app.data.repository.DecryptedMessage
-import com.khanqah.app.data.repository.QaRepository
-import com.khanqah.app.data.repository.ShaykhKeyChangedException
-import com.khanqah.app.qa.AudioPlayer
-import com.khanqah.app.qa.UrduPipeline
+import com.ennbi.khanqah.data.db.SentQuestionDao
+import com.ennbi.khanqah.data.db.entities.SentQuestionEntity
+import com.ennbi.khanqah.data.repository.DecryptedMessage
+import com.ennbi.khanqah.data.repository.QaRepository
+import com.ennbi.khanqah.data.repository.ShaykhKeyChangedException
+import com.ennbi.khanqah.qa.AudioPlayer
+import com.ennbi.khanqah.qa.UrduPipeline
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 

@@ -1,4 +1,4 @@
-package com.khanqah.app
+package com.ennbi.khanqah
 
 import android.content.Context
 import androidx.media3.common.MediaItem
