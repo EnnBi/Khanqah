@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"log"
 	"net/http"
 
@@ -64,6 +65,32 @@ func CreateContent(pool *pgxpool.Pool, fcmClient *fcm.Client) http.HandlerFunc {
 	}
 }
 
+// mergeContentUpdate applies a JSON body over the existing row, so clients may send
+// only the fields they change (UpdateContent otherwise overwrites every column).
+func mergeContentUpdate(existing dbgen.Content, body io.Reader) (dbgen.UpdateContentParams, error) {
+	req := dbgen.UpdateContentParams{
+		ID:            existing.ID,
+		TitleEn:       existing.TitleEn,
+		TitleUr:       existing.TitleUr,
+		DescriptionEn: existing.DescriptionEn,
+		DescriptionUr: existing.DescriptionUr,
+		CreditEn:      existing.CreditEn,
+		CreditUr:      existing.CreditUr,
+		Type:          existing.Type,
+		CategoryID:    existing.CategoryID,
+		MediaUrl:      existing.MediaUrl,
+		ThumbnailUrl:  existing.ThumbnailUrl,
+		Duration:      existing.Duration,
+		FileSize:      existing.FileSize,
+		IsVideo:       existing.IsVideo,
+	}
+	if err := json.NewDecoder(body).Decode(&req); err != nil {
+		return req, err
+	}
+	req.ID = existing.ID // never taken from the body
+	return req, nil
+}
+
 // UpdateContent godoc
 //	@Summary		Update content
 //	@Tags			admin
@@ -84,12 +111,20 @@ func UpdateContent(pool *pgxpool.Pool) http.HandlerFunc {
 			writeError(w, http.StatusBadRequest, "invalid id")
 			return
 		}
-		var req dbgen.UpdateContentParams
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		existing, err := q.GetContent(r.Context(), id)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				writeError(w, http.StatusNotFound, "not found")
+			} else {
+				writeError(w, http.StatusInternalServerError, "internal error")
+			}
+			return
+		}
+		req, err := mergeContentUpdate(existing, r.Body)
+		if err != nil {
 			writeError(w, http.StatusBadRequest, "invalid body")
 			return
 		}
-		req.ID = id
 		row, err := q.UpdateContent(r.Context(), req)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
