@@ -3,6 +3,7 @@ package com.khanqah.admin.ui.schedule
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -63,6 +64,22 @@ fun ScheduleScreen(
 ) {
     var showCreateForm by remember { mutableStateOf(false) }
     var expandedId     by remember { mutableStateOf<String?>(null) }
+    var confirmDelete  by remember { mutableStateOf<ScheduledSession?>(null) }
+
+    confirmDelete?.let { s ->
+        AlertDialog(
+            onDismissRequest = { confirmDelete = null },
+            title = { Text("Delete session?", color = AdminCream) },
+            text  = { Text("\"${s.titleEn}\" will be removed from the schedule. This can't be undone.", color = AdminCreamMuted) },
+            confirmButton = {
+                TextButton(onClick = { onDelete(s.id); expandedId = null; confirmDelete = null }) {
+                    Text("Delete", color = AdminError)
+                }
+            },
+            dismissButton = { TextButton(onClick = { confirmDelete = null }) { Text("Cancel", color = AdminCreamMuted) } },
+            containerColor = AdminSurface,
+        )
+    }
 
     val fieldColors = OutlinedTextFieldDefaults.colors(
         focusedContainerColor = AdminSurfaceVar, unfocusedContainerColor = AdminSurfaceVar,
@@ -150,7 +167,7 @@ fun ScheduleScreen(
                                 onUpdate(s.id, en, ur, at, recurring, rule)
                                 expandedId = null
                             },
-                            onDelete = { onDelete(s.id); expandedId = null },
+                            onDelete = { confirmDelete = s },
                             onCancel = { expandedId = null },
                         )
                     }
@@ -262,6 +279,21 @@ private fun SessionForm(
     }
 }
 
+/** A read-only text field swallows taps itself, so `clickable` on it never fires; catch them on an overlay instead. */
+@Composable
+private fun PickerFieldBox(modifier: Modifier, onClick: () -> Unit, field: @Composable () -> Unit) {
+    Box(modifier) {
+        field()
+        Box(
+            Modifier.matchParentSize().clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick,
+            ),
+        )
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DatePickerField(
@@ -279,12 +311,14 @@ private fun DatePickerField(
         "${zdt.dayOfMonth} ${zdt.month.getDisplayName(TextStyle.SHORT, Locale.ENGLISH)}"
     } ?: "Pick date"
 
-    OutlinedTextField(
-        value = displayText, onValueChange = {}, readOnly = true, label = { Text(label) },
-        modifier = modifier.clickable { showPicker = true },
-        trailingIcon = { Icon(Icons.Outlined.DateRange, contentDescription = null, tint = AdminGold) },
-        colors = fieldColors,
-    )
+    PickerFieldBox(modifier, onClick = { showPicker = true }) {
+        OutlinedTextField(
+            value = displayText, onValueChange = {}, readOnly = true, label = { Text(label) },
+            modifier = Modifier.fillMaxWidth(),
+            trailingIcon = { Icon(Icons.Outlined.DateRange, contentDescription = null, tint = AdminGold) },
+            colors = fieldColors,
+        )
+    }
 
     if (showPicker) {
         DatePickerDialog(
@@ -318,12 +352,14 @@ private fun TimePickerField(
     val period = if (hour < 12) "AM" else "PM"
     val displayText = "$h12:%02d $period".format(minute)
 
-    OutlinedTextField(
-        value = displayText, onValueChange = {}, readOnly = true, label = { Text(label) },
-        modifier = modifier.clickable { showPicker = true },
-        trailingIcon = { Icon(Icons.Outlined.Schedule, contentDescription = null, tint = AdminGold) },
-        colors = fieldColors,
-    )
+    PickerFieldBox(modifier, onClick = { showPicker = true }) {
+        OutlinedTextField(
+            value = displayText, onValueChange = {}, readOnly = true, label = { Text(label) },
+            modifier = Modifier.fillMaxWidth(),
+            trailingIcon = { Icon(Icons.Outlined.Schedule, contentDescription = null, tint = AdminGold) },
+            colors = fieldColors,
+        )
+    }
 
     if (showPicker) {
         AlertDialog(
