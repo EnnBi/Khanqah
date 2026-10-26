@@ -12,8 +12,8 @@ import (
 )
 
 const createLiveSession = `-- name: CreateLiveSession :one
-INSERT INTO live_sessions (title_en, title_ur, stream_url, started_by)
-VALUES ($1, $2, $3, $4) RETURNING id, title_en, title_ur, stream_url, started_by, started_at, ended_at, recording_url, status
+INSERT INTO live_sessions (title_en, title_ur, stream_url, started_by, speaker_en, speaker_ur)
+VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, title_en, title_ur, stream_url, started_by, started_at, ended_at, recording_url, status, speaker_en, speaker_ur
 `
 
 type CreateLiveSessionParams struct {
@@ -21,6 +21,8 @@ type CreateLiveSessionParams struct {
 	TitleUr   string      `json:"title_ur"`
 	StreamUrl string      `json:"stream_url"`
 	StartedBy pgtype.UUID `json:"started_by"`
+	SpeakerEn string      `json:"speaker_en"`
+	SpeakerUr string      `json:"speaker_ur"`
 }
 
 func (q *Queries) CreateLiveSession(ctx context.Context, arg CreateLiveSessionParams) (LiveSession, error) {
@@ -29,6 +31,8 @@ func (q *Queries) CreateLiveSession(ctx context.Context, arg CreateLiveSessionPa
 		arg.TitleUr,
 		arg.StreamUrl,
 		arg.StartedBy,
+		arg.SpeakerEn,
+		arg.SpeakerUr,
 	)
 	var i LiveSession
 	err := row.Scan(
@@ -41,13 +45,15 @@ func (q *Queries) CreateLiveSession(ctx context.Context, arg CreateLiveSessionPa
 		&i.EndedAt,
 		&i.RecordingUrl,
 		&i.Status,
+		&i.SpeakerEn,
+		&i.SpeakerUr,
 	)
 	return i, err
 }
 
 const endCurrentLiveSession = `-- name: EndCurrentLiveSession :one
 UPDATE live_sessions SET status = 'ended', ended_at = NOW()
-WHERE status = 'live' RETURNING id, title_en, title_ur, stream_url, started_by, started_at, ended_at, recording_url, status
+WHERE status = 'live' RETURNING id, title_en, title_ur, stream_url, started_by, started_at, ended_at, recording_url, status, speaker_en, speaker_ur
 `
 
 func (q *Queries) EndCurrentLiveSession(ctx context.Context) (LiveSession, error) {
@@ -63,13 +69,15 @@ func (q *Queries) EndCurrentLiveSession(ctx context.Context) (LiveSession, error
 		&i.EndedAt,
 		&i.RecordingUrl,
 		&i.Status,
+		&i.SpeakerEn,
+		&i.SpeakerUr,
 	)
 	return i, err
 }
 
 const endLiveSession = `-- name: EndLiveSession :one
 UPDATE live_sessions SET status = 'ended', ended_at = NOW()
-WHERE id = $1 RETURNING id, title_en, title_ur, stream_url, started_by, started_at, ended_at, recording_url, status
+WHERE id = $1 RETURNING id, title_en, title_ur, stream_url, started_by, started_at, ended_at, recording_url, status, speaker_en, speaker_ur
 `
 
 func (q *Queries) EndLiveSession(ctx context.Context, id pgtype.UUID) (LiveSession, error) {
@@ -85,12 +93,14 @@ func (q *Queries) EndLiveSession(ctx context.Context, id pgtype.UUID) (LiveSessi
 		&i.EndedAt,
 		&i.RecordingUrl,
 		&i.Status,
+		&i.SpeakerEn,
+		&i.SpeakerUr,
 	)
 	return i, err
 }
 
 const getCurrentLiveSession = `-- name: GetCurrentLiveSession :one
-SELECT id, title_en, title_ur, stream_url, started_by, started_at, ended_at, recording_url, status FROM live_sessions WHERE status = 'live' ORDER BY started_at DESC LIMIT 1
+SELECT id, title_en, title_ur, stream_url, started_by, started_at, ended_at, recording_url, status, speaker_en, speaker_ur FROM live_sessions WHERE status = 'live' ORDER BY started_at DESC LIMIT 1
 `
 
 func (q *Queries) GetCurrentLiveSession(ctx context.Context) (LiveSession, error) {
@@ -106,12 +116,14 @@ func (q *Queries) GetCurrentLiveSession(ctx context.Context) (LiveSession, error
 		&i.EndedAt,
 		&i.RecordingUrl,
 		&i.Status,
+		&i.SpeakerEn,
+		&i.SpeakerUr,
 	)
 	return i, err
 }
 
 const getLiveSessionByID = `-- name: GetLiveSessionByID :one
-SELECT id, title_en, title_ur, stream_url, started_by, started_at, ended_at, recording_url, status FROM live_sessions WHERE id = $1
+SELECT id, title_en, title_ur, stream_url, started_by, started_at, ended_at, recording_url, status, speaker_en, speaker_ur FROM live_sessions WHERE id = $1
 `
 
 func (q *Queries) GetLiveSessionByID(ctx context.Context, id pgtype.UUID) (LiveSession, error) {
@@ -127,12 +139,14 @@ func (q *Queries) GetLiveSessionByID(ctx context.Context, id pgtype.UUID) (LiveS
 		&i.EndedAt,
 		&i.RecordingUrl,
 		&i.Status,
+		&i.SpeakerEn,
+		&i.SpeakerUr,
 	)
 	return i, err
 }
 
 const setLiveSessionRecordingURL = `-- name: SetLiveSessionRecordingURL :one
-UPDATE live_sessions SET recording_url = $2 WHERE id = $1 RETURNING id, title_en, title_ur, stream_url, started_by, started_at, ended_at, recording_url, status
+UPDATE live_sessions SET recording_url = $2 WHERE id = $1 RETURNING id, title_en, title_ur, stream_url, started_by, started_at, ended_at, recording_url, status, speaker_en, speaker_ur
 `
 
 type SetLiveSessionRecordingURLParams struct {
@@ -153,6 +167,8 @@ func (q *Queries) SetLiveSessionRecordingURL(ctx context.Context, arg SetLiveSes
 		&i.EndedAt,
 		&i.RecordingUrl,
 		&i.Status,
+		&i.SpeakerEn,
+		&i.SpeakerUr,
 	)
 	return i, err
 }

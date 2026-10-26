@@ -43,6 +43,8 @@ func CreateContent(pool *pgxpool.Pool, fcmClient *fcm.Client) http.HandlerFunc {
 			return
 		}
 		req.UploadedBy = uploaderID
+		req.CreditEn = speakerPtrOrDefault(req.CreditEn, defaultSpeakerEn)
+		req.CreditUr = speakerPtrOrDefault(req.CreditUr, defaultSpeakerUr)
 
 		row, err := q.CreateContent(r.Context(), req)
 		if err != nil {

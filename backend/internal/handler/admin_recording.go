@@ -95,6 +95,8 @@ func FinalizeRecording(pool *pgxpool.Pool, r2 *storage.R2Client) http.HandlerFun
 		_, err = q.CreateContent(r.Context(), dbgen.CreateContentParams{
 			TitleEn:    session.TitleEn,
 			TitleUr:    session.TitleUr,
+			CreditEn:   &session.SpeakerEn,
+			CreditUr:   &session.SpeakerUr,
 			Type:       cat.Type,
 			CategoryID: categoryUUID,
 			MediaUrl:   cdnURL,

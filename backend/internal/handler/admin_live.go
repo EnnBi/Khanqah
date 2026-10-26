@@ -43,6 +43,8 @@ func StartLiveSession(pool *pgxpool.Pool, fcmClient *fcm.Client) http.HandlerFun
 			CategoryID string `json:"category_id"`
 			TitleEn    string `json:"title_en"`
 			TitleUr    string `json:"title_ur"`
+			SpeakerEn  string `json:"speaker_en"`
+			SpeakerUr  string `json:"speaker_ur"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.CategoryID == "" {
 			writeError(w, http.StatusBadRequest, "category_id is required")
@@ -75,6 +77,8 @@ func StartLiveSession(pool *pgxpool.Pool, fcmClient *fcm.Client) http.HandlerFun
 			TitleUr:   titleUr,
 			StreamUrl: hlsStreamURL,
 			StartedBy: startedBy,
+			SpeakerEn: speakerOrDefault(body.SpeakerEn, defaultSpeakerEn),
+			SpeakerUr: speakerOrDefault(body.SpeakerUr, defaultSpeakerUr),
 		})
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, "internal error")

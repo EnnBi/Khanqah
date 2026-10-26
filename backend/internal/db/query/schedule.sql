@@ -7,13 +7,14 @@ ORDER BY scheduled_at ASC;
 SELECT * FROM scheduled_sessions WHERE id = $1;
 
 -- name: CreateScheduledSession :one
-INSERT INTO scheduled_sessions (title_en, title_ur, description_en, description_ur, scheduled_at, is_recurring, recurrence_rule, created_by)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *;
+INSERT INTO scheduled_sessions (title_en, title_ur, description_en, description_ur, scheduled_at, is_recurring, recurrence_rule, created_by, speaker_en, speaker_ur)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *;
 
 -- name: UpdateScheduledSession :one
 UPDATE scheduled_sessions
 SET title_en = $2, title_ur = $3, description_en = $4, description_ur = $5,
-    scheduled_at = $6, is_recurring = $7, recurrence_rule = $8
+    scheduled_at = $6, is_recurring = $7, recurrence_rule = $8,
+    speaker_en = $9, speaker_ur = $10
 WHERE id = $1 RETURNING *;
 
 -- name: DeleteScheduledSession :exec

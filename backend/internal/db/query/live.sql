@@ -2,8 +2,8 @@
 SELECT * FROM live_sessions WHERE status = 'live' ORDER BY started_at DESC LIMIT 1;
 
 -- name: CreateLiveSession :one
-INSERT INTO live_sessions (title_en, title_ur, stream_url, started_by)
-VALUES ($1, $2, $3, $4) RETURNING *;
+INSERT INTO live_sessions (title_en, title_ur, stream_url, started_by, speaker_en, speaker_ur)
+VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;
 
 -- name: EndLiveSession :one
 UPDATE live_sessions SET status = 'ended', ended_at = NOW()

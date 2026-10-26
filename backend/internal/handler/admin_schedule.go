@@ -41,6 +41,8 @@ func CreateScheduledSession(pool *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 		req.CreatedBy = createdBy
+		req.SpeakerEn = speakerOrDefault(req.SpeakerEn, defaultSpeakerEn)
+		req.SpeakerUr = speakerOrDefault(req.SpeakerUr, defaultSpeakerUr)
 
 		row, err := q.CreateScheduledSession(r.Context(), req)
 		if err != nil {
@@ -76,6 +78,8 @@ func UpdateScheduledSession(pool *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 		req.ID = id
+		req.SpeakerEn = speakerOrDefault(req.SpeakerEn, defaultSpeakerEn)
+		req.SpeakerUr = speakerOrDefault(req.SpeakerUr, defaultSpeakerUr)
 		row, err := q.UpdateScheduledSession(r.Context(), req)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {

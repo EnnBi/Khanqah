@@ -12,8 +12,8 @@ import (
 )
 
 const createScheduledSession = `-- name: CreateScheduledSession :one
-INSERT INTO scheduled_sessions (title_en, title_ur, description_en, description_ur, scheduled_at, is_recurring, recurrence_rule, created_by)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, title_en, title_ur, description_en, description_ur, scheduled_at, is_recurring, recurrence_rule, created_by, created_at
+INSERT INTO scheduled_sessions (title_en, title_ur, description_en, description_ur, scheduled_at, is_recurring, recurrence_rule, created_by, speaker_en, speaker_ur)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id, title_en, title_ur, description_en, description_ur, scheduled_at, is_recurring, recurrence_rule, created_by, created_at, speaker_en, speaker_ur
 `
 
 type CreateScheduledSessionParams struct {
@@ -25,6 +25,8 @@ type CreateScheduledSessionParams struct {
 	IsRecurring    bool               `json:"is_recurring"`
 	RecurrenceRule *string            `json:"recurrence_rule"`
 	CreatedBy      pgtype.UUID        `json:"created_by"`
+	SpeakerEn      string             `json:"speaker_en"`
+	SpeakerUr      string             `json:"speaker_ur"`
 }
 
 func (q *Queries) CreateScheduledSession(ctx context.Context, arg CreateScheduledSessionParams) (ScheduledSession, error) {
@@ -37,6 +39,8 @@ func (q *Queries) CreateScheduledSession(ctx context.Context, arg CreateSchedule
 		arg.IsRecurring,
 		arg.RecurrenceRule,
 		arg.CreatedBy,
+		arg.SpeakerEn,
+		arg.SpeakerUr,
 	)
 	var i ScheduledSession
 	err := row.Scan(
@@ -50,6 +54,8 @@ func (q *Queries) CreateScheduledSession(ctx context.Context, arg CreateSchedule
 		&i.RecurrenceRule,
 		&i.CreatedBy,
 		&i.CreatedAt,
+		&i.SpeakerEn,
+		&i.SpeakerUr,
 	)
 	return i, err
 }
@@ -64,7 +70,7 @@ func (q *Queries) DeleteScheduledSession(ctx context.Context, id pgtype.UUID) er
 }
 
 const getScheduledSession = `-- name: GetScheduledSession :one
-SELECT id, title_en, title_ur, description_en, description_ur, scheduled_at, is_recurring, recurrence_rule, created_by, created_at FROM scheduled_sessions WHERE id = $1
+SELECT id, title_en, title_ur, description_en, description_ur, scheduled_at, is_recurring, recurrence_rule, created_by, created_at, speaker_en, speaker_ur FROM scheduled_sessions WHERE id = $1
 `
 
 func (q *Queries) GetScheduledSession(ctx context.Context, id pgtype.UUID) (ScheduledSession, error) {
@@ -81,12 +87,14 @@ func (q *Queries) GetScheduledSession(ctx context.Context, id pgtype.UUID) (Sche
 		&i.RecurrenceRule,
 		&i.CreatedBy,
 		&i.CreatedAt,
+		&i.SpeakerEn,
+		&i.SpeakerUr,
 	)
 	return i, err
 }
 
 const listUpcomingSchedule = `-- name: ListUpcomingSchedule :many
-SELECT id, title_en, title_ur, description_en, description_ur, scheduled_at, is_recurring, recurrence_rule, created_by, created_at FROM scheduled_sessions
+SELECT id, title_en, title_ur, description_en, description_ur, scheduled_at, is_recurring, recurrence_rule, created_by, created_at, speaker_en, speaker_ur FROM scheduled_sessions
 WHERE scheduled_at >= NOW() OR is_recurring = true
 ORDER BY scheduled_at ASC
 `
@@ -111,6 +119,8 @@ func (q *Queries) ListUpcomingSchedule(ctx context.Context) ([]ScheduledSession,
 			&i.RecurrenceRule,
 			&i.CreatedBy,
 			&i.CreatedAt,
+			&i.SpeakerEn,
+			&i.SpeakerUr,
 		); err != nil {
 			return nil, err
 		}
@@ -125,8 +135,9 @@ func (q *Queries) ListUpcomingSchedule(ctx context.Context) ([]ScheduledSession,
 const updateScheduledSession = `-- name: UpdateScheduledSession :one
 UPDATE scheduled_sessions
 SET title_en = $2, title_ur = $3, description_en = $4, description_ur = $5,
-    scheduled_at = $6, is_recurring = $7, recurrence_rule = $8
-WHERE id = $1 RETURNING id, title_en, title_ur, description_en, description_ur, scheduled_at, is_recurring, recurrence_rule, created_by, created_at
+    scheduled_at = $6, is_recurring = $7, recurrence_rule = $8,
+    speaker_en = $9, speaker_ur = $10
+WHERE id = $1 RETURNING id, title_en, title_ur, description_en, description_ur, scheduled_at, is_recurring, recurrence_rule, created_by, created_at, speaker_en, speaker_ur
 `
 
 type UpdateScheduledSessionParams struct {
@@ -138,6 +149,8 @@ type UpdateScheduledSessionParams struct {
 	ScheduledAt    pgtype.Timestamptz `json:"scheduled_at"`
 	IsRecurring    bool               `json:"is_recurring"`
 	RecurrenceRule *string            `json:"recurrence_rule"`
+	SpeakerEn      string             `json:"speaker_en"`
+	SpeakerUr      string             `json:"speaker_ur"`
 }
 
 func (q *Queries) UpdateScheduledSession(ctx context.Context, arg UpdateScheduledSessionParams) (ScheduledSession, error) {
@@ -150,6 +163,8 @@ func (q *Queries) UpdateScheduledSession(ctx context.Context, arg UpdateSchedule
 		arg.ScheduledAt,
 		arg.IsRecurring,
 		arg.RecurrenceRule,
+		arg.SpeakerEn,
+		arg.SpeakerUr,
 	)
 	var i ScheduledSession
 	err := row.Scan(
@@ -163,6 +178,8 @@ func (q *Queries) UpdateScheduledSession(ctx context.Context, arg UpdateSchedule
 		&i.RecurrenceRule,
 		&i.CreatedBy,
 		&i.CreatedAt,
+		&i.SpeakerEn,
+		&i.SpeakerUr,
 	)
 	return i, err
 }

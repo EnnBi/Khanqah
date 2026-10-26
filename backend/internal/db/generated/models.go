@@ -275,6 +275,8 @@ type LiveSession struct {
 	EndedAt      pgtype.Timestamptz `json:"ended_at"`
 	RecordingUrl *string            `json:"recording_url"`
 	Status       LiveSessionStatus  `json:"status"`
+	SpeakerEn    string             `json:"speaker_en"`
+	SpeakerUr    string             `json:"speaker_ur"`
 }
 
 type NotificationSetting struct {
@@ -366,6 +368,8 @@ type ScheduledSession struct {
 	RecurrenceRule *string            `json:"recurrence_rule"`
 	CreatedBy      pgtype.UUID        `json:"created_by"`
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	SpeakerEn      string             `json:"speaker_en"`
+	SpeakerUr      string             `json:"speaker_ur"`
 }
 
 type Topic struct {
