@@ -30,7 +30,8 @@ class ContentViewModel(
         try {
             val updated = repo.updateContent(id, titleEn, titleUr, categoryId)
             _items.value = _items.value.map { if (it.id == id) updated else it }
-        } catch (_: Exception) {}
+            notify("Content updated")
+        } catch (e: Exception) { notify(e.toActionError("update content")) }
     }
 
     fun delete(id: String) = viewModelScope.launch {
