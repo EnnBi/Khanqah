@@ -1,6 +1,7 @@
 package com.khanqah.admin.ui.upload
 
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.border
@@ -41,7 +42,14 @@ fun UploadScreen(viewModel: UploadViewModel, categories: List<Category>) {
         }
     }
 
-    LaunchedEffect(state) { if (state is UploadState.Done) viewModel.reset() }
+    LaunchedEffect(state) {
+        if (state is UploadState.Done) {
+            Toast.makeText(context, "Uploaded successfully", Toast.LENGTH_LONG).show()
+            fileUri = null; fileName = ""; mimeType = ""; isVideo = false
+            titleEn = ""; titleUr = ""; categoryId = ""
+            viewModel.reset()
+        }
+    }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Text("Upload Content", style = MaterialTheme.typography.headlineMedium,

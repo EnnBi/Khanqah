@@ -36,6 +36,22 @@ fun ContentListScreen(
     var editTitleEn    by remember { mutableStateOf("") }
     var editTitleUr    by remember { mutableStateOf("") }
     var editCategoryId by remember { mutableStateOf("") }
+    var confirmDelete  by remember { mutableStateOf<Content?>(null) }
+
+    confirmDelete?.let { item ->
+        AlertDialog(
+            onDismissRequest = { confirmDelete = null },
+            title = { Text("Delete content?", color = AdminCream) },
+            text  = { Text("\"${item.titleEn}\" will be permanently deleted. This can't be undone.", color = AdminCreamMuted) },
+            confirmButton = {
+                TextButton(onClick = { onDelete(item.id); expandedId = null; confirmDelete = null }) {
+                    Text("Delete", color = AdminError)
+                }
+            },
+            dismissButton = { TextButton(onClick = { confirmDelete = null }) { Text("Cancel", color = AdminCreamMuted) } },
+            containerColor = AdminSurface,
+        )
+    }
 
     val fieldColors = OutlinedTextFieldDefaults.colors(
         focusedContainerColor   = AdminSurfaceVar, unfocusedContainerColor = AdminSurfaceVar,
@@ -142,7 +158,7 @@ fun ContentListScreen(
                             Spacer(Modifier.height(12.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 OutlinedButton(
-                                    onClick  = { onDelete(item.id); expandedId = null },
+                                    onClick  = { confirmDelete = item },
                                     modifier = Modifier.weight(1f),
                                     border   = androidx.compose.foundation.BorderStroke(1.dp, AdminCoral),
                                 ) { Text("Delete", color = AdminCoral) }

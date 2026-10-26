@@ -102,6 +102,7 @@ fun AdminNavGraph(app: AdminApp, startDestination: String) {
                 )
             }
             composable("content") {
+                LaunchedEffect(Unit) { app.contentViewModel.refresh() }
                 val items      by app.contentViewModel.items.collectAsState()
                 val categories by app.contentViewModel.categories.collectAsState()
                 ContentListScreen(

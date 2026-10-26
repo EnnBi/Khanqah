@@ -4,11 +4,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.khanqah.admin.data.model.User
 import com.khanqah.admin.data.repository.TeamRepository
+import com.khanqah.admin.ui.common.toActionError
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class TeamViewModel(private val repo: TeamRepository) : ViewModel() {
+class TeamViewModel(
+    private val repo: TeamRepository,
+    private val notify: (String) -> Unit = {},
+) : ViewModel() {
     private val _users = MutableStateFlow<List<User>>(emptyList())
     val users = _users.asStateFlow()
 
@@ -36,6 +40,7 @@ class TeamViewModel(private val repo: TeamRepository) : ViewModel() {
         try {
             repo.deleteUser(id)
             _users.value = _users.value.filter { it.id != id }
-        } catch (_: Exception) {}
+            notify("User deleted")
+        } catch (e: Exception) { notify(e.toActionError("delete this user")) }
     }
 }

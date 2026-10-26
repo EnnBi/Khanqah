@@ -4,11 +4,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.khanqah.admin.data.model.Category
 import com.khanqah.admin.data.repository.CategoryRepository
+import com.khanqah.admin.ui.common.toActionError
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class CategoryViewModel(private val repo: CategoryRepository) : ViewModel() {
+class CategoryViewModel(
+    private val repo: CategoryRepository,
+    private val notify: (String) -> Unit = {},
+) : ViewModel() {
     private val _categories = MutableStateFlow<List<Category>>(emptyList())
     val categories = _categories.asStateFlow()
 
@@ -36,6 +40,7 @@ class CategoryViewModel(private val repo: CategoryRepository) : ViewModel() {
         try {
             repo.delete(id)
             _categories.value = _categories.value.filter { it.id != id }
-        } catch (_: Exception) {}
+            notify("Category deleted")
+        } catch (e: Exception) { notify(e.toActionError("delete this category")) }
     }
 }

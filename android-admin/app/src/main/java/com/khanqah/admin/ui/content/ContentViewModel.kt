@@ -5,11 +5,15 @@ import androidx.lifecycle.viewModelScope
 import com.khanqah.admin.data.model.Category
 import com.khanqah.admin.data.model.Content
 import com.khanqah.admin.data.repository.ContentAdminRepository
+import com.khanqah.admin.ui.common.toActionError
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class ContentViewModel(private val repo: ContentAdminRepository) : ViewModel() {
+class ContentViewModel(
+    private val repo: ContentAdminRepository,
+    private val notify: (String) -> Unit = {},
+) : ViewModel() {
     private val _items = MutableStateFlow<List<Content>>(emptyList())
     val items = _items.asStateFlow()
     private val _categories = MutableStateFlow<List<Category>>(emptyList())
@@ -33,6 +37,7 @@ class ContentViewModel(private val repo: ContentAdminRepository) : ViewModel() {
         try {
             repo.deleteContent(id)
             _items.value = _items.value.filter { it.id != id }
-        } catch (_: Exception) {}
+            notify("Content deleted")
+        } catch (e: Exception) { notify(e.toActionError("delete content")) }
     }
 }

@@ -15,7 +15,10 @@ sealed interface UploadState {
     data class Error(val message: String) : UploadState
 }
 
-class UploadViewModel(private val repo: UploadRepository) : ViewModel() {
+class UploadViewModel(
+    private val repo: UploadRepository,
+    private val onUploaded: () -> Unit = {},
+) : ViewModel() {
     private val _state = MutableStateFlow<UploadState>(UploadState.Idle)
     val state = _state.asStateFlow()
 
@@ -31,6 +34,7 @@ class UploadViewModel(private val repo: UploadRepository) : ViewModel() {
                 onProgress = { _state.value = UploadState.Uploading(it) },
             )
             _state.value = UploadState.Done
+            onUploaded()
         } catch (e: Exception) {
             _state.value = UploadState.Error(e.message ?: "Upload failed")
         }

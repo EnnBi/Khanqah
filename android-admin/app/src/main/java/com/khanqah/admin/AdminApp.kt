@@ -1,6 +1,7 @@
 package com.khanqah.admin
 
 import android.app.Application
+import android.widget.Toast
 import com.khanqah.admin.data.api.ApiClient
 import com.khanqah.admin.data.api.TokenManager
 import com.khanqah.admin.data.repository.*
@@ -37,16 +38,20 @@ class AdminApp : Application() {
         val contentRepo = ContentAdminRepository(api)
         val scheduleRepo = ScheduleRepository(api)
         val bugRepo = BugRepository(api)
+        val notify: (String) -> Unit = { Toast.makeText(this, it, Toast.LENGTH_SHORT).show() }
 
         authRepo = AuthRepository(api, tokenManager)
         authViewModel = AuthViewModel(authRepo)
-        contentViewModel = ContentViewModel(contentRepo)
-        uploadViewModel = UploadViewModel(UploadRepository(api, this))
-        scheduleViewModel = ScheduleViewModel(scheduleRepo)
+        contentViewModel = ContentViewModel(contentRepo, notify)
+        uploadViewModel = UploadViewModel(UploadRepository(api, this)) {
+            contentViewModel.refresh()
+            homeViewModel.refresh()
+        }
+        scheduleViewModel = ScheduleViewModel(scheduleRepo, notify)
         liveViewModel = LiveViewModel(LiveRepository(api))
-        teamViewModel = TeamViewModel(TeamRepository(api))
+        teamViewModel = TeamViewModel(TeamRepository(api), notify)
         bugsViewModel = BugsViewModel(bugRepo)
-        categoryViewModel = CategoryViewModel(CategoryRepository(api))
+        categoryViewModel = CategoryViewModel(CategoryRepository(api), notify)
         homeViewModel = HomeViewModel(contentRepo, scheduleRepo, bugRepo)
         settingsViewModel = SettingsViewModel(SettingsRepository(api))
     }
