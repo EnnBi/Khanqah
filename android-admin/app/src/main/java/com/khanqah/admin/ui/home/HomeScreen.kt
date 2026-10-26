@@ -38,6 +38,8 @@ import com.khanqah.admin.ui.live.LiveOnAirScreen
 import com.khanqah.admin.ui.live.LiveViewModel
 import com.khanqah.admin.ui.live.NextSessionCard
 import com.khanqah.admin.ui.live.nextUpcoming
+import com.khanqah.admin.ui.common.DEFAULT_SPEAKER_EN
+import com.khanqah.admin.ui.common.DEFAULT_SPEAKER_UR
 import com.khanqah.admin.ui.theme.*
 import java.time.Duration
 import java.time.Instant
@@ -252,8 +254,8 @@ fun HomeScreen(
                 sessions     = sessions,
                 error        = error,
                 onClearError = { liveViewModel.clearError() },
-                onStart      = { categoryId, titleEn, titleUr, record ->
-                    liveViewModel.start(categoryId, titleEn, titleUr, record)
+                onStart      = { categoryId, titleEn, titleUr, speakerEn, speakerUr, record ->
+                    liveViewModel.start(categoryId, titleEn, titleUr, speakerEn, speakerUr, record)
                     showSetupSheet = false
                 },
             )
@@ -268,26 +270,28 @@ private fun LiveSetupSheetContent(
     sessions: List<ScheduledSession>,
     error: String?,
     onClearError: () -> Unit,
-    onStart: (categoryId: String, titleEn: String, titleUr: String, record: Boolean) -> Unit,
+    onStart: (categoryId: String, titleEn: String, titleUr: String, speakerEn: String, speakerUr: String, record: Boolean) -> Unit,
 ) {
     val ctx = LocalContext.current
     var selectedCategory by remember(categories) { mutableStateOf(categories.firstOrNull()) }
     var dropdownExpanded by remember { mutableStateOf(false) }
     var titleEn by remember { mutableStateOf("") }
     var titleUr by remember { mutableStateOf("") }
+    var speakerEn by remember { mutableStateOf("") }
+    var speakerUr by remember { mutableStateOf("") }
     var recordBroadcast by remember { mutableStateOf(false) }
 
     val nextSession = remember(sessions) { sessions.nextUpcoming() }
 
     val permLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted) selectedCategory?.let { onStart(it.id, titleEn, titleUr, recordBroadcast) }
+        if (granted) selectedCategory?.let { onStart(it.id, titleEn, titleUr, speakerEn.trim(), speakerUr.trim(), recordBroadcast) }
     }
 
     fun goLive() {
         val cat = selectedCategory ?: return
         if (titleEn.isBlank()) return
         if (ContextCompat.checkSelfPermission(ctx, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-            onStart(cat.id, titleEn, titleUr, recordBroadcast)
+            onStart(cat.id, titleEn, titleUr, speakerEn.trim(), speakerUr.trim(), recordBroadcast)
         } else {
             permLauncher.launch(Manifest.permission.RECORD_AUDIO)
         }
@@ -318,7 +322,10 @@ private fun LiveSetupSheetContent(
         if (nextSession != null) {
             NextSessionCard(
                 session = nextSession,
-                onUse   = { titleEn = nextSession.titleEn; titleUr = nextSession.titleUr },
+                onUse   = {
+                    titleEn = nextSession.titleEn; titleUr = nextSession.titleUr
+                    speakerEn = nextSession.speakerEn.orEmpty(); speakerUr = nextSession.speakerUr.orEmpty()
+                },
             )
             Spacer(Modifier.height(16.dp))
         }
@@ -356,6 +363,20 @@ private fun LiveSetupSheetContent(
         OutlinedTextField(
             value = titleUr, onValueChange = { titleUr = it },
             label = { Text("عنوان (اردو)") }, singleLine = true,
+            shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth(), colors = fieldColors,
+        )
+        Spacer(Modifier.height(10.dp))
+        OutlinedTextField(
+            value = speakerEn, onValueChange = { speakerEn = it },
+            label = { Text("Speaker (English)") }, singleLine = true,
+            placeholder = { Text(DEFAULT_SPEAKER_EN, color = AdminCreamMuted) },
+            shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth(), colors = fieldColors,
+        )
+        Spacer(Modifier.height(10.dp))
+        OutlinedTextField(
+            value = speakerUr, onValueChange = { speakerUr = it },
+            label = { Text("مقرر (اردو)") }, singleLine = true,
+            placeholder = { Text(DEFAULT_SPEAKER_UR, color = AdminCreamMuted) },
             shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth(), colors = fieldColors,
         )
         Spacer(Modifier.height(12.dp))

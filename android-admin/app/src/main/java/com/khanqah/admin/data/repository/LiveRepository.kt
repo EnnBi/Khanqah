@@ -9,9 +9,12 @@ class LiveRepository(private val api: AdminApiService) {
         api.getCurrentLive()
     } catch (_: Exception) { null }
     suspend fun listCategories(): List<Category> = api.listCategories()
-    suspend fun start(categoryId: String, titleEn: String, titleUr: String) =
+    suspend fun start(categoryId: String, titleEn: String, titleUr: String, speakerEn: String, speakerUr: String) =
         retry(times = 3, delayMs = 2000) {
-            api.startLive(mapOf("category_id" to categoryId, "title_en" to titleEn, "title_ur" to titleUr))
+            api.startLive(mapOf(
+                "category_id" to categoryId, "title_en" to titleEn, "title_ur" to titleUr,
+                "speaker_en" to speakerEn, "speaker_ur" to speakerUr,
+            ))
         }
     suspend fun end(id: String) = api.endLive(id)
     suspend fun getListeners(): Int = try { api.getListeners()["listeners"] ?: 0 } catch (_: Exception) { 0 }

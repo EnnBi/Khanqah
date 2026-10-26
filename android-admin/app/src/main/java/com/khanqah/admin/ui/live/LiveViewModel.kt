@@ -54,10 +54,13 @@ class LiveViewModel(private val repo: LiveRepository) : ViewModel() {
         try { _categories.value = repo.listCategories() } catch (e: Exception) { Log.e("LiveVM", "listCategories", e) }
     }
 
-    fun start(categoryId: String, titleEn: String, titleUr: String, record: Boolean = false) = viewModelScope.launch {
+    fun start(
+        categoryId: String, titleEn: String, titleUr: String,
+        speakerEn: String = "", speakerUr: String = "", record: Boolean = false,
+    ) = viewModelScope.launch {
         _error.value = null
         try {
-            val session = repo.start(categoryId, titleEn, titleUr)
+            val session = repo.start(categoryId, titleEn, titleUr, speakerEn, speakerUr)
             _currentSession.value = session
             streamer.start(
                 sessionId = session.id,

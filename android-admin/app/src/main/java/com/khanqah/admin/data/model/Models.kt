@@ -41,6 +41,8 @@ data class ScheduledSession(
     @SerializedName("scheduled_at") val scheduledAt: String,
     @SerializedName("is_recurring") val isRecurring: Boolean,
     @SerializedName("recurrence_rule") val recurrenceRule: String?,
+    @SerializedName("speaker_en") val speakerEn: String? = null,
+    @SerializedName("speaker_ur") val speakerUr: String? = null,
 )
 
 data class LiveSession(

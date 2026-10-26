@@ -19,6 +19,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.khanqah.admin.data.model.ScheduledSession
+import com.khanqah.admin.ui.common.DEFAULT_SPEAKER_EN
+import com.khanqah.admin.ui.common.DEFAULT_SPEAKER_UR
 import com.khanqah.admin.ui.theme.*
 import java.time.Instant
 import java.time.ZoneId
@@ -58,8 +60,8 @@ private fun formatSessionDate(scheduledAt: String): String = try {
 @Composable
 fun ScheduleScreen(
     sessions: List<ScheduledSession>,
-    onCreate: (titleEn: String, titleUr: String, scheduledAt: String, isRecurring: Boolean, recurrenceRule: String?) -> Unit,
-    onUpdate: (id: String, titleEn: String, titleUr: String, scheduledAt: String, isRecurring: Boolean, recurrenceRule: String?) -> Unit,
+    onCreate: (titleEn: String, titleUr: String, scheduledAt: String, isRecurring: Boolean, recurrenceRule: String?, speakerEn: String, speakerUr: String) -> Unit,
+    onUpdate: (id: String, titleEn: String, titleUr: String, scheduledAt: String, isRecurring: Boolean, recurrenceRule: String?, speakerEn: String, speakerUr: String) -> Unit,
     onDelete: (String) -> Unit,
 ) {
     var showCreateForm by remember { mutableStateOf(false) }
@@ -110,8 +112,8 @@ fun ScheduleScreen(
                     SessionForm(
                         title    = "New Session",
                         fieldColors = fieldColors,
-                        onSubmit = { en, ur, at, recurring, rule ->
-                            onCreate(en, ur, at, recurring, rule)
+                        onSubmit = { en, ur, at, recurring, rule, spEn, spUr ->
+                            onCreate(en, ur, at, recurring, rule, spEn, spUr)
                             showCreateForm = false
                         },
                         onCancel = { showCreateForm = false },
@@ -163,8 +165,10 @@ fun ScheduleScreen(
                             initialUr   = s.titleUr,
                             initialScheduledAt = s.scheduledAt,
                             initialFreq = ruleToFreq(s.recurrenceRule),
-                            onSubmit    = { en, ur, at, recurring, rule ->
-                                onUpdate(s.id, en, ur, at, recurring, rule)
+                            initialSpeakerEn = s.speakerEn.orEmpty(),
+                            initialSpeakerUr = s.speakerUr.orEmpty(),
+                            onSubmit    = { en, ur, at, recurring, rule, spEn, spUr ->
+                                onUpdate(s.id, en, ur, at, recurring, rule, spEn, spUr)
                                 expandedId = null
                             },
                             onDelete = { confirmDelete = s },
@@ -186,13 +190,17 @@ private fun SessionForm(
     initialUr: String = "",
     initialScheduledAt: String = "",
     initialFreq: String = "once",
-    onSubmit: (titleEn: String, titleUr: String, scheduledAt: String, isRecurring: Boolean, recurrenceRule: String?) -> Unit,
+    initialSpeakerEn: String = "",
+    initialSpeakerUr: String = "",
+    onSubmit: (titleEn: String, titleUr: String, scheduledAt: String, isRecurring: Boolean, recurrenceRule: String?, speakerEn: String, speakerUr: String) -> Unit,
     onDelete: (() -> Unit)? = null,
     onCancel: () -> Unit,
 ) {
     var titleEn  by remember { mutableStateOf(initialEn) }
     var titleUr  by remember { mutableStateOf(initialUr) }
     var freq     by remember { mutableStateOf(initialFreq) }
+    var speakerEn by remember { mutableStateOf(initialSpeakerEn) }
+    var speakerUr by remember { mutableStateOf(initialSpeakerUr) }
 
     val initMs = remember(initialScheduledAt) {
         runCatching { Instant.parse(initialScheduledAt).toEpochMilli() }.getOrNull()
@@ -211,6 +219,14 @@ private fun SessionForm(
         OutlinedTextField(value = titleEn, onValueChange = { titleEn = it }, label = { Text("Title (English)") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = fieldColors)
         Spacer(Modifier.height(8.dp))
         OutlinedTextField(value = titleUr, onValueChange = { titleUr = it }, label = { Text("عنوان (اردو)") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = fieldColors)
+        Spacer(Modifier.height(8.dp))
+        OutlinedTextField(value = speakerEn, onValueChange = { speakerEn = it }, label = { Text("Speaker (English)") },
+            placeholder = { Text(DEFAULT_SPEAKER_EN, color = AdminCreamMuted) }, singleLine = true,
+            modifier = Modifier.fillMaxWidth(), colors = fieldColors)
+        Spacer(Modifier.height(8.dp))
+        OutlinedTextField(value = speakerUr, onValueChange = { speakerUr = it }, label = { Text("مقرر (اردو)") },
+            placeholder = { Text(DEFAULT_SPEAKER_UR, color = AdminCreamMuted) }, singleLine = true,
+            modifier = Modifier.fillMaxWidth(), colors = fieldColors)
         Spacer(Modifier.height(8.dp))
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -269,7 +285,7 @@ private fun SessionForm(
                     val dateMs = selectedDateMs ?: return@Button
                     if (titleEn.isBlank()) return@Button
                     val at = buildScheduledAt(dateMs, selectedHour, selectedMinute)
-                    onSubmit(titleEn, titleUr, at, freq != "once", freqToRule(freq))
+                    onSubmit(titleEn, titleUr, at, freq != "once", freqToRule(freq), speakerEn.trim(), speakerUr.trim())
                 },
                 enabled = titleEn.isNotBlank() && selectedDateMs != null,
                 modifier = Modifier.weight(1f),

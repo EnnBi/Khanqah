@@ -8,6 +8,7 @@ class ScheduleRepository(private val api: AdminApiService) {
     suspend fun create(
         titleEn: String, titleUr: String, scheduledAt: String,
         isRecurring: Boolean, recurrenceRule: String?,
+        speakerEn: String, speakerUr: String,
     ) = api.createSession(
         mapOf(
             "title_en" to titleEn,
@@ -15,6 +16,8 @@ class ScheduleRepository(private val api: AdminApiService) {
             "scheduled_at" to scheduledAt,
             "is_recurring" to isRecurring,
             "recurrence_rule" to recurrenceRule,
+            "speaker_en" to speakerEn,
+            "speaker_ur" to speakerUr,
         )
     )
 
@@ -22,6 +25,7 @@ class ScheduleRepository(private val api: AdminApiService) {
         id: String,
         titleEn: String, titleUr: String, scheduledAt: String,
         isRecurring: Boolean, recurrenceRule: String?,
+        speakerEn: String, speakerUr: String,
     ) = api.updateSession(
         id,
         mapOf(
@@ -30,6 +34,8 @@ class ScheduleRepository(private val api: AdminApiService) {
             "scheduled_at" to scheduledAt,
             "is_recurring" to isRecurring,
             "recurrence_rule" to recurrenceRule,
+            "speaker_en" to speakerEn,
+            "speaker_ur" to speakerUr,
         )
     )
 

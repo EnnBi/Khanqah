@@ -25,9 +25,10 @@ class ScheduleViewModel(
     fun create(
         titleEn: String, titleUr: String, scheduledAt: String,
         isRecurring: Boolean, recurrenceRule: String?,
+        speakerEn: String, speakerUr: String,
     ) = viewModelScope.launch {
         try {
-            val new = repo.create(titleEn, titleUr, scheduledAt, isRecurring, recurrenceRule)
+            val new = repo.create(titleEn, titleUr, scheduledAt, isRecurring, recurrenceRule, speakerEn, speakerUr)
             _sessions.value = _sessions.value + new
         } catch (_: Exception) {}
     }
@@ -36,9 +37,10 @@ class ScheduleViewModel(
         id: String,
         titleEn: String, titleUr: String, scheduledAt: String,
         isRecurring: Boolean, recurrenceRule: String?,
+        speakerEn: String, speakerUr: String,
     ) = viewModelScope.launch {
         try {
-            val updated = repo.update(id, titleEn, titleUr, scheduledAt, isRecurring, recurrenceRule)
+            val updated = repo.update(id, titleEn, titleUr, scheduledAt, isRecurring, recurrenceRule, speakerEn, speakerUr)
             _sessions.value = _sessions.value.map { if (it.id == id) updated else it }
         } catch (_: Exception) {}
     }

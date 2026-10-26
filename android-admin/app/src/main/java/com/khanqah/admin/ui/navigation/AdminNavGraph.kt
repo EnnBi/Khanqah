@@ -121,8 +121,8 @@ fun AdminNavGraph(app: AdminApp, startDestination: String) {
                 val sessions by app.scheduleViewModel.sessions.collectAsState()
                 ScheduleScreen(
                     sessions  = sessions,
-                    onCreate  = { en, ur, at, recurring, rule -> app.scheduleViewModel.create(en, ur, at, recurring, rule) },
-                    onUpdate  = { id, en, ur, at, recurring, rule -> app.scheduleViewModel.update(id, en, ur, at, recurring, rule) },
+                    onCreate  = { en, ur, at, recurring, rule, spEn, spUr -> app.scheduleViewModel.create(en, ur, at, recurring, rule, spEn, spUr) },
+                    onUpdate  = { id, en, ur, at, recurring, rule, spEn, spUr -> app.scheduleViewModel.update(id, en, ur, at, recurring, rule, spEn, spUr) },
                     onDelete  = { app.scheduleViewModel.delete(it) },
                 )
             }

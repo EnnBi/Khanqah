@@ -14,6 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.khanqah.admin.data.model.Category
+import com.khanqah.admin.ui.common.DEFAULT_SPEAKER_EN
+import com.khanqah.admin.ui.common.DEFAULT_SPEAKER_UR
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,6 +28,8 @@ fun UploadScreen(viewModel: UploadViewModel, categories: List<Category>) {
     var mimeType by remember { mutableStateOf("") }
     var titleEn by remember { mutableStateOf("") }
     var titleUr by remember { mutableStateOf("") }
+    var creditEn by remember { mutableStateOf("") }
+    var creditUr by remember { mutableStateOf("") }
     var type by remember { mutableStateOf("bayan") }
     var categoryId by remember { mutableStateOf("") }
     var isVideo by remember { mutableStateOf(false) }
@@ -46,7 +50,7 @@ fun UploadScreen(viewModel: UploadViewModel, categories: List<Category>) {
         if (state is UploadState.Done) {
             Toast.makeText(context, "Uploaded successfully", Toast.LENGTH_LONG).show()
             fileUri = null; fileName = ""; mimeType = ""; isVideo = false
-            titleEn = ""; titleUr = ""; categoryId = ""
+            titleEn = ""; titleUr = ""; creditEn = ""; creditUr = ""; categoryId = ""
             viewModel.reset()
         }
     }
@@ -75,6 +79,14 @@ fun UploadScreen(viewModel: UploadViewModel, categories: List<Category>) {
         Spacer(Modifier.height(8.dp))
         OutlinedTextField(value = titleUr, onValueChange = { titleUr = it },
             label = { Text("عنوان (اردو)") }, modifier = Modifier.fillMaxWidth())
+        Spacer(Modifier.height(8.dp))
+        OutlinedTextField(value = creditEn, onValueChange = { creditEn = it },
+            label = { Text("Speaker (English)") }, singleLine = true,
+            placeholder = { Text(DEFAULT_SPEAKER_EN) }, modifier = Modifier.fillMaxWidth())
+        Spacer(Modifier.height(8.dp))
+        OutlinedTextField(value = creditUr, onValueChange = { creditUr = it },
+            label = { Text("مقرر (اردو)") }, singleLine = true,
+            placeholder = { Text(DEFAULT_SPEAKER_UR) }, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(8.dp))
 
         var typeExpanded by remember { mutableStateOf(false) }
@@ -122,7 +134,7 @@ fun UploadScreen(viewModel: UploadViewModel, categories: List<Category>) {
         Button(
             onClick = {
                 fileUri?.let { uri ->
-                    viewModel.upload(uri, fileName, mimeType, titleEn, titleUr, type, categoryId, isVideo)
+                    viewModel.upload(uri, fileName, mimeType, titleEn, titleUr, creditEn.trim(), creditUr.trim(), type, categoryId, isVideo)
                 }
             },
             enabled = fileUri != null && titleEn.isNotBlank() && categoryId.isNotBlank()

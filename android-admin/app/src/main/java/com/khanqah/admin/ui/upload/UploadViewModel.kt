@@ -24,13 +24,13 @@ class UploadViewModel(
 
     fun upload(
         uri: Uri, filename: String, mimeType: String,
-        titleEn: String, titleUr: String, type: String,
+        titleEn: String, titleUr: String, creditEn: String, creditUr: String, type: String,
         categoryId: String, isVideo: Boolean,
     ) = viewModelScope.launch {
         _state.value = UploadState.Uploading(0)
         try {
             repo.uploadAndCreate(
-                uri, filename, mimeType, titleEn, titleUr, type, categoryId, isVideo,
+                uri, filename, mimeType, titleEn, titleUr, creditEn, creditUr, type, categoryId, isVideo,
                 onProgress = { _state.value = UploadState.Uploading(it) },
             )
             _state.value = UploadState.Done

@@ -21,6 +21,8 @@ class UploadRepository(private val api: AdminApiService, private val context: Co
         mimeType: String,
         titleEn: String,
         titleUr: String,
+        creditEn: String,
+        creditUr: String,
         type: String,
         categoryId: String,
         isVideo: Boolean,
@@ -62,6 +64,8 @@ class UploadRepository(private val api: AdminApiService, private val context: Co
         api.createContent(mapOf(
             "title_en" to titleEn,
             "title_ur" to titleUr,
+            "credit_en" to creditEn,
+            "credit_ur" to creditUr,
             "type" to type,
             "category_id" to categoryId,
             "media_url" to urlResp.cdnUrl,
