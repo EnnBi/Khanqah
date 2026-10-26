@@ -1,5 +1,8 @@
 package com.ennbi.khanqah.ui.live
 
+import com.ennbi.khanqah.ui.theme.NastaleeqFontFamily
+import com.ennbi.khanqah.ui.utils.LocalIsUrdu
+import com.ennbi.khanqah.ui.utils.speakerLabel
 import android.content.Context
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
@@ -272,12 +275,14 @@ fun LiveScreen(
             }
 
             Spacer(Modifier.height(6.dp))
+            val isUrdu = LocalIsUrdu.current
             Text(
-                "HAZRAT MUFTI ABDUR RASHEED MIFTAHI SAHAB",
+                speakerLabel(session.speakerEn, session.speakerUr, isUrdu).let { if (isUrdu) it else it.uppercase() },
                 style = MaterialTheme.typography.labelSmall.copy(
-                    fontSize = 9.sp,
-                    letterSpacing = 0.22.sp,
+                    fontSize = if (isUrdu) 14.sp else 9.sp,
+                    letterSpacing = if (isUrdu) 0.sp else 0.22.sp,
                     fontWeight = FontWeight.Medium,
+                    fontFamily = if (isUrdu) NastaleeqFontFamily else null,
                 ),
                 color = LiveGoldMuted,
                 textAlign = TextAlign.Center,

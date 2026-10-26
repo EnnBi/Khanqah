@@ -18,6 +18,7 @@ import com.ennbi.khanqah.data.model.ScheduledSession
 import com.ennbi.khanqah.ui.theme.NastaleeqFontFamily
 import com.ennbi.khanqah.ui.utils.LocalIsUrdu
 import com.ennbi.khanqah.ui.utils.ScheduleStr
+import com.ennbi.khanqah.ui.utils.speakerLabel
 
 @Composable
 fun ScheduleScreen(sessions: List<ScheduledSession>) {
@@ -123,6 +124,15 @@ private fun ScheduleCard(session: ScheduledSession) {
                     )
                 }
                 Spacer(Modifier.height(4.dp))
+                Text(
+                    speakerLabel(session.speakerEn, session.speakerUr, isUrdu),
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        fontFamily = if (isUrdu) NastaleeqFontFamily else null,
+                        fontSize = if (isUrdu) 14.sp else 12.sp,
+                    ),
+                    color = MaterialTheme.colorScheme.tertiary,
+                )
+                Spacer(Modifier.height(2.dp))
                 Text(
                     weekdayTime,
                     style = MaterialTheme.typography.bodySmall,
