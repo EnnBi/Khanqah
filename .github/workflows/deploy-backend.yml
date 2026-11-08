@@ -42,6 +42,17 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
 
+      # Before the binary swap: if a migration fails the job stops and the old release keeps running.
+      - name: Apply database migrations
+        run: |
+          ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+            "rm -rf /tmp/khanqah-migrations && mkdir -p /tmp/khanqah-migrations"
+          scp -i ~/.ssh/deploy_key \
+            backend/migrations/*.up.sql backend/scripts/apply-migrations.sh \
+            "$DEPLOY_USER@$DEPLOY_HOST:/tmp/khanqah-migrations/"
+          ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+            "bash /tmp/khanqah-migrations/apply-migrations.sh /tmp/khanqah-migrations"
+
       - name: Deploy
         run: |
           ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
