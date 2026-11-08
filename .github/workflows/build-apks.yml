@@ -10,9 +10,10 @@ on:
       - 'android-shaykh/**'
 
 jobs:
+  # Pinned: setup-android@v3 fails on ubuntu-latest (now Ubuntu 26): "Failed to find package tools"
   build-user-app:
     name: Build user app APK
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
 
     steps:
@@ -48,7 +49,7 @@ jobs:
 
   build-admin-app:
     name: Build admin app APK
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
 
     steps:
@@ -79,7 +80,7 @@ jobs:
 
   build-shaykh-app:
     name: Build shaykh app APK
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
 
     steps:
