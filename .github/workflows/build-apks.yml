@@ -10,10 +10,9 @@ on:
       - 'android-shaykh/**'
 
 jobs:
-  # Pinned: setup-android@v3 fails on ubuntu-latest (now Ubuntu 26): "Failed to find package tools"
   build-user-app:
     name: Build user app APK
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 30
 
     steps:
@@ -24,8 +23,10 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      # The runner image ships the Android SDK. android-actions/setup-android@v3 fails
+      # (it runs `sdkmanager tools`, a package Google removed), so only accept licenses.
+      - name: Accept Android SDK licenses
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
 
       - name: Make gradlew executable
         working-directory: android
@@ -49,7 +50,7 @@ jobs:
 
   build-admin-app:
     name: Build admin app APK
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 30
 
     steps:
@@ -60,8 +61,10 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      # The runner image ships the Android SDK. android-actions/setup-android@v3 fails
+      # (it runs `sdkmanager tools`, a package Google removed), so only accept licenses.
+      - name: Accept Android SDK licenses
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
 
       - name: Make gradlew executable
         working-directory: android-admin
@@ -80,7 +83,7 @@ jobs:
 
   build-shaykh-app:
     name: Build shaykh app APK
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 30
 
     steps:
@@ -91,8 +94,10 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      # The runner image ships the Android SDK. android-actions/setup-android@v3 fails
+      # (it runs `sdkmanager tools`, a package Google removed), so only accept licenses.
+      - name: Accept Android SDK licenses
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
 
       - name: Make gradlew executable
         working-directory: android-shaykh
