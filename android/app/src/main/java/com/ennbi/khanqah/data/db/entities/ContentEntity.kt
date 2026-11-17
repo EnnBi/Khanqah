@@ -16,4 +16,6 @@ data class ContentEntity(
     val duration: Int?,
     val createdAt: String = "",
     val cachedAt: Long = System.currentTimeMillis(),
+    val creditEn: String? = null,
+    val creditUr: String? = null,
 )

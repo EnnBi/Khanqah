@@ -14,7 +14,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -43,13 +45,19 @@ fun LibraryScreen(
     onContentClick: (String) -> Unit = {},
 ) {
     val categories by viewModel.categories.collectAsState()
-    val query by viewModel.searchQuery.collectAsState()
+    val filter by viewModel.filter.collectAsState()
+    val allContent by viewModel.allContent.collectAsState()
     val searchResults by viewModel.searchResults.collectAsState()
     val focusRequester = remember { FocusRequester() }
-    val isSearching = query.isNotBlank()
+    var showFilter by remember { mutableStateOf(false) }
+    val query = filter.query
+    val isSearching = filter.isActive
     val gold = MaterialTheme.colorScheme.tertiary
     val bg = MaterialTheme.colorScheme.background
     val isUrdu = LocalIsUrdu.current
+    val categoryChoices = categoryOptions(allContent, categories)
+    val speakerChoices = speakerOptions(allContent, isUrdu)
+    val canFilter = categoryChoices.size > 1 || speakerChoices.size > 1 || filter.facetCount > 0
 
     Column(
         modifier = Modifier
@@ -128,7 +136,25 @@ fun LibraryScreen(
                             modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
                         )
                     }
+                    if (canFilter) {
+                        FilterIconButton(
+                            active = filter.facetCount > 0,
+                            tint = MaterialTheme.colorScheme.secondary,
+                            onClick = { showFilter = true },
+                            modifier = Modifier.size(32.dp),
+                        )
+                    }
                 }
+            }
+
+            if (showFilter) {
+                FilterDialog(
+                    filter = filter,
+                    categories = categoryChoices,
+                    speakers = speakerChoices,
+                    onApply = { viewModel.setFilter(it); showFilter = false },
+                    onDismiss = { showFilter = false },
+                )
             }
 
             Spacer(Modifier.height(10.dp))
@@ -146,7 +172,7 @@ fun LibraryScreen(
             if (searchResults.isEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
-                        "No results for \"$query\"",
+                        if (query.isNotBlank()) "No results for \"$query\"" else "No results",
                         style = MaterialTheme.typography.bodyLarge.copy(fontStyle = FontStyle.Italic),
                         color = MaterialTheme.colorScheme.secondary,
                     )

@@ -99,5 +99,5 @@ class KhanqahApp : Application() {
         PlayerViewModel(contentRepo, progressRepo, this)
 
     fun makeCategoryDetailViewModel(categoryId: String) =
-        CategoryDetailViewModel(contentRepo, progressRepo, categoryId)
+        CategoryDetailViewModel(contentRepo, progressRepo, categoryRepo, categoryId)
 }

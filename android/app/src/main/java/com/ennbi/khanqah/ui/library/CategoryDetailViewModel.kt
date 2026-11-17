@@ -3,6 +3,7 @@ package com.ennbi.khanqah.ui.library
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ennbi.khanqah.data.model.Progress
+import com.ennbi.khanqah.data.repository.CategoryRepository
 import com.ennbi.khanqah.data.repository.ContentRepository
 import com.ennbi.khanqah.data.repository.ProgressRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,10 +15,14 @@ import kotlinx.coroutines.launch
 class CategoryDetailViewModel(
     private val contentRepo: ContentRepository,
     private val progressRepo: ProgressRepository,
+    categoryRepo: CategoryRepository,
     private val categoryId: String,
 ) : ViewModel() {
 
     val content = contentRepo.observeContent(categoryId)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val categories = categoryRepo.observeCategories()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _progressMap = MutableStateFlow<Map<String, Progress>>(emptyMap())

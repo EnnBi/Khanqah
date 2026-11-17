@@ -12,9 +12,6 @@ interface ContentDao {
     @Query("SELECT * FROM content WHERE categoryId = :categoryId ORDER BY createdAt DESC")
     fun observeByCategory(categoryId: String): Flow<List<ContentEntity>>
 
-    @Query("SELECT * FROM content WHERE titleEn LIKE '%' || :query || '%' ORDER BY createdAt DESC")
-    fun searchByTitle(query: String): Flow<List<ContentEntity>>
-
     @Query("SELECT * FROM content WHERE id = :id LIMIT 1")
     suspend fun getById(id: String): ContentEntity?
 

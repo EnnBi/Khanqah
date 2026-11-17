@@ -12,9 +12,6 @@ class ContentRepository(private val api: ApiService, private val db: AppDatabase
         if (categoryId != null) db.contentDao().observeByCategory(categoryId)
         else db.contentDao().observeAll()
 
-    fun searchContent(query: String): Flow<List<ContentEntity>> =
-        db.contentDao().searchByTitle(query)
-
     suspend fun refreshContent(categoryId: String? = null) {
         val items = api.listContent(categoryId = categoryId) ?: return
         val entities = items.map { it.toEntity() }
@@ -41,6 +38,7 @@ class ContentRepository(private val api: ApiService, private val db: AppDatabase
         id = id, titleEn = titleEn, titleUr = titleUr, mediaUrl = mediaUrl,
         thumbnailUrl = thumbnailUrl, type = type, categoryId = categoryId,
         isVideo = isVideo, duration = duration, createdAt = createdAt ?: "",
+        creditEn = creditEn, creditUr = creditUr,
     )
 
     private fun ContentEntity.toContent() = Content(
@@ -48,5 +46,6 @@ class ContentRepository(private val api: ApiService, private val db: AppDatabase
         mediaUrl = mediaUrl, thumbnailUrl = thumbnailUrl, duration = duration,
         isVideo = isVideo, type = type, categoryId = categoryId,
         topics = null, createdAt = createdAt,
+        creditEn = creditEn, creditUr = creditUr,
     )
 }

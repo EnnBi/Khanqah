@@ -36,7 +36,10 @@ fun CategoryDetailScreen(
 ) {
     val content by viewModel.content.collectAsState()
     val progressMap by viewModel.progressMap.collectAsState()
-    var query by remember { mutableStateOf("") }
+    val categories by viewModel.categories.collectAsState()
+    var filter by remember { mutableStateOf(ContentFilter()) }
+    var showFilter by remember { mutableStateOf(false) }
+    val query = filter.query
     val isDark = isSystemInDarkTheme()
     val isUrdu = LocalIsUrdu.current
 
@@ -47,8 +50,10 @@ fun CategoryDetailScreen(
     val searchBg = if (isDark) Color(0xFF0F2E24).copy(alpha = 0.2f) else Color(0xFF0F2E24).copy(alpha = 0.08f)
     val searchHint = if (isDark) Color(0xFF0F2E24).copy(alpha = 0.5f) else Color(0xFF5A6B60)
 
-    val filtered = if (query.isBlank()) content
-                   else content.filter { it.titleEn.contains(query, ignoreCase = true) }
+    val filtered = content.applyFilter(filter)
+    val categoryChoices = categoryOptions(content, categories)
+    val speakerChoices = speakerOptions(content, isUrdu)
+    val canFilter = categoryChoices.size > 1 || speakerChoices.size > 1 || filter.facetCount > 0
 
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         // ── Gold / cream header zone ──
@@ -132,26 +137,42 @@ fun CategoryDetailScreen(
 
             Spacer(Modifier.height(12.dp))
 
-            // Search bar
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(searchBg, RoundedCornerShape(24.dp))
-                    .padding(horizontal = 16.dp, vertical = 10.dp),
-            ) {
-                if (query.isEmpty()) {
-                    Text("Search title or credit…", color = searchHint, style = MaterialTheme.typography.bodyMedium)
+            // Search bar + filter icon
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .background(searchBg, RoundedCornerShape(24.dp))
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                ) {
+                    if (query.isEmpty()) {
+                        Text("Search title or speaker…", color = searchHint, style = MaterialTheme.typography.bodyMedium)
+                    }
+                    BasicTextField(
+                        value = query,
+                        onValueChange = { filter = filter.copy(query = it) },
+                        singleLine = true,
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(color = headerFg),
+                        cursorBrush = SolidColor(headerFg),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
-                BasicTextField(
-                    value = query,
-                    onValueChange = { query = it },
-                    singleLine = true,
-                    textStyle = MaterialTheme.typography.bodyMedium.copy(color = headerFg),
-                    cursorBrush = SolidColor(headerFg),
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                if (canFilter) {
+                    Spacer(Modifier.width(6.dp))
+                    FilterIconButton(active = filter.facetCount > 0, tint = headerFg, onClick = { showFilter = true })
+                }
             }
             Spacer(Modifier.height(16.dp))
+        }
+
+        if (showFilter) {
+            FilterDialog(
+                filter = filter,
+                categories = categoryChoices,
+                speakers = speakerChoices,
+                onApply = { filter = it; showFilter = false },
+                onDismiss = { showFilter = false },
+            )
         }
 
         // ── Content list ──
@@ -161,7 +182,11 @@ fun CategoryDetailScreen(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    if (query.isBlank()) "No content available" else "No results for \"$query\"",
+                    when {
+                        !filter.isActive -> "No content available"
+                        query.isNotBlank() -> "No results for \"$query\""
+                        else -> "No results"
+                    },
                     style = MaterialTheme.typography.bodyLarge.copy(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic),
                     color = MaterialTheme.colorScheme.secondary,
                 )
