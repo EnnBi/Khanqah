@@ -28,3 +28,37 @@ WHERE id = $1 RETURNING *;
 
 -- name: DeleteContent :exec
 DELETE FROM content WHERE id = $1;
+
+-- name: SearchContent :many
+-- Optional filters (NULL = no filter). q matches title or speaker (either language);
+-- speaker is the normalised key from ContentSpeakerFacets ('' = no speaker).
+SELECT * FROM content
+WHERE (sqlc.narg('type')::content_type IS NULL OR type = sqlc.narg('type')::content_type)
+  AND (sqlc.narg('category_id')::uuid IS NULL OR category_id = sqlc.narg('category_id')::uuid)
+  AND (sqlc.narg('q')::text IS NULL
+       OR strpos(lower(title_en), lower(sqlc.narg('q')::text)) > 0
+       OR strpos(lower(title_ur), lower(sqlc.narg('q')::text)) > 0
+       OR strpos(lower(COALESCE(credit_en, '')), lower(sqlc.narg('q')::text)) > 0
+       OR strpos(lower(COALESCE(credit_ur, '')), lower(sqlc.narg('q')::text)) > 0)
+  AND (sqlc.narg('speaker')::text IS NULL
+       OR lower(COALESCE(NULLIF(btrim(credit_en), ''), NULLIF(btrim(credit_ur), ''), '')) = lower(sqlc.narg('speaker')::text))
+ORDER BY created_at DESC
+LIMIT sqlc.arg('lim') OFFSET sqlc.arg('off');
+
+-- name: ContentSpeakerFacets :many
+SELECT lower(COALESCE(NULLIF(btrim(credit_en), ''), NULLIF(btrim(credit_ur), ''), ''))::text AS speaker_key,
+       COALESCE(MAX(NULLIF(btrim(credit_en), '')), '')::text AS name_en,
+       COALESCE(MAX(NULLIF(btrim(credit_ur), '')), '')::text AS name_ur,
+       COUNT(*)::bigint AS total
+FROM content
+WHERE (sqlc.narg('type')::content_type IS NULL OR type = sqlc.narg('type')::content_type)
+  AND (sqlc.narg('category_id')::uuid IS NULL OR category_id = sqlc.narg('category_id')::uuid)
+GROUP BY 1
+ORDER BY 1;
+
+-- name: ContentCategoryFacets :many
+SELECT category_id, COUNT(*)::bigint AS total
+FROM content
+WHERE (sqlc.narg('type')::content_type IS NULL OR type = sqlc.narg('type')::content_type)
+  AND (sqlc.narg('category_id')::uuid IS NULL OR category_id = sqlc.narg('category_id')::uuid)
+GROUP BY category_id;

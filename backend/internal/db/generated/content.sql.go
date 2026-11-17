@@ -11,6 +11,93 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const contentCategoryFacets = `-- name: ContentCategoryFacets :many
+SELECT category_id, COUNT(*)::bigint AS total
+FROM content
+WHERE ($1::content_type IS NULL OR type = $1::content_type)
+  AND ($2::uuid IS NULL OR category_id = $2::uuid)
+GROUP BY category_id
+`
+
+type ContentCategoryFacetsParams struct {
+	Type       *ContentType `json:"type"`
+	CategoryID pgtype.UUID  `json:"category_id"`
+}
+
+type ContentCategoryFacetsRow struct {
+	CategoryID pgtype.UUID `json:"category_id"`
+	Total      int64       `json:"total"`
+}
+
+func (q *Queries) ContentCategoryFacets(ctx context.Context, arg ContentCategoryFacetsParams) ([]ContentCategoryFacetsRow, error) {
+	rows, err := q.db.Query(ctx, contentCategoryFacets, arg.Type, arg.CategoryID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ContentCategoryFacetsRow
+	for rows.Next() {
+		var i ContentCategoryFacetsRow
+		if err := rows.Scan(&i.CategoryID, &i.Total); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const contentSpeakerFacets = `-- name: ContentSpeakerFacets :many
+SELECT lower(COALESCE(NULLIF(btrim(credit_en), ''), NULLIF(btrim(credit_ur), ''), ''))::text AS speaker_key,
+       COALESCE(MAX(NULLIF(btrim(credit_en), '')), '')::text AS name_en,
+       COALESCE(MAX(NULLIF(btrim(credit_ur), '')), '')::text AS name_ur,
+       COUNT(*)::bigint AS total
+FROM content
+WHERE ($1::content_type IS NULL OR type = $1::content_type)
+  AND ($2::uuid IS NULL OR category_id = $2::uuid)
+GROUP BY 1
+ORDER BY 1
+`
+
+type ContentSpeakerFacetsParams struct {
+	Type       *ContentType `json:"type"`
+	CategoryID pgtype.UUID  `json:"category_id"`
+}
+
+type ContentSpeakerFacetsRow struct {
+	SpeakerKey string `json:"speaker_key"`
+	NameEn     string `json:"name_en"`
+	NameUr     string `json:"name_ur"`
+	Total      int64  `json:"total"`
+}
+
+func (q *Queries) ContentSpeakerFacets(ctx context.Context, arg ContentSpeakerFacetsParams) ([]ContentSpeakerFacetsRow, error) {
+	rows, err := q.db.Query(ctx, contentSpeakerFacets, arg.Type, arg.CategoryID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ContentSpeakerFacetsRow
+	for rows.Next() {
+		var i ContentSpeakerFacetsRow
+		if err := rows.Scan(
+			&i.SpeakerKey,
+			&i.NameEn,
+			&i.NameUr,
+			&i.Total,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const createContent = `-- name: CreateContent :one
 INSERT INTO content (title_en, title_ur, description_en, description_ur, credit_en, credit_ur,
   type, category_id, media_url, thumbnail_url, duration, file_size, is_video, uploaded_by)
@@ -222,6 +309,77 @@ type ListContentByTypeParams struct {
 
 func (q *Queries) ListContentByType(ctx context.Context, arg ListContentByTypeParams) ([]Content, error) {
 	rows, err := q.db.Query(ctx, listContentByType, arg.Type, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Content
+	for rows.Next() {
+		var i Content
+		if err := rows.Scan(
+			&i.ID,
+			&i.TitleEn,
+			&i.TitleUr,
+			&i.DescriptionEn,
+			&i.DescriptionUr,
+			&i.CreditEn,
+			&i.CreditUr,
+			&i.Type,
+			&i.CategoryID,
+			&i.MediaUrl,
+			&i.ThumbnailUrl,
+			&i.Duration,
+			&i.FileSize,
+			&i.IsVideo,
+			&i.UploadedBy,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const searchContent = `-- name: SearchContent :many
+SELECT id, title_en, title_ur, description_en, description_ur, credit_en, credit_ur, type, category_id, media_url, thumbnail_url, duration, file_size, is_video, uploaded_by, created_at, updated_at FROM content
+WHERE ($1::content_type IS NULL OR type = $1::content_type)
+  AND ($2::uuid IS NULL OR category_id = $2::uuid)
+  AND ($3::text IS NULL
+       OR strpos(lower(title_en), lower($3::text)) > 0
+       OR strpos(lower(title_ur), lower($3::text)) > 0
+       OR strpos(lower(COALESCE(credit_en, '')), lower($3::text)) > 0
+       OR strpos(lower(COALESCE(credit_ur, '')), lower($3::text)) > 0)
+  AND ($4::text IS NULL
+       OR lower(COALESCE(NULLIF(btrim(credit_en), ''), NULLIF(btrim(credit_ur), ''), '')) = lower($4::text))
+ORDER BY created_at DESC
+LIMIT $6 OFFSET $5
+`
+
+type SearchContentParams struct {
+	Type       *ContentType `json:"type"`
+	CategoryID pgtype.UUID  `json:"category_id"`
+	Q          *string      `json:"q"`
+	Speaker    *string      `json:"speaker"`
+	Off        int32        `json:"off"`
+	Lim        int32        `json:"lim"`
+}
+
+// Optional filters (NULL = no filter). q matches title or speaker (either language);
+// speaker is the normalised key from ContentSpeakerFacets (” = no speaker).
+func (q *Queries) SearchContent(ctx context.Context, arg SearchContentParams) ([]Content, error) {
+	rows, err := q.db.Query(ctx, searchContent,
+		arg.Type,
+		arg.CategoryID,
+		arg.Q,
+		arg.Speaker,
+		arg.Off,
+		arg.Lim,
+	)
 	if err != nil {
 		return nil, err
 	}

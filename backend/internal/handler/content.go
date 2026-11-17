@@ -56,6 +56,27 @@ func ListContent(pool *pgxpool.Pool) http.HandlerFunc {
 			}
 		}
 
+		if hasSearchParams(r.URL.Query()) {
+			s, err := parseContentSearch(r.URL.Query())
+			if err != nil {
+				writeError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			rows, err := q.SearchContent(r.Context(), dbgen.SearchContentParams{
+				Type: s.Type, CategoryID: s.CategoryID, Q: s.Q, Speaker: s.Speaker,
+				Lim: s.Limit, Off: s.Offset,
+			})
+			if err != nil {
+				writeError(w, http.StatusInternalServerError, "internal error")
+				return
+			}
+			if rows == nil {
+				rows = []dbgen.Content{}
+			}
+			writeJSON(w, http.StatusOK, rows)
+			return
+		}
+
 		typeParam := r.URL.Query().Get("type")
 		categoryParam := r.URL.Query().Get("category_id")
 

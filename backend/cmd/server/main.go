@@ -95,6 +95,7 @@ func main() {
 
 		// Public
 		r.Get("/content", handler.ListContent(pool))
+		r.Get("/content/facets", handler.ContentFacets(pool))
 		r.Get("/content/{id}", handler.GetContent(pool))
 		r.Get("/categories", handler.ListCategories(pool))
 		r.Get("/schedule", handler.ListSchedule(pool))
