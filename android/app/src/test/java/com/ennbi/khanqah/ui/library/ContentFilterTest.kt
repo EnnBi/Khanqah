@@ -3,6 +3,8 @@ package com.ennbi.khanqah.ui.library
 import com.ennbi.khanqah.data.db.entities.CategoryEntity
 import com.ennbi.khanqah.data.db.entities.ContentEntity
 import org.junit.Assert.assertEquals
+import com.ennbi.khanqah.data.model.ContentFacets
+import com.ennbi.khanqah.data.model.SpeakerFacet
 import org.junit.Test
 
 class ContentFilterTest {
@@ -68,5 +70,37 @@ class ContentFilterTest {
             CategoryEntity("c3", "Empty", "خالی", "bayan", null, 0),
         )
         assertEquals(listOf("c2", "c1"), categoryOptions(items, cats).map { it.id })
+    }
+}
+
+class FacetOptionsTest {
+    private val facets = ContentFacets(
+        speakers = listOf(
+            SpeakerFacet("mufti rashid", "Mufti Rashid", "مفتی رشید", 5),
+            SpeakerFacet("", "", "", 2),
+            SpeakerFacet("maulana ahmad", "Maulana Ahmad", "", 1),
+        ),
+        categoryIds = listOf("c2", "c1"),
+    )
+
+    @Test fun speakerOptionsFromFacetsAreLocalisedSortedOtherLast() {
+        assertEquals(
+            listOf("Maulana Ahmad", "Mufti Rashid", "Other"),
+            speakerOptionsFrom(facets, isUrdu = false).map { it.label },
+        )
+        val ur = speakerOptionsFrom(facets, isUrdu = true)
+        assertEquals("دیگر", ur.last().label)
+        assertEquals("مفتی رشید", ur.first { it.key == "mufti rashid" }.label)
+        // no Urdu name -> falls back to the English one
+        assertEquals("Maulana Ahmad", ur.first { it.key == "maulana ahmad" }.label)
+    }
+
+    @Test fun categoryOptionsFromFacetsKeepOrderAndSkipUnknown() {
+        val cats = listOf(
+            CategoryEntity("c1", "One", "ایک", "bayan", null, 2),
+            CategoryEntity("c2", "Two", "دو", "bayan", null, 1),
+            CategoryEntity("c9", "Unused", "", "bayan", null, 0),
+        )
+        assertEquals(listOf("c2", "c1"), categoryOptionsFrom(facets.categoryIds, cats).map { it.id })
     }
 }

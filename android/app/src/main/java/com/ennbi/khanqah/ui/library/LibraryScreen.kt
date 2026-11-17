@@ -6,12 +6,15 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -47,7 +50,9 @@ fun LibraryScreen(
     val categories by viewModel.categories.collectAsState()
     val filter by viewModel.filter.collectAsState()
     val allContent by viewModel.allContent.collectAsState()
-    val searchResults by viewModel.searchResults.collectAsState()
+    val cachedResults by viewModel.searchResults.collectAsState()
+    val remote by viewModel.search.state.collectAsState()
+    val facets by viewModel.facets.collectAsState()
     val focusRequester = remember { FocusRequester() }
     var showFilter by remember { mutableStateOf(false) }
     val query = filter.query
@@ -55,8 +60,18 @@ fun LibraryScreen(
     val gold = MaterialTheme.colorScheme.tertiary
     val bg = MaterialTheme.colorScheme.background
     val isUrdu = LocalIsUrdu.current
-    val categoryChoices = categoryOptions(allContent, categories)
-    val speakerChoices = speakerOptions(allContent, isUrdu)
+    // Search/filter run on the server (the phone only caches the newest items); offline, use the cache.
+    val searchResults = if (remote.failed) cachedResults else remote.items
+    val hasMore = isSearching && !remote.failed && !remote.endReached
+    val categoryChoices = facets?.let { categoryOptionsFrom(it.categoryIds, categories) } ?: categoryOptions(allContent, categories)
+    val speakerChoices = facets?.let { speakerOptionsFrom(it, isUrdu) } ?: speakerOptions(allContent, isUrdu)
+    val listState = rememberLazyListState()
+    LaunchedEffect(listState, filter) {
+        snapshotFlow {
+            val info = listState.layoutInfo
+            (info.visibleItemsInfo.lastOrNull()?.index ?: -1) to info.totalItemsCount
+        }.collect { (last, total) -> if (total > 0 && last >= total - 5) viewModel.loadMore() }
+    }
     val canFilter = categoryChoices.size > 1 || speakerChoices.size > 1 || filter.facetCount > 0
 
     Column(
@@ -160,7 +175,7 @@ fun LibraryScreen(
             Spacer(Modifier.height(10.dp))
 
             Text(
-                if (isSearching) "${searchResults.size} ${if (isUrdu) LibraryStr.RESULTS_UR else LibraryStr.RESULTS_EN}"
+                if (isSearching) "${searchResults.size}${if (hasMore) "+" else ""} ${if (isUrdu) LibraryStr.RESULTS_UR else LibraryStr.RESULTS_EN}"
                 else "%02d · ${if (isUrdu) LibraryStr.CATEGORIES_UR else LibraryStr.CATEGORIES_EN}".format(categories.size),
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.08.sp),
                 color = MaterialTheme.colorScheme.secondary,
@@ -169,7 +184,11 @@ fun LibraryScreen(
 
         // ── Content: search results list OR category grid ──
         if (isSearching) {
-            if (searchResults.isEmpty()) {
+            if (searchResults.isEmpty() && remote.loading) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(modifier = Modifier.size(28.dp), strokeWidth = 2.dp)
+                }
+            } else if (searchResults.isEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
                         if (query.isNotBlank()) "No results for \"$query\"" else "No results",
@@ -178,9 +197,16 @@ fun LibraryScreen(
                     )
                 }
             } else {
-                LazyColumn(Modifier.fillMaxSize()) {
+                LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
                     items(searchResults) { item ->
                         ContentRow(item = item, progress = null, onClick = { onContentClick(item.id) })
+                    }
+                    if (remote.loading) {
+                        item {
+                            Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                            }
+                        }
                     }
                 }
             }

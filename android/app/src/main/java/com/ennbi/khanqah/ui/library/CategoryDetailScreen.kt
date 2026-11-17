@@ -6,6 +6,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
@@ -37,6 +38,8 @@ fun CategoryDetailScreen(
     val content by viewModel.content.collectAsState()
     val progressMap by viewModel.progressMap.collectAsState()
     val categories by viewModel.categories.collectAsState()
+    val remote by viewModel.search.state.collectAsState()
+    val facets by viewModel.facets.collectAsState()
     var filter by remember { mutableStateOf(ContentFilter()) }
     var showFilter by remember { mutableStateOf(false) }
     val query = filter.query
@@ -50,9 +53,23 @@ fun CategoryDetailScreen(
     val searchBg = if (isDark) Color(0xFF0F2E24).copy(alpha = 0.2f) else Color(0xFF0F2E24).copy(alpha = 0.08f)
     val searchHint = if (isDark) Color(0xFF0F2E24).copy(alpha = 0.5f) else Color(0xFF5A6B60)
 
-    val filtered = content.applyFilter(filter)
-    val categoryChoices = categoryOptions(content, categories)
-    val speakerChoices = speakerOptions(content, isUrdu)
+    LaunchedEffect(filter) { viewModel.setFilter(filter) }
+    // Search/filter run on the server (the phone only caches the newest items); offline, filter the cache.
+    val filtered = when {
+        !filter.isActive -> content
+        remote.failed -> content.applyFilter(filter)
+        else -> remote.items
+    }
+    val hasMore = filter.isActive && !remote.failed && !remote.endReached
+    val categoryChoices = facets?.let { categoryOptionsFrom(it.categoryIds, categories) } ?: categoryOptions(content, categories)
+    val speakerChoices = facets?.let { speakerOptionsFrom(it, isUrdu) } ?: speakerOptions(content, isUrdu)
+    val listState = rememberLazyListState()
+    LaunchedEffect(listState, filter) {
+        snapshotFlow {
+            val info = listState.layoutInfo
+            (info.visibleItemsInfo.lastOrNull()?.index ?: -1) to info.totalItemsCount
+        }.collect { (last, total) -> if (total > 0 && last >= total - 5) viewModel.loadMore() }
+    }
     val canFilter = categoryChoices.size > 1 || speakerChoices.size > 1 || filter.facetCount > 0
 
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
@@ -130,7 +147,7 @@ fun CategoryDetailScreen(
 
             // Item count
             Text(
-                "${filtered.size} ITEMS",
+                "${filtered.size}${if (hasMore) "+" else ""} ITEMS",
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, letterSpacing = 0.06.sp),
                 color = headerMuted,
             )
@@ -176,7 +193,11 @@ fun CategoryDetailScreen(
         }
 
         // ── Content list ──
-        if (filtered.isEmpty()) {
+        if (filtered.isEmpty() && filter.isActive && remote.loading) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(modifier = Modifier.size(28.dp), strokeWidth = 2.dp)
+            }
+        } else if (filtered.isEmpty()) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
@@ -192,13 +213,20 @@ fun CategoryDetailScreen(
                 )
             }
         } else {
-            LazyColumn(modifier = Modifier.fillMaxSize().weight(1f)) {
+            LazyColumn(state = listState, modifier = Modifier.fillMaxSize().weight(1f)) {
                 items(filtered) { item ->
                     ContentRow(
                         item = item,
                         progress = progressMap[item.id],
                         onClick = { onContentClick(item.id) },
                     )
+                }
+                if (filter.isActive && remote.loading) {
+                    item {
+                        Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                        }
+                    }
                 }
             }
         }

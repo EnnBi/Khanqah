@@ -4,6 +4,7 @@ import com.ennbi.khanqah.data.api.ApiService
 import com.ennbi.khanqah.data.db.AppDatabase
 import com.ennbi.khanqah.data.db.entities.ContentEntity
 import com.ennbi.khanqah.data.model.Content
+import com.ennbi.khanqah.data.model.ContentFacets
 import kotlinx.coroutines.flow.Flow
 
 class ContentRepository(private val api: ApiService, private val db: AppDatabase) {
@@ -11,6 +12,19 @@ class ContentRepository(private val api: ApiService, private val db: AppDatabase
     fun observeContent(categoryId: String? = null): Flow<List<ContentEntity>> =
         if (categoryId != null) db.contentDao().observeByCategory(categoryId)
         else db.contentDao().observeAll()
+
+    /** One page of server-side search results. Not cached: it's a transient view of the library. */
+    suspend fun searchPage(
+        q: String?, categoryId: String?, speaker: String?, offset: Int, limit: Int,
+    ): List<ContentEntity> =
+        (api.listContent(
+            categoryId = categoryId, q = q?.trim()?.ifEmpty { null }, speaker = speaker,
+            limit = limit, offset = offset,
+        ) ?: emptyList()).map { it.toEntity() }
+
+    /** Filter options (speakers, categories with content), optionally within one category. */
+    suspend fun facets(categoryId: String? = null): ContentFacets? =
+        try { api.contentFacets(categoryId = categoryId) } catch (_: Exception) { null }
 
     suspend fun refreshContent(categoryId: String? = null) {
         val items = api.listContent(categoryId = categoryId) ?: return

@@ -17,7 +17,17 @@ interface ApiService {
     suspend fun listContent(
         @Query("type") type: String? = null,
         @Query("category_id") categoryId: String? = null,
+        @Query("q") q: String? = null,
+        @Query("speaker") speaker: String? = null,
+        @Query("limit") limit: Int? = null,
+        @Query("offset") offset: Int? = null,
     ): List<Content>?
+
+    @GET("content/facets")
+    suspend fun contentFacets(
+        @Query("type") type: String? = null,
+        @Query("category_id") categoryId: String? = null,
+    ): com.ennbi.khanqah.data.model.ContentFacets
 
     @GET("content/{id}")
     suspend fun getContent(@Path("id") id: String): Content

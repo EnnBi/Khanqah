@@ -2,6 +2,7 @@ package com.ennbi.khanqah.ui.library
 
 import com.ennbi.khanqah.data.db.entities.CategoryEntity
 import com.ennbi.khanqah.data.db.entities.ContentEntity
+import com.ennbi.khanqah.data.model.ContentFacets
 
 /** Search text plus the two popup filters. `speakerKey == OTHER_SPEAKER_KEY` means "no speaker". */
 data class ContentFilter(
@@ -56,3 +57,19 @@ fun categoryOptions(items: List<ContentEntity>, categories: List<CategoryEntity>
     val used = items.map { it.categoryId }.toSet()
     return categories.filter { it.id in used }.sortedBy { it.sortOrder }
 }
+
+/** Popup speaker options from the server's facets, in the listener's language; "Other" last. */
+fun speakerOptionsFrom(facets: ContentFacets, isUrdu: Boolean): List<SpeakerOption> =
+    facets.speakers.map { f ->
+        val label = when {
+            isUrdu && f.nameUr.isNotBlank() -> f.nameUr
+            f.nameEn.isNotBlank() -> f.nameEn
+            f.nameUr.isNotBlank() -> f.nameUr
+            else -> if (isUrdu) OTHER_UR else OTHER_EN
+        }
+        SpeakerOption(f.key, label)
+    }.sortedWith(compareBy<SpeakerOption> { it.key == OTHER_SPEAKER_KEY }.thenBy { it.label.lowercase() })
+
+/** Popup category options from the server's category ids, in the app's normal order. */
+fun categoryOptionsFrom(ids: List<String>, categories: List<CategoryEntity>): List<CategoryEntity> =
+    categories.filter { it.id in ids.toSet() }.sortedBy { it.sortOrder }

@@ -27,6 +27,19 @@ data class Content(
     @SerializedName("credit_ur") val creditUr: String? = null,
 )
 
+data class SpeakerFacet(
+    val key: String,
+    @SerializedName("name_en") val nameEn: String = "",
+    @SerializedName("name_ur") val nameUr: String = "",
+    val count: Long = 0,
+)
+
+/** Filter options from GET /content/facets: speakers and the categories that have content. */
+data class ContentFacets(
+    val speakers: List<SpeakerFacet> = emptyList(),
+    @SerializedName("category_ids") val categoryIds: List<String> = emptyList(),
+)
+
 data class Topic(
     val id: String,
     @SerializedName("title_en") val titleEn: String,

@@ -2,6 +2,7 @@ package com.ennbi.khanqah.ui.library
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ennbi.khanqah.data.model.ContentFacets
 import com.ennbi.khanqah.data.model.Progress
 import com.ennbi.khanqah.data.repository.CategoryRepository
 import com.ennbi.khanqah.data.repository.ContentRepository
@@ -22,6 +23,16 @@ class CategoryDetailViewModel(
     val content = contentRepo.observeContent(categoryId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    /** Server-side search within this category (used while a search or filter is active). */
+    val search = PagedSearch(viewModelScope) { f, offset, limit ->
+        contentRepo.searchPage(f.query, f.categoryId ?: categoryId, f.speakerKey, offset, limit)
+    }
+    fun setFilter(f: ContentFilter) = search.setFilter(f)
+    fun loadMore() = search.loadMore()
+
+    private val _facets = MutableStateFlow<ContentFacets?>(null)
+    val facets = _facets.asStateFlow()
+
     val categories = categoryRepo.observeCategories()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -29,6 +40,7 @@ class CategoryDetailViewModel(
     val progressMap = _progressMap.asStateFlow()
 
     init {
+        viewModelScope.launch { _facets.value = contentRepo.facets(categoryId) }
         viewModelScope.launch { try { contentRepo.refreshContent(categoryId) } catch (_: Exception) {} }
         viewModelScope.launch { try { _progressMap.value = progressRepo.loadAll() } catch (_: Exception) {} }
     }

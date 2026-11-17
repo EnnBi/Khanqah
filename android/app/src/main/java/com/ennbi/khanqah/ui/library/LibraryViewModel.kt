@@ -3,6 +3,7 @@ package com.ennbi.khanqah.ui.library
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ennbi.khanqah.data.db.entities.ContentEntity
+import com.ennbi.khanqah.data.model.ContentFacets
 import com.ennbi.khanqah.data.repository.CategoryRepository
 import com.ennbi.khanqah.data.repository.ContentRepository
 import kotlinx.coroutines.flow.*
@@ -28,10 +29,20 @@ class LibraryViewModel(
         if (f.isActive) items.applyFilter(f) else emptyList()
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun setSearchQuery(q: String) { _filter.update { it.copy(query = q) } }
-    fun setFilter(f: ContentFilter) { _filter.value = f }
+    /** Server-side search over the whole library, paged; the cached results above are the offline fallback. */
+    val search = PagedSearch(viewModelScope) { f, offset, limit ->
+        contentRepo.searchPage(f.query, f.categoryId, f.speakerKey, offset, limit)
+    }
+    fun loadMore() = search.loadMore()
+
+    private val _facets = MutableStateFlow<ContentFacets?>(null)
+    val facets: StateFlow<ContentFacets?> = _facets.asStateFlow()
+
+    fun setSearchQuery(q: String) = setFilter(_filter.value.copy(query = q))
+    fun setFilter(f: ContentFilter) { _filter.value = f; search.setFilter(f) }
 
     init {
         viewModelScope.launch { categoryRepo.refresh() }
+        viewModelScope.launch { _facets.value = contentRepo.facets() }
     }
 }
