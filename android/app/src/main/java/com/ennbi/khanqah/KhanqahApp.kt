@@ -37,6 +37,10 @@ class KhanqahApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // Tell crash reports apart: the downloads-page APKs are debug builds, Play ones are release.
+        com.google.firebase.crashlytics.FirebaseCrashlytics.getInstance().setCustomKey(
+            "debug_build", (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0,
+        )
         ListeningForegroundService.createChannel(this)
         PlaybackNotificationService.createChannel(this)
         settingsStore = com.ennbi.khanqah.data.SettingsStore(this)

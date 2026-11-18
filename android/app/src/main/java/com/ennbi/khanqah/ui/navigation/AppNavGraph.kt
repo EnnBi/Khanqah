@@ -141,6 +141,16 @@ fun AppNavGraph(
     var cameFromAsk by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val app = context.applicationContext as KhanqahApp
+
+    // Anonymous screen views for Firebase Analytics: route templates only, never ids or names.
+    LaunchedEffect(currentRoute) {
+        currentRoute?.let {
+            com.google.firebase.analytics.FirebaseAnalytics.getInstance(context).logEvent(
+                com.google.firebase.analytics.FirebaseAnalytics.Event.SCREEN_VIEW,
+                androidx.core.os.bundleOf(com.google.firebase.analytics.FirebaseAnalytics.Param.SCREEN_NAME to it),
+            )
+        }
+    }
     val nowPlaying by app.nowPlayingManager.info.collectAsState()
 
     // Navigate to live screen when notification is tapped
