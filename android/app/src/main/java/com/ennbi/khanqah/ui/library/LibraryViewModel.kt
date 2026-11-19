@@ -3,6 +3,7 @@ package com.ennbi.khanqah.ui.library
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ennbi.khanqah.data.db.entities.ContentEntity
+import com.ennbi.khanqah.data.orNetworkError
 import com.ennbi.khanqah.data.model.ContentFacets
 import com.ennbi.khanqah.data.repository.CategoryRepository
 import com.ennbi.khanqah.data.repository.ContentRepository
@@ -42,7 +43,7 @@ class LibraryViewModel(
     fun setFilter(f: ContentFilter) { _filter.value = f; search.setFilter(f) }
 
     init {
-        viewModelScope.launch { categoryRepo.refresh() }
+        viewModelScope.launch { orNetworkError { categoryRepo.refresh() } }
         viewModelScope.launch { _facets.value = contentRepo.facets() }
     }
 }

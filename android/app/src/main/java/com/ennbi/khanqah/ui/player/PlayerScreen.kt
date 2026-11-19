@@ -63,6 +63,7 @@ fun PlayerScreen(
 ) {
     val content by viewModel.content.collectAsState()
     val player  by viewModel.playerState.collectAsState()
+    val loadFailed by viewModel.loadFailed.collectAsState()
 
     LaunchedEffect(contentId) { viewModel.load(contentId) }
 
@@ -71,6 +72,21 @@ fun PlayerScreen(
         val item = content
         val p = player
         when {
+            item == null && loadFailed -> Column(
+                Modifier.fillMaxSize().padding(32.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    if (isUrdu) "لوڈ نہیں ہو سکا۔ انٹرنیٹ چیک کریں۔" else "Couldn't load this. Check your connection.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.secondary,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                )
+                Spacer(Modifier.height(16.dp))
+                Button(onClick = { viewModel.load(contentId) }) { Text(if (isUrdu) "دوبارہ کوشش کریں" else "Retry") }
+                TextButton(onClick = onBack) { Text(if (isUrdu) "واپس" else "Back") }
+            }
             item == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = MaterialTheme.colorScheme.tertiary)
             }

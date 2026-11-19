@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.ennbi.khanqah.data.api.ApiService
 import com.ennbi.khanqah.data.model.LiveSession
 import com.ennbi.khanqah.data.model.ScheduledSession
+import com.ennbi.khanqah.data.orNetworkError
 import com.ennbi.khanqah.data.repository.ContentRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,7 +23,7 @@ class HomeViewModel(
     val schedule = _schedule.asStateFlow()
 
     init {
-        viewModelScope.launch { contentRepo.refreshContent() }
+        viewModelScope.launch { orNetworkError { contentRepo.refreshContent() } }
         viewModelScope.launch { try { _schedule.value = api.listSchedule() } catch (_: Exception) {} }
         viewModelScope.launch { pollLive() }
     }

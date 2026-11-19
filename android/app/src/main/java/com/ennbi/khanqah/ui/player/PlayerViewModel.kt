@@ -1,5 +1,6 @@
 package com.ennbi.khanqah.ui.player
 
+import com.ennbi.khanqah.data.orNetworkError
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -27,6 +28,9 @@ class PlayerViewModel(
     private val _content = MutableStateFlow<Content?>(null)
     val content = _content.asStateFlow()
 
+    private val _loadFailed = MutableStateFlow(false)
+    val loadFailed = _loadFailed.asStateFlow()
+
     private val _player = MutableStateFlow<ExoPlayer?>(null)
     val playerState = _player.asStateFlow()
 
@@ -45,7 +49,10 @@ class PlayerViewModel(
     }
 
     fun load(id: String) = viewModelScope.launch {
-        val c = contentRepo.getContent(id)
+        _loadFailed.value = false
+        // Offline and not cached: show a retry message instead of crashing the app.
+        val c = orNetworkError { contentRepo.getContent(id) }
+        if (c == null) { _loadFailed.value = true; return@launch }
         _content.value = c
 
         val isBook = c.type.lowercase() in setOf("book", "books") ||
