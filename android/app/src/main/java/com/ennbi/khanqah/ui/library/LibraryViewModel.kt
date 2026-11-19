@@ -3,10 +3,11 @@ package com.ennbi.khanqah.ui.library
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ennbi.khanqah.data.db.entities.ContentEntity
-import com.ennbi.khanqah.data.orNetworkError
 import com.ennbi.khanqah.data.model.ContentFacets
 import com.ennbi.khanqah.data.repository.CategoryRepository
 import com.ennbi.khanqah.data.repository.ContentRepository
+import com.ennbi.khanqah.data.retryOnNetworkError
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -42,8 +43,26 @@ class LibraryViewModel(
     fun setSearchQuery(q: String) = setFilter(_filter.value.copy(query = q))
     fun setFilter(f: ContentFilter) { _filter.value = f; search.setFilter(f) }
 
+    private val _loadState = MutableStateFlow(LoadState.Loading)
+    /** Whether the category list has come back from the server; drives the empty-tab placeholder. */
+    val loadState: StateFlow<LoadState> = _loadState.asStateFlow()
+    private var refreshJob: Job? = null
+
+    /** Loads the categories now, retrying with backoff until the server answers. */
+    fun refresh() {
+        refreshJob?.cancel()
+        _loadState.value = LoadState.Loading
+        refreshJob = viewModelScope.launch {
+            retryOnNetworkError(onFailure = { _loadState.value = LoadState.Failed }) { categoryRepo.refresh() }
+            _loadState.value = LoadState.Loaded
+            if (_facets.value == null) _facets.value = contentRepo.facets()
+        }
+    }
+
     init {
-        viewModelScope.launch { orNetworkError { categoryRepo.refresh() } }
+        refresh()
         viewModelScope.launch { _facets.value = contentRepo.facets() }
     }
 }
+
+enum class LoadState { Loading, Failed, Loaded }

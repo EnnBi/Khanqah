@@ -210,6 +210,9 @@ fun LibraryScreen(
                     }
                 }
             }
+        } else if (categories.isEmpty()) {
+            val loadState by viewModel.loadState.collectAsState()
+            LoadPlaceholder(loadState, onRetry = { viewModel.refresh() }, modifier = Modifier.weight(1f))
         } else {
             val rows = categories.chunked(2)
             Column(

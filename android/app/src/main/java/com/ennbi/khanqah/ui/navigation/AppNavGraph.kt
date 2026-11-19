@@ -47,6 +47,7 @@ import com.ennbi.khanqah.ui.library.CategoryDetailScreen
 import com.ennbi.khanqah.ui.library.CategoryDetailViewModel
 import com.ennbi.khanqah.ui.library.LibraryScreen
 import com.ennbi.khanqah.ui.library.LibraryViewModel
+import com.ennbi.khanqah.ui.library.LoadPlaceholder
 import com.ennbi.khanqah.ui.live.LiveScreen
 import com.ennbi.khanqah.ui.player.MiniPlayerBar
 import com.ennbi.khanqah.ui.player.PlayerScreen
@@ -464,6 +465,10 @@ fun AppNavGraph(
                         onBack = {},
                         showBackButton = false,
                     )
+                } else {
+                    // No category yet (first launch on a bad connection): say so instead of a blank tab.
+                    val loadState by libraryViewModel.loadState.collectAsState()
+                    LoadPlaceholder(loadState, onRetry = { libraryViewModel.refresh() })
                 }
             }
             composable(Screen.ClipsTab.route) {
@@ -480,6 +485,10 @@ fun AppNavGraph(
                         onBack = {},
                         showBackButton = false,
                     )
+                } else {
+                    // No category yet (first launch on a bad connection): say so instead of a blank tab.
+                    val loadState by libraryViewModel.loadState.collectAsState()
+                    LoadPlaceholder(loadState, onRetry = { libraryViewModel.refresh() })
                 }
             }
             composable(Screen.BooksTab.route) {
@@ -496,6 +505,10 @@ fun AppNavGraph(
                         onBack = {},
                         showBackButton = false,
                     )
+                } else {
+                    // No category yet (first launch on a bad connection): say so instead of a blank tab.
+                    val loadState by libraryViewModel.loadState.collectAsState()
+                    LoadPlaceholder(loadState, onRetry = { libraryViewModel.refresh() })
                 }
             }
             composable(Screen.AskList.route) {

@@ -5,8 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.ennbi.khanqah.data.api.ApiService
 import com.ennbi.khanqah.data.model.LiveSession
 import com.ennbi.khanqah.data.model.ScheduledSession
-import com.ennbi.khanqah.data.orNetworkError
 import com.ennbi.khanqah.data.repository.ContentRepository
+import com.ennbi.khanqah.data.retryOnNetworkError
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,8 +23,11 @@ class HomeViewModel(
     val schedule = _schedule.asStateFlow()
 
     init {
-        viewModelScope.launch { orNetworkError { contentRepo.refreshContent() } }
-        viewModelScope.launch { try { _schedule.value = api.listSchedule() } catch (_: Exception) {} }
+        // This view model lives as long as the app, so these run once: keep trying until they succeed.
+        viewModelScope.launch { retryOnNetworkError { contentRepo.refreshContent() } }
+        viewModelScope.launch {
+            try { retryOnNetworkError { _schedule.value = api.listSchedule() } } catch (_: Exception) {}
+        }
         viewModelScope.launch { pollLive() }
     }
 

@@ -9,6 +9,7 @@ import okhttp3.Route
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.util.concurrent.TimeUnit
 
 private const val BASE_URL = "https://arrashid.ennbi.com/api/"
 
@@ -62,6 +63,10 @@ class ApiClient(private val tokenManager: TokenManager) {
 
     private fun buildRetrofit(tm: TokenManager?): Retrofit {
         val http = OkHttpClient.Builder()
+            // OkHttp's 10s defaults are too short on weak mobile data (connects were timing out).
+            .connectTimeout(20, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
             .apply { if (tm != null) addInterceptor(authInterceptor).authenticator(tokenAuthenticator) }
             .addInterceptor(HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BASIC })
             .build()
