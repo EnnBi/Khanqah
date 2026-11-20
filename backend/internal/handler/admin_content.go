@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -55,12 +54,7 @@ func CreateContent(pool *pgxpool.Pool, fcmClient *fcm.Client) http.HandlerFunc {
 		writeJSON(w, http.StatusCreated, row)
 
 		if notificationEnabled(r.Context(), pool, "content_upload") {
-			go func() {
-				if err := fcmClient.SendToTopic(r.Context(), "content_upload",
-					"New Content", row.TitleEn); err != nil {
-					log.Printf("fcm content_upload: %v", err)
-				}
-			}()
+			notifyTopic(r.Context(), fcmClient, "content_upload", "New Content", row.TitleEn)
 		}
 	}
 }

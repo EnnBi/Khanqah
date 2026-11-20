@@ -3,7 +3,6 @@ package handler
 import (
 	"encoding/json"
 	"errors"
-	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -87,12 +86,7 @@ func StartLiveSession(pool *pgxpool.Pool, fcmClient *fcm.Client) http.HandlerFun
 		writeJSON(w, http.StatusCreated, row)
 
 		if notificationEnabled(r.Context(), pool, "broadcast_live") {
-			go func() {
-				if err := fcmClient.SendToTopic(r.Context(), "broadcast_live",
-					"Live Now", row.TitleEn+" is now live"); err != nil {
-					log.Printf("fcm broadcast_live: %v", err)
-				}
-			}()
+			notifyTopic(r.Context(), fcmClient, "broadcast_live", "Live Now", row.TitleEn+" is now live")
 		}
 	}
 }
