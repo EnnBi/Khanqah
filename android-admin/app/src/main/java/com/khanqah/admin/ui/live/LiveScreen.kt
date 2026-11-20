@@ -1,6 +1,8 @@
 package com.khanqah.admin.ui.live
 
 import android.Manifest
+import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -16,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Mic
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -62,6 +65,7 @@ internal fun LiveOnAirScreen(session: LiveSession, isStreaming: Boolean, listene
         "%02d:%02d:%02d".format(elapsedSeconds / 3600, (elapsedSeconds % 3600) / 60, elapsedSeconds % 60)
     }
 
+    val context = LocalContext.current
     val infiniteTransition = rememberInfiniteTransition(label = "livePulse")
     val dotAlpha by infiniteTransition.animateFloat(
         initialValue = 1f, targetValue = 0.15f,
@@ -155,6 +159,39 @@ internal fun LiveOnAirScreen(session: LiveSession, isStreaming: Boolean, listene
                 ),
                 color = AdminCream.copy(alpha = 0.38f),
             )
+
+            Spacer(Modifier.height(28.dp))
+
+            // Share: a link that plays this broadcast in any browser, for people without the app
+            Surface(
+                shape = RoundedCornerShape(50.dp),
+                color = Color.Transparent,
+                border = BorderStroke(1.dp, AdminGold.copy(alpha = 0.55f)),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(50.dp))
+                    .clickable { shareLive(context, session) },
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 11.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        Icons.Outlined.Share,
+                        contentDescription = null,
+                        tint = AdminGold,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "SHARE LINK",
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.12.sp,
+                        ),
+                        color = AdminGold,
+                    )
+                }
+            }
         }
 
         // ── Stop button ──
@@ -185,6 +222,14 @@ internal fun LiveOnAirScreen(session: LiveSession, isStreaming: Boolean, listene
             )
         }
     }
+}
+
+// Same link the listener app shares and opens: the website plays the broadcast in the browser.
+private fun shareLive(context: Context, session: LiveSession) {
+    val send = Intent(Intent.ACTION_SEND)
+        .setType("text/plain")
+        .putExtra(Intent.EXTRA_TEXT, "Live now: ${session.titleEn}\nhttps://arrashid.ennbi.com/live/${session.id}")
+    context.startActivity(Intent.createChooser(send, null))
 }
 
 // ── Next session card ─────────────────────────────────────────────────────────
