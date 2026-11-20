@@ -101,6 +101,7 @@ func main() {
 		r.Get("/schedule", handler.ListSchedule(pool))
 		r.Get("/live/current", handler.GetCurrentLive(pool))
 		r.Get("/live/listeners", handler.GetLiveListeners())
+		r.Get("/live/{id}", handler.GetLiveSession(pool))
 		r.Post("/live/ping", handler.PingLiveListener())
 		r.Post("/live/leave", handler.LeaveLive())
 		r.Post("/bugs", handler.SubmitBugReport(pool))
