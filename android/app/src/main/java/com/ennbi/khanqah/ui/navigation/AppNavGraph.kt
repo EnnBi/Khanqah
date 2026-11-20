@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ennbi.khanqah.KhanqahApp
 import com.ennbi.khanqah.PlaybackNotificationService
+import com.ennbi.khanqah.needsNotificationPermission
 import com.ennbi.khanqah.ui.theme.NastaleeqFontFamily
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -420,6 +421,9 @@ fun AppNavGraph(
                 )
             }
             composable(Screen.Profile.route) {
+                val notificationPermission = androidx.activity.compose.rememberLauncherForActivityResult(
+                    androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
+                ) {}
                 ProfileScreen(
                     isLoggedIn = isLoggedIn,
                     displayName = displayName,
@@ -428,7 +432,13 @@ fun AppNavGraph(
                     isUrdu = isUrdu,
                     settingsStore = app.settingsStore,
                     onLanguageToggle = onLanguageToggle,
-                    onSetNotifications = { app.setNotifications(it) },
+                    onSetNotifications = { on ->
+                        app.setNotifications(on)
+                        // Turning them on in the app does nothing while the system still blocks them.
+                        if (on && context.needsNotificationPermission()) {
+                            notificationPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                        }
+                    },
                     onLoginClick = { navController.navigate(Screen.Login.route) },
                     onAbout = { title -> navController.navigate(Screen.About.route(title)) },
                     onLogout = onLogout,

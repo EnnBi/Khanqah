@@ -1,10 +1,15 @@
 package com.ennbi.khanqah
 
+import android.Manifest
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.flow.first
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.*
@@ -36,11 +41,30 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private val notificationPermission =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
+
+    /** Without this prompt, Android 13+ silently drops the live and new-content pushes. */
+    private fun askForNotificationsOnce(app: KhanqahApp) {
+        val ask = runBlocking {
+            shouldAskOnLaunch(
+                sdkInt = Build.VERSION.SDK_INT,
+                granted = !needsNotificationPermission(),
+                enabledInApp = app.settingsStore.notificationsEnabled.first(),
+                alreadyAsked = app.settingsStore.notificationPermissionAsked(),
+            )
+        }
+        if (!ask) return
+        lifecycleScope.launch { app.settingsStore.setNotificationPermissionAsked() }
+        notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val app = application as KhanqahApp
+        askForNotificationsOnce(app)
         val initialLoggedIn = runBlocking { app.authRepo.isLoggedIn() }
         val initialRole     = runBlocking { app.authRepo.getRole() }
         val initialName     = runBlocking { app.authRepo.getDisplayName() }

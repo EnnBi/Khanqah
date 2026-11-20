@@ -23,6 +23,7 @@ class SettingsStore(private val context: Context) {
     private val SPEED  = floatPreferencesKey("playback_speed")
     private val SKIP   = intPreferencesKey("skip_interval_sec")
     private val NOTIF  = booleanPreferencesKey("notifications_enabled")
+    private val NOTIF_ASKED = booleanPreferencesKey("notification_permission_asked")
 
     val themeMode: Flow<ThemeMode> = context.settingsStore.data.map {
         runCatching { ThemeMode.valueOf(it[THEME] ?: "SYSTEM") }.getOrDefault(ThemeMode.SYSTEM)
@@ -39,4 +40,8 @@ class SettingsStore(private val context: Context) {
     suspend fun setPlaybackSpeed(speed: Float) = context.settingsStore.edit { it[SPEED] = speed }
     suspend fun setSkipInterval(sec: Int) = context.settingsStore.edit { it[SKIP] = sec }
     suspend fun setNotificationsEnabled(on: Boolean) = context.settingsStore.edit { it[NOTIF] = on }
+
+    /** Whether the system notification-permission prompt was already shown on launch. */
+    suspend fun notificationPermissionAsked(): Boolean = context.settingsStore.data.first()[NOTIF_ASKED] ?: false
+    suspend fun setNotificationPermissionAsked() = context.settingsStore.edit { it[NOTIF_ASKED] = true }
 }
