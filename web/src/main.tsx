@@ -36,6 +36,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/player/:id" element={<Player />} />
           <Route path="/schedule" element={<Schedule />} />
           <Route path="/live" element={<Live />} />
+          <Route path="/live/:id" element={<Live />} />
           <Route path="/login" element={<Login />} />
 
           <Route element={<ProtectedRoute />}>

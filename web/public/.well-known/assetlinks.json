@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.ennbi.khanqah",
+      "sha256_cert_fingerprints": [
+        "01:68:6C:81:ED:36:F6:E9:1F:28:DA:EB:18:02:5F:81:66:45:A1:48:E9:92:D8:AF:B7:41:08:AC:3A:38:0F:EA"
+      ]
+    }
+  }
+]
