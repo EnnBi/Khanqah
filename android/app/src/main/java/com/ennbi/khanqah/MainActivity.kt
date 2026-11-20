@@ -28,9 +28,15 @@ class MainActivity : ComponentActivity() {
     private var openPlayerState    = mutableStateOf(false)
     private var openAskState       = mutableStateOf(false)
     private var openAskThreadState = mutableStateOf<String?>(null)
+    private var liveLinkState      = mutableStateOf<String?>(null)
+
+    /** The broadcast id when [intent] is a tapped share link (see LiveLink.kt), else null. */
+    private fun liveLinkId(intent: Intent?): String? =
+        if (intent?.action == Intent.ACTION_VIEW) liveIdFromLink(intent.dataString) else null
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        liveLinkId(intent)?.let { liveLinkState.value = it }
         when (intent.action) {
             ListeningForegroundService.ACTION_OPEN_LIVE -> openLiveState.value = true
             PlaybackNotificationService.ACTION_OPEN_PLAYER -> openPlayerState.value = true
@@ -81,6 +87,8 @@ class MainActivity : ComponentActivity() {
             openAskState.value = true
             openAskThreadState.value = intent.getStringExtra(KhanqahFirebaseMessagingService.EXTRA_THREAD_ID)
         }
+        // Not after a rotation or restore: the link that launched the app was already opened then.
+        if (savedInstanceState == null) liveLinkState.value = liveLinkId(intent)
 
         setContent {
             val themeMode by app.settingsStore.themeMode.collectAsState(initial = initialTheme)
@@ -109,6 +117,7 @@ class MainActivity : ComponentActivity() {
                     val openPlayer    by openPlayerState
                     val openAsk       by openAskState
                     val openAskThread by openAskThreadState
+                    val liveLink      by liveLinkState
                     AppNavGraph(
                         authViewModel                  = app.authViewModel,
                         homeViewModel                  = app.homeViewModel,
@@ -126,6 +135,8 @@ class MainActivity : ComponentActivity() {
                         openPlayer                     = openPlayer,
                         openAsk                        = openAsk,
                         openAskThread                  = openAskThread,
+                        liveLinkId                     = liveLink,
+                        onLiveLinkHandled              = { liveLinkState.value = null },
                         onLanguageToggle               = {
                             scope.launch {
                                 app.tokenManager.setLanguage(if (language == "ur") "en" else "ur")

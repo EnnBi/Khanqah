@@ -48,10 +48,22 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTask"
             android:theme="@style/Theme.Khanqah.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- Shared broadcast links (see LiveLink.kt) open here instead of the browser. Android
+                 verifies the claim against https://arrashid.ennbi.com/.well-known/assetlinks.json,
+                 which lists this app's signing certificates (web/public/.well-known/). -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:host="arrashid.ennbi.com" />
+                <data android:pathPrefix="/live/" />
             </intent-filter>
         </activity>
         <!-- No advertising ID in Analytics (see the AD_ID permission removal above). -->

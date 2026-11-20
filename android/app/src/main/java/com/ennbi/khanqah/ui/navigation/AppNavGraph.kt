@@ -49,6 +49,7 @@ import com.ennbi.khanqah.ui.library.CategoryDetailViewModel
 import com.ennbi.khanqah.ui.library.LibraryScreen
 import com.ennbi.khanqah.ui.library.LibraryViewModel
 import com.ennbi.khanqah.ui.library.LoadPlaceholder
+import com.ennbi.khanqah.ui.live.LiveLinkEndedScreen
 import com.ennbi.khanqah.ui.live.LiveScreen
 import com.ennbi.khanqah.ui.player.MiniPlayerBar
 import com.ennbi.khanqah.ui.player.PlayerScreen
@@ -64,6 +65,7 @@ sealed class Screen(val route: String) {
     object Library      : Screen("library")
     object Schedule     : Screen("schedule")
     object Live         : Screen("live")
+    object LiveEnded    : Screen("live_ended")
     object Profile      : Screen("profile")
     object Player       : Screen("player/{contentId}") {
         fun route(id: String) = "player/$id"
@@ -132,6 +134,8 @@ fun AppNavGraph(
     openPlayer: Boolean = false,
     openAsk: Boolean = false,
     openAskThread: String? = null,
+    liveLinkId: String? = null,
+    onLiveLinkHandled: () -> Unit = {},
     onLanguageToggle: () -> Unit,
     onLogout: () -> Unit,
     onLoginSuccess: () -> Unit = {},
@@ -154,6 +158,31 @@ fun AppNavGraph(
         }
     }
     val nowPlaying by app.nowPlayingManager.info.collectAsState()
+
+    // Starts the live player and its notification, then shows the live screen.
+    fun joinLive(session: LiveSession) {
+        app.liveStreamPlayer.ensure(session.streamUrl, context)
+        context.startForegroundService(
+            Intent(context, com.ennbi.khanqah.ListeningForegroundService::class.java)
+                .putExtra(com.ennbi.khanqah.ListeningForegroundService.EXTRA_TITLE, session.titleEn)
+        )
+        navController.navigate(Screen.Live.route) { launchSingleTop = true }
+    }
+
+    // A shared broadcast link was tapped: join it if it is still on air, otherwise say it has
+    // ended. If the server can't be reached we can't tell which, so stay where we are.
+    LaunchedEffect(liveLinkId) {
+        val id = liveLinkId ?: return@LaunchedEffect
+        if (homeViewModel.refreshLive()) {
+            val onAir = homeViewModel.live.value
+            if (onAir != null && onAir.id.equals(id, ignoreCase = true)) {
+                joinLive(onAir)
+            } else {
+                navController.navigate(Screen.LiveEnded.route) { launchSingleTop = true }
+            }
+        }
+        onLiveLinkHandled()
+    }
 
     // Navigate to live screen when notification is tapped
     LaunchedEffect(openLive) {
@@ -207,6 +236,7 @@ fun AppNavGraph(
         Screen.Player.route,
         Screen.CategoryDetail.route,
         Screen.Live.route,
+        Screen.LiveEnded.route,
     )
     val showBottomNav = currentRoute !in noBottomNavRoutes
     val pillColor    = Color(0xFFD4AF37)           // gold background
@@ -338,14 +368,7 @@ fun AppNavGraph(
                     onContentClick = { id -> navController.navigate(Screen.Player.route(id)) },
                     onLiveClick = {
                         val session = liveSession
-                        if (session != null) {
-                            app.liveStreamPlayer.ensure(session.streamUrl, context)
-                            context.startForegroundService(
-                                Intent(context, com.ennbi.khanqah.ListeningForegroundService::class.java)
-                                    .putExtra(com.ennbi.khanqah.ListeningForegroundService.EXTRA_TITLE, session.titleEn)
-                            )
-                        }
-                        navController.navigate(Screen.Live.route)
+                        if (session != null) joinLive(session) else navController.navigate(Screen.Live.route)
                     },
                     onLibraryClick = { navController.navigate(Screen.Library.route) },
                     onProfileClick = { navController.navigate(Screen.Profile.route) },
@@ -419,6 +442,9 @@ fun AppNavGraph(
                     leaveLive  = { homeViewModel.leaveLive() },
                     checkLive  = { homeViewModel.isLiveActive() },
                 )
+            }
+            composable(Screen.LiveEnded.route) {
+                LiveLinkEndedScreen(onBack = { navController.popBackStack() })
             }
             composable(Screen.Profile.route) {
                 val notificationPermission = androidx.activity.compose.rememberLauncherForActivityResult(

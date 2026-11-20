@@ -4,6 +4,7 @@ import com.ennbi.khanqah.ui.theme.NastaleeqFontFamily
 import com.ennbi.khanqah.ui.utils.LocalIsUrdu
 import com.ennbi.khanqah.ui.utils.speakerLabel
 import android.content.Context
+import android.content.Intent
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -38,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.ennbi.khanqah.data.model.LiveSession
+import com.ennbi.khanqah.liveShareText
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
@@ -411,12 +413,15 @@ fun LiveScreen(
                 // Share
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.width(72.dp),
+                    modifier = Modifier
+                        .width(72.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable { shareLive(context, session) },
                 ) {
                     Icon(
                         Icons.Outlined.Share,
                         contentDescription = "Share",
-                        tint = LiveCream.copy(alpha = 0.55f),
+                        tint = LiveCream.copy(alpha = 0.9f),
                         modifier = Modifier.size(24.dp),
                     )
                     Spacer(Modifier.height(5.dp))
@@ -598,8 +603,18 @@ private fun CoverArtCard() {
 
 // ── Broadcast ended screen ─────────────────────────────────────────────────────
 
+/** Where a shared link lands when its broadcast is no longer on air. */
 @Composable
-private fun BroadcastEndedScreen(onBack: () -> Unit) {
+fun LiveLinkEndedScreen(onBack: () -> Unit) {
+    BroadcastEndedScreen(title = "This live broadcast has ended", note = null, onBack = onBack)
+}
+
+@Composable
+private fun BroadcastEndedScreen(
+    title: String = "Broadcast has ended",
+    note: String? = "Jazakallah for listening",
+    onBack: () -> Unit,
+) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -621,7 +636,7 @@ private fun BroadcastEndedScreen(onBack: () -> Unit) {
             }
             Spacer(Modifier.height(22.dp))
             Text(
-                "Broadcast has ended",
+                title,
                 style = MaterialTheme.typography.bodyLarge.copy(
                     fontFamily = FontFamily.Serif,
                     fontStyle = FontStyle.Italic,
@@ -629,13 +644,15 @@ private fun BroadcastEndedScreen(onBack: () -> Unit) {
                 color = LiveCream.copy(alpha = 0.9f),
                 textAlign = TextAlign.Center,
             )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                "Jazakallah for listening",
-                style = MaterialTheme.typography.bodySmall,
-                color = LiveGoldMuted,
-                textAlign = TextAlign.Center,
-            )
+            if (note != null) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    note,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = LiveGoldMuted,
+                    textAlign = TextAlign.Center,
+                )
+            }
             Spacer(Modifier.height(32.dp))
             Surface(
                 shape = RoundedCornerShape(50.dp),
@@ -698,6 +715,14 @@ private fun NoLiveScreen() {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+/** Opens the system share sheet with a link that plays this broadcast in any browser. */
+private fun shareLive(context: Context, session: LiveSession) {
+    val send = Intent(Intent.ACTION_SEND)
+        .setType("text/plain")
+        .putExtra(Intent.EXTRA_TEXT, liveShareText(session.titleEn, session.id))
+    context.startActivity(Intent.createChooser(send, null))
+}
 
 private fun computeInitialElapsed(startedAt: String): Int = try {
     val started = Instant.parse(startedAt)

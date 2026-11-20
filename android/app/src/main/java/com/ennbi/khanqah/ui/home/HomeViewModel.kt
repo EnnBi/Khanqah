@@ -43,6 +43,18 @@ class HomeViewModel(
         }
     }
 
+    /**
+     * Checks what is on air right now instead of waiting for the next poll, for opening a shared
+     * broadcast link. Returns false, leaving [live] untouched, if the server could not be reached.
+     */
+    suspend fun refreshLive(): Boolean = try {
+        val response = api.getCurrentLive()
+        if (response.isSuccessful) _live.value = response.body()
+        response.isSuccessful
+    } catch (_: Exception) {
+        false
+    }
+
     suspend fun pingLive(): Int = try { api.pingLive()["listeners"] ?: 0 } catch (_: Exception) { 0 }
     suspend fun leaveLive() { try { api.leaveLive() } catch (_: Exception) {} }
     suspend fun isLiveActive(): Boolean {
